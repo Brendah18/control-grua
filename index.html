@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="Módulo de Control en Tiempo Real para Vehículo IoT - Edición Pastel Kawaii · AWS EC2, Amazon RDS y WebSocket WSS" />
-  <title>✨ Control Vehículo IoT · Pastel Edition 🌸</title>
+  <meta name="description" content="Aplicación Web IoT: Control y Monitoreo en Tiempo Real - Edición Pastel Kawaii · AWS EC2, Amazon RDS y WebSocket WSS" />
+  <title>✨ Vehículo IoT · Control &amp; Monitoreo 🌸</title>
 
   <!-- Favicon IoT con ruta relativa compatible con subrutas de GitHub Pages -->
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
@@ -47,21 +47,21 @@
   </div>
 
   <!-- =====================================================================
-       CABECERA PASTEL Y PANEL DE 3 INDICADORES DE CONEXIÓN REALES
+       CABECERA PASTEL SUPERIOR
        ===================================================================== -->
   <header class="navbar pastel-header py-2">
-    <div class="container-fluid px-3">
+    <div class="container-fluid px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
       <div class="d-flex align-items-center gap-2">
         <div class="logo-bubble">
           <img src="./favicon.svg" alt="IoT Icon" width="38" height="38" class="rounded-4" />
         </div>
         <div>
           <h1 class="h6 mb-0 fw-extrabold title-gradient d-flex align-items-center gap-1">
-            <span>🌸 CONTROL VEHÍCULO IoT</span>
+            <span>🌸 CONTROL &amp; MONITOREO VEHÍCULO IoT</span>
             <span class="sparkle-inline">✨</span>
           </h1>
           <small class="text-soft-lilac d-block fw-semibold" style="font-size: 0.74rem;">
-            ✿ ID Vehículo: <span id="lbl-vehiculo-id" class="badge-mini-id">1</span> · Etapa 1 (Control) ★
+            ✿ ID Vehículo: <span id="lbl-vehiculo-id" class="badge-mini-id">1</span> · Etapa 1 y 2 (Control + Monitoreo AWS) ★
           </small>
         </div>
       </div>
@@ -74,7 +74,9 @@
     </div>
   </header>
 
-  <!-- Barra de los 3 Indicadores Reales -->
+  <!-- =====================================================================
+       BARRA DE LOS 3 INDICADORES REALES (SIEMPRE VISIBLE)
+       ===================================================================== -->
   <section class="pastel-status-bar py-2 px-3">
     <div class="container">
       <div class="row g-2 text-center">
@@ -118,26 +120,51 @@
   </section>
 
   <!-- =====================================================================
-       CONTENIDO PRINCIPAL (MOBILE FIRST - ESTÉTICA CUTE CONSOLE)
+       CONTENIDO PRINCIPAL (DOS COLUMNAS BALANCEADAS:
+       IZQUIERDA FIJA [JOYSTICK + DETENER] | DERECHA CON PESTAÑAS [CONTROL / MONITOREO])
        ===================================================================== -->
   <main class="container my-3 flex-grow-1 position-relative z-1">
 
-    <!-- Tarjeta Superior: Estado / Telemetría de Comando Activo -->
+    <!-- Tarjeta Superior + Pestañas de Navegación ("Control" y "Monitoreo") debajo de los indicadores -->
     <div class="card pastel-card status-banner-card mb-3">
       <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex flex-wrap align-items-center gap-2">
           <span class="badge badge-ribbon">✨ ESTADO ACTUAL 🌸</span>
           <span id="lbl-comando-actual" class="fw-extrabold text-uppercase command-active-text">DETENER</span>
+          <span class="small text-soft-lilac fw-semibold ms-md-2">
+            <i class="bi bi-heart-fill text-pink-accent me-1"></i>Última respuesta:
+            <span id="lbl-ultima-respuesta" class="text-plum fw-bold">Listo para operar ✨</span>
+          </span>
         </div>
-        <div class="small text-soft-lilac fw-semibold">
-          <i class="bi bi-heart-fill text-pink-accent me-1"></i>Última respuesta:
-          <span id="lbl-ultima-respuesta" class="text-plum fw-bold">Listo para operar ✨</span>
-        </div>
+
+        <!-- PESTAÑAS DE NAVEGACIÓN ("Control" y "Monitoreo") DEBAJO DE LOS INDICADORES -->
+        <nav class="nav-view-switcher d-flex align-items-center gap-1" aria-label="Cambiar panel derecho entre Control y Monitoreo">
+          <button
+            id="tab-btn-control"
+            type="button"
+            class="btn btn-tab-pastel active"
+            data-target-view="control"
+          >
+            <i class="bi bi-controller me-1"></i>Control 🌸
+          </button>
+          <button
+            id="tab-btn-monitoreo"
+            type="button"
+            class="btn btn-tab-pastel"
+            data-target-view="monitoreo"
+          >
+            <i class="bi bi-activity me-1"></i>Monitoreo ✨
+          </button>
+        </nav>
       </div>
     </div>
 
+    <!-- CUADRÍCULA PRINCIPAL DE DOS COLUMNAS -->
     <div class="row g-3">
-      <!-- COLUMNA IZQUIERDA: JOYSTICK VIRTUAL KAWAII Y BOTÓN DE PARO PRIORITARIO -->
+
+      <!-- =================================================================
+           COLUMNA IZQUIERDA (FIJA Y VISIBLE EN AMBAS VISTAS: JOYSTICK + DETENER)
+           ================================================================= -->
       <div class="col-12 col-lg-6">
         <div class="card pastel-card h-100">
           <!-- Florecitas decorativas en las esquinas -->
@@ -173,7 +200,7 @@
               <!-- Punto neutral central visible con borde de flor -->
               <div class="joystick-center-mark"></div>
 
-              <!-- Palanca móvil (Thumb estilo botón de consola kawaii con florecita/estrellita) -->
+              <!-- Palanca móvil (Thumb estilo botón de consola kawaii con florecita) -->
               <div id="joystick-thumb" class="joystick-thumb">
                 <span class="thumb-flower-icon">🌸</span>
               </div>
@@ -197,95 +224,205 @@
         </div>
       </div>
 
-      <!-- COLUMNA DERECHA: MANIOBRAS SECUNDARIAS Y EJECUCIÓN DE DEMOS -->
-      <div class="col-12 col-lg-6 d-flex flex-column gap-3">
+      <!-- =================================================================
+           COLUMNA DERECHA (ALTERNA ENTRE PESTAÑA "CONTROL" Y PESTAÑA "MONITOREO")
+           ================================================================= -->
+      <div class="col-12 col-lg-6">
 
-        <!-- Tarjeta 1: Giros Especiales y Comandos Secundarios del Catálogo -->
-        <div class="card pastel-card">
-          <span class="corner-flower flower-tl" aria-hidden="true">✨</span>
-          <span class="corner-flower flower-tr" aria-hidden="true">✿</span>
+        <!-- ---------------------------------------------------------------
+             PANEL DERECHO A: PESTAÑA "CONTROL" (MANIOBRAS + SECUENCIAS DEMO)
+             --------------------------------------------------------------- -->
+        <div id="right-panel-control" class="d-flex flex-column gap-3 h-100">
 
-          <div class="card-header pastel-card-header d-flex justify-content-between align-items-center">
-            <span class="fw-extrabold text-plum d-flex align-items-center gap-1">
-              <i class="bi bi-stars text-lilac-accent fs-5"></i>
-              <span>Maniobras y Giros Cute</span>
-              <span class="tiny-flower">🌷</span>
-            </span>
-            <small class="badge badge-soft-pill">★ Toque único</small>
+          <!-- Tarjeta 1: Giros Especiales y Comandos Secundarios del Catálogo -->
+          <div class="card pastel-card">
+            <span class="corner-flower flower-tl" aria-hidden="true">✨</span>
+            <span class="corner-flower flower-tr" aria-hidden="true">✿</span>
+
+            <div class="card-header pastel-card-header d-flex justify-content-between align-items-center">
+              <span class="fw-extrabold text-plum d-flex align-items-center gap-1">
+                <i class="bi bi-stars text-lilac-accent fs-5"></i>
+                <span>Maniobras y Giros Cute</span>
+                <span class="tiny-flower">🌷</span>
+              </span>
+              <small class="badge badge-soft-pill">★ Toque único</small>
+            </div>
+            <div class="card-body">
+              <!-- Contenedor de botones secundarios (90°, 360° estilo gamepad) -->
+              <div id="secondary-commands-grid" class="row g-2">
+                <div class="col-6 col-sm-3">
+                  <button type="button" class="btn w-100 py-2 cmd-sec-btn" data-cmd-name="GIRO_90_IZQ">
+                    <span class="btn-deco-corner">✦</span>
+                    <i class="bi bi-arrow-counterclockwise d-block fs-4 icon-pastel"></i>
+                    <span class="small fw-bold">Giro 90° Izq</span>
+                  </button>
+                </div>
+                <div class="col-6 col-sm-3">
+                  <button type="button" class="btn w-100 py-2 cmd-sec-btn" data-cmd-name="GIRO_90_DER">
+                    <span class="btn-deco-corner">✦</span>
+                    <i class="bi bi-arrow-clockwise d-block fs-4 icon-pastel"></i>
+                    <span class="small fw-bold">Giro 90° Der</span>
+                  </button>
+                </div>
+                <div class="col-6 col-sm-3">
+                  <button type="button" class="btn w-100 py-2 cmd-sec-btn" data-cmd-name="GIRO_360_IZQ">
+                    <span class="btn-deco-corner">✿</span>
+                    <i class="bi bi-arrow-repeat d-block fs-4 icon-pastel"></i>
+                    <span class="small fw-bold">Giro 360° Izq</span>
+                  </button>
+                </div>
+                <div class="col-6 col-sm-3">
+                  <button type="button" class="btn w-100 py-2 cmd-sec-btn" data-cmd-name="GIRO_360_DER">
+                    <span class="btn-deco-corner">✿</span>
+                    <i class="bi bi-bootstrap-reboot d-block fs-4 icon-pastel"></i>
+                    <span class="small fw-bold">Giro 360° Der</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Comandos dinámicos extra cargados desde GET /api/comandos -->
+              <div id="dynamic-catalog-commands" class="row g-2 mt-2"></div>
+            </div>
           </div>
-          <div class="card-body">
-            <!-- Contenedor de botones secundarios (90°, 360° estilo gamepad) -->
-            <div id="secondary-commands-grid" class="row g-2">
-              <div class="col-6 col-sm-3">
-                <button type="button" class="btn w-100 py-2 cmd-sec-btn" data-cmd-name="GIRO_90_IZQ">
-                  <span class="btn-deco-corner">✦</span>
-                  <i class="bi bi-arrow-counterclockwise d-block fs-4 icon-pastel"></i>
-                  <span class="small fw-bold">Giro 90° Izq</span>
-                </button>
+
+          <!-- Tarjeta 2: Ejecución de Secuencias DEMO -->
+          <div class="card pastel-card flex-grow-1">
+            <span class="corner-flower flower-tl" aria-hidden="true">🌸</span>
+            <span class="corner-flower flower-tr" aria-hidden="true">★</span>
+
+            <div class="card-header pastel-card-header d-flex justify-content-between align-items-center">
+              <span class="fw-extrabold text-plum d-flex align-items-center gap-1">
+                <i class="bi bi-magic text-pink-accent fs-5"></i>
+                <span>Secuencias Automáticas (DEMO)</span>
+              </span>
+              <span id="badge-demo-status" class="badge badge-pastel-neutral">✿ Inactiva</span>
+            </div>
+            <div class="card-body d-flex flex-column justify-content-between">
+              <div>
+                <label for="select-demo" class="form-label small text-soft-lilac fw-bold mb-1">
+                  🌸 Seleccionar coreografía / secuencia (`GET /api/demos`):
+                </label>
+                <select id="select-demo" class="form-select pastel-select mb-2">
+                  <option value="">✨ Cargando secuencias DEMO...</option>
+                </select>
+                <p class="small text-soft-lilac fw-semibold mb-3 demo-hint-box p-2 rounded-4">
+                  <i class="bi bi-shield-heart text-pink-accent me-1"></i>
+                  El servidor AWS gestiona los tiempos de cada paso sin contaminar el historial individual. Mientras una DEMO está activa, los controles manuales se bloquean. ✨
+                </p>
               </div>
-              <div class="col-6 col-sm-3">
-                <button type="button" class="btn w-100 py-2 cmd-sec-btn" data-cmd-name="GIRO_90_DER">
-                  <span class="btn-deco-corner">✦</span>
-                  <i class="bi bi-arrow-clockwise d-block fs-4 icon-pastel"></i>
-                  <span class="small fw-bold">Giro 90° Der</span>
+
+              <div class="d-flex gap-2">
+                <button id="btn-demo-start" type="button" class="btn btn-cute-primary fw-extrabold flex-grow-1 py-2">
+                  <i class="bi bi-play-circle-fill me-1"></i>Iniciar DEMO ✨
                 </button>
-              </div>
-              <div class="col-6 col-sm-3">
-                <button type="button" class="btn w-100 py-2 cmd-sec-btn" data-cmd-name="GIRO_360_IZQ">
-                  <span class="btn-deco-corner">✿</span>
-                  <i class="bi bi-arrow-repeat d-block fs-4 icon-pastel"></i>
-                  <span class="small fw-bold">Giro 360° Izq</span>
-                </button>
-              </div>
-              <div class="col-6 col-sm-3">
-                <button type="button" class="btn w-100 py-2 cmd-sec-btn" data-cmd-name="GIRO_360_DER">
-                  <span class="btn-deco-corner">✿</span>
-                  <i class="bi bi-bootstrap-reboot d-block fs-4 icon-pastel"></i>
-                  <span class="small fw-bold">Giro 360° Der</span>
+                <button id="btn-demo-cancel" type="button" class="btn btn-cute-cancel fw-extrabold py-2" disabled>
+                  <i class="bi bi-x-octagon-fill me-1"></i>Cancelar DEMO
                 </button>
               </div>
             </div>
-
-            <!-- Comandos dinámicos extra cargados desde GET /api/comandos -->
-            <div id="dynamic-catalog-commands" class="row g-2 mt-2"></div>
           </div>
+
         </div>
 
-        <!-- Tarjeta 2: Ejecución de Secuencias DEMO -->
-        <div class="card pastel-card flex-grow-1">
-          <span class="corner-flower flower-tl" aria-hidden="true">🌸</span>
-          <span class="corner-flower flower-tr" aria-hidden="true">★</span>
+        <!-- ---------------------------------------------------------------
+             PANEL DERECHO B: PESTAÑA "MONITOREO" (ÚLTIMO MOVIMIENTO + TABLA 10 REGISTROS)
+             --------------------------------------------------------------- -->
+        <div id="right-panel-monitoreo" class="d-flex flex-column gap-3 h-100 d-none">
 
-          <div class="card-header pastel-card-header d-flex justify-content-between align-items-center">
-            <span class="fw-extrabold text-plum d-flex align-items-center gap-1">
-              <i class="bi bi-magic text-pink-accent fs-5"></i>
-              <span>Secuencias Automáticas (DEMO)</span>
-            </span>
-            <span id="badge-demo-status" class="badge badge-pastel-neutral">✿ Inactiva</span>
-          </div>
-          <div class="card-body d-flex flex-column justify-content-between">
-            <div>
-              <label for="select-demo" class="form-label small text-soft-lilac fw-bold mb-1">
-                🌸 Seleccionar coreografía / secuencia (`GET /api/demos`):
-              </label>
-              <select id="select-demo" class="form-select pastel-select mb-2">
-                <option value="">✨ Cargando secuencias DEMO...</option>
-              </select>
-              <p class="small text-soft-lilac fw-semibold mb-3 demo-hint-box p-2 rounded-4">
-                <i class="bi bi-shield-heart text-pink-accent me-1"></i>
-                El servidor AWS gestiona los tiempos de cada paso sin contaminar el historial individual. Mientras una DEMO está activa, los controles manuales se bloquean. ✨
-              </p>
+          <!-- Tarjeta 1: Último Movimiento en Tiempo Real -->
+          <div class="card pastel-card mon-hero-card">
+            <span class="corner-flower flower-tl" aria-hidden="true">🌸</span>
+            <span class="corner-flower flower-tr" aria-hidden="true">✨</span>
+
+            <div class="card-header pastel-card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <span class="fw-extrabold text-plum d-flex align-items-center gap-1">
+                <i class="bi bi-broadcast-pin text-pink-accent fs-5"></i>
+                <span>Último Movimiento</span>
+                <span class="tiny-flower">🌷</span>
+              </span>
+              <div class="d-flex align-items-center gap-2">
+                <span id="mon-vehicle-online-badge" class="badge rounded-pill badge-pastel-online">
+                  <span class="status-dot dot-online"></span>Activo en RDS ✨
+                </span>
+                <button id="btn-refresh-monitoreo" type="button" class="btn btn-sm btn-cute-sync py-1 px-2" title="Actualizar desde RDS">
+                  <i class="bi bi-arrow-clockwise"></i>
+                </button>
+              </div>
             </div>
 
-            <div class="d-flex gap-2">
-              <button id="btn-demo-start" type="button" class="btn btn-cute-primary fw-extrabold flex-grow-1 py-2">
-                <i class="bi bi-play-circle-fill me-1"></i>Iniciar DEMO ✨
-              </button>
-              <button id="btn-demo-cancel" type="button" class="btn btn-cute-cancel fw-extrabold py-2" disabled>
-                <i class="bi bi-x-octagon-fill me-1"></i>Cancelar DEMO
-              </button>
+            <div class="card-body py-3 px-3">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="mon-hero-icon-wrapper">
+                    <i id="mon-last-icon" class="bi bi-octagon-fill mon-hero-icon"></i>
+                  </div>
+                  <div>
+                    <span class="small text-soft-lilac fw-bold text-uppercase d-block">
+                      ✨ Comando Actual:
+                    </span>
+                    <h2 id="mon-last-command" class="h4 fw-extrabold mon-hero-command mb-0">
+                      Cargando...
+                    </h2>
+                  </div>
+                </div>
+
+                <!-- Fecha y Hora exactas extraídas del backend -->
+                <div class="mon-timestamp-box px-3 py-2 rounded-4 d-flex flex-column gap-1 flex-grow-1 flex-sm-grow-0">
+                  <div class="d-flex align-items-center justify-content-between gap-3">
+                    <span class="small fw-bold text-soft-lilac">
+                      <i class="bi bi-calendar3-heart text-pink-accent me-1"></i>Fecha:
+                    </span>
+                    <span id="mon-last-date" class="small fw-extrabold text-plum">—</span>
+                  </div>
+                  <div class="d-flex align-items-center justify-content-between gap-3">
+                    <span class="small fw-bold text-soft-lilac">
+                      <i class="bi bi-clock-history text-lilac-accent me-1"></i>Hora:
+                    </span>
+                    <span id="mon-last-time" class="small fw-extrabold text-plum">—</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
+
+          <!-- Tarjeta 2: Tabla de Historial (Últimos 10 registros) -->
+          <div class="card pastel-card flex-grow-1">
+            <span class="corner-flower flower-tl" aria-hidden="true">✿</span>
+            <span class="corner-flower flower-tr" aria-hidden="true">★</span>
+
+            <div class="card-header pastel-card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <span class="fw-extrabold text-plum d-flex align-items-center gap-1">
+                <i class="bi bi-journal-medical text-lilac-accent fs-5"></i>
+                <span>Tabla de Historial (10 registros)</span>
+              </span>
+              <span id="mon-history-count" class="badge badge-soft-pill">
+                Últimos 10 registros
+              </span>
+            </div>
+
+            <div class="card-body p-0">
+              <div class="table-responsive mon-table-scroll">
+                <table class="table table-hover align-middle mb-0 pastel-history-table">
+                  <thead>
+                    <tr>
+                      <th scope="col" class="text-center" style="width: 52px;">#</th>
+                      <th scope="col">Movimiento</th>
+                      <th scope="col">Fecha</th>
+                      <th scope="col">Hora</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mon-history-tbody">
+                    <tr>
+                      <td colspan="4" class="text-center py-3 text-soft-lilac fw-bold">
+                        Cargando historial desde Amazon RDS... ✨
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
         </div>
 
       </div>
@@ -303,11 +440,7 @@
     </div>
   </footer>
 
-  <!-- Módulos de la aplicación (compatibles tanto con file:/// como con GitHub Pages HTTPS) -->
-  <script src="./js/config.js"></script>
-  <script src="./js/api.js"></script>
-  <script src="./js/websocket.js"></script>
-  <script src="./js/joystick.js"></script>
-  <script src="./js/app.js"></script>
+  <!-- Módulo Principal ES6 (Importa config.js, api.js, websocket.js, joystick.js y monitoreo.js) -->
+  <script type="module" src="./js/app.js"></script>
 </body>
 </html>
