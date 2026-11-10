@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="pastelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffb6d9" />
+      <stop offset="50%" stop-color="#e2b6ff" />
+      <stop offset="100%" stop-color="#c8a2ff" />
+    </linearGradient>
+    <linearGradient id="innerCream" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fffdf9" />
+      <stop offset="100%" stop-color="#ffeef7" />
+    </linearGradient>
+  </defs>
+  <!-- Base redondeada pastel -->
+  <rect width="64" height="64" rx="20" fill="url(#pastelGrad)" />
+  <rect x="4" y="4" width="56" height="56" rx="17" fill="url(#innerCream)" stroke="#ffffff" stroke-width="2" />
+
+  <!-- Aro del Joystick kawaii -->
+  <circle cx="32" cy="34" r="16" fill="#fbe4ff" stroke="#d896ff" stroke-width="2.5" stroke-dasharray="6 3" />
+
+  <!-- Florecita central (Botón del Joystick) -->
+  <g transform="translate(32, 34)">
+    <circle cx="0" cy="-7" r="5" fill="#ff9ebb" />
+    <circle cx="6.6" cy="-2.1" r="5" fill="#ff9ebb" />
+    <circle cx="4.1" cy="5.6" r="5" fill="#ff9ebb" />
+    <circle cx="-4.1" cy="5.6" r="5" fill="#ff9ebb" />
+    <circle cx="-6.6" cy="-2.1" r="5" fill="#ff9ebb" />
+    <circle cx="0" cy="0" r="4.5" fill="#fff6cc" stroke="#ff85a2" stroke-width="1.2" />
+  </g>
+
+  <!-- Brillitos / Destellos ✨ -->
+  <path d="M15 11 L16.5 14.5 L20 16 L16.5 17.5 L15 21 L13.5 17.5 L10 16 L13.5 14.5 Z" fill="#ff85b3" />
+  <path d="M49 10 L50 12.5 L52.5 13.5 L50 14.5 L49 17 L48 14.5 L45.5 13.5 L48 12.5 Z" fill="#b57cff" />
+  <circle cx="48" cy="49" r="2" fill="#ff9ebb" />
+  <circle cx="14" cy="48" r="1.8" fill="#c88aff" />
+</svg>

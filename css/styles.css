@@ -1,0 +1,570 @@
+/* ==========================================================================
+   ESTILOS PERSONALIZADOS MOBILE FIRST - EDICIÓN PASTEL KAWAII / CUTE GAMING
+   Paleta: Rosa Pastel (#ffb6d9 / #ff85b3), Morado Lila (#d8b4f8 / #a855f7)
+           y Blanco Crema (#fffaf5 / #fff5fa).
+   ========================================================================== */
+
+:root {
+  --pastel-cream: #fffaf5;
+  --pastel-cream-pink: #fff0f7;
+  --pastel-card-bg: rgba(255, 255, 255, 0.92);
+  --pastel-pink-light: #ffd6eb;
+  --pastel-pink: #ff9ec7;
+  --pastel-pink-strong: #ff6fa5;
+  --pastel-lilac-light: #f1e4ff;
+  --pastel-lilac: #d4a5ff;
+  --pastel-lilac-strong: #9d5ce5;
+  --pastel-plum: #5b3765;
+  --pastel-soft-text: #8c6598;
+  --pastel-border: #f5c6e3;
+  --pastel-shadow: 0 10px 26px rgba(212, 145, 214, 0.18), 0 4px 10px rgba(255, 158, 199, 0.14);
+}
+
+html, body {
+  background: radial-gradient(circle at top left, #fff5fa 0%, #fffaf5 45%, #f8eeff 100%);
+  color: var(--pastel-plum);
+  font-family: "Nunito", "Quicksand", system-ui, -apple-system, sans-serif;
+  overscroll-behavior-y: contain;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.bg-pastel-cream {
+  background: radial-gradient(circle at 15% 15%, #ffeef7 0%, #fffaf5 52%, #f5ebff 100%) !important;
+}
+
+.text-plum {
+  color: var(--pastel-plum) !important;
+}
+
+.text-soft-lilac {
+  color: var(--pastel-soft-text) !important;
+}
+
+.text-pink-accent {
+  color: var(--pastel-pink-strong) !important;
+}
+
+.text-lilac-accent {
+  color: var(--pastel-lilac-strong) !important;
+}
+
+.fw-extrabold {
+  font-weight: 800 !important;
+}
+
+/* ==========================================================================
+   DECORACIONES FLOTANTES DE FONDO (BRILLITOS ✨, ESTRELLITAS Y FLORECITAS 🌸)
+   ========================================================================== */
+.floating-decorations {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.deco-item {
+  position: absolute;
+  font-size: 1.25rem;
+  opacity: 0.42;
+  animation: floatSparkle 5.5s ease-in-out infinite alternate;
+}
+
+.deco-1 { top: 12%; left: 4%; animation-delay: 0s; color: #ff85b3; }
+.deco-2 { top: 22%; right: 5%; animation-delay: 1.2s; font-size: 1.4rem; }
+.deco-3 { bottom: 18%; left: 6%; animation-delay: 2.1s; color: #b57cff; }
+.deco-4 { bottom: 28%; right: 7%; animation-delay: 0.7s; color: #ff85b3; font-size: 1.35rem; }
+.deco-5 { top: 55%; left: 2%; animation-delay: 1.8s; }
+.deco-6 { bottom: 10%; right: 15%; animation-delay: 2.8s; font-size: 1.15rem; }
+
+@keyframes floatSparkle {
+  0% {
+    transform: translateY(0px) rotate(0deg) scale(0.95);
+    opacity: 0.32;
+  }
+  100% {
+    transform: translateY(-10px) rotate(12deg) scale(1.08);
+    opacity: 0.62;
+  }
+}
+
+/* ==========================================================================
+   CABECERA Y BARRA DE 3 INDICADORES REALES
+   ========================================================================== */
+.pastel-header {
+  background: linear-gradient(90deg, #fff7fb 0%, #fffdf9 50%, #f8f0ff 100%);
+  border-bottom: 2px dashed var(--pastel-border);
+  box-shadow: 0 4px 16px rgba(235, 165, 215, 0.16);
+  position: relative;
+  z-index: 2;
+}
+
+.logo-bubble {
+  padding: 4px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ffd1e8, #e5c6ff);
+  box-shadow: 0 4px 10px rgba(255, 145, 195, 0.3);
+}
+
+.title-gradient {
+  background: linear-gradient(90deg, #d9468f, #9333ea);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.02em;
+}
+
+.badge-mini-id {
+  display: inline-block;
+  background: linear-gradient(135deg, #ffc2e0, #e2c2ff);
+  color: var(--pastel-plum);
+  padding: 0px 8px;
+  border-radius: 999px;
+  font-weight: 800;
+}
+
+.btn-cute-sync {
+  background: linear-gradient(135deg, #ffaae5 0%, #c99eff 100%);
+  color: #ffffff;
+  font-weight: 800;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  padding: 6px 16px;
+  box-shadow: 0 4px 0 #d480c8, 0 6px 14px rgba(212, 128, 200, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.btn-cute-sync:hover {
+  background: linear-gradient(135deg, #ff99df 0%, #be8aff 100%);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.btn-cute-sync:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #d480c8;
+}
+
+.pastel-status-bar {
+  background: rgba(255, 248, 252, 0.85);
+  border-bottom: 2px solid #f7d9ec;
+  position: relative;
+  z-index: 2;
+}
+
+.status-pill {
+  background: linear-gradient(135deg, #ffffff 0%, #fff6fb 100%);
+  border: 2px solid #f5cee7;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(232, 165, 215, 0.14);
+}
+
+.tiny-star {
+  color: #e879f9;
+  font-size: 0.75rem;
+}
+
+/* Badges pasteles para los 3 indicadores */
+.badge-pastel-online {
+  background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%) !important;
+  color: #065f46 !important;
+  border: 1.5px solid #ffffff;
+  font-weight: 800;
+  padding: 5px 12px;
+  box-shadow: 0 2px 8px rgba(52, 211, 153, 0.3);
+}
+
+.badge-pastel-warning {
+  background: linear-gradient(135deg, #fde68a 0%, #fbcfe8 100%) !important;
+  color: #6b215c !important;
+  border: 1.5px solid #ffffff;
+  font-weight: 800;
+  padding: 5px 12px;
+}
+
+.badge-pastel-offline {
+  background: linear-gradient(135deg, #fecdd3 0%, #fda4af 100%) !important;
+  color: #881337 !important;
+  border: 1.5px solid #ffffff;
+  font-weight: 800;
+  padding: 5px 12px;
+}
+
+.badge-pastel-neutral {
+  background: linear-gradient(135deg, #f3e8ff 0%, #fce7f3 100%) !important;
+  color: #6b427a !important;
+  border: 1.5px solid #e9d5ff;
+  font-weight: 800;
+  padding: 5px 12px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.dot-online {
+  background-color: #059669;
+  box-shadow: 0 0 6px #10b981;
+}
+
+.dot-warning {
+  background-color: #d97706;
+}
+
+.dot-offline {
+  background-color: #e11d48;
+}
+
+.dot-neutral {
+  background-color: #a855f7;
+}
+
+/* ==========================================================================
+   TARJETAS PASTEL REDONDEADAS CON FLORECITAS BORDEADAS
+   ========================================================================== */
+.pastel-card {
+  position: relative;
+  background: var(--pastel-card-bg);
+  border: 2.5px solid var(--pastel-border);
+  border-radius: 28px;
+  box-shadow: var(--pastel-shadow);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+}
+
+.status-banner-card {
+  background: linear-gradient(90deg, #fff0f8 0%, #fffdf9 50%, #f5ebff 100%);
+  border: 2px solid #f3bfe0;
+  border-radius: 22px;
+}
+
+.badge-ribbon {
+  background: linear-gradient(135deg, #ff85b3, #b975ff);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  box-shadow: 0 3px 10px rgba(255, 133, 179, 0.35);
+}
+
+.command-active-text {
+  color: #c026d3;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+}
+
+.pastel-card-header {
+  background: linear-gradient(90deg, rgba(255, 219, 238, 0.45) 0%, rgba(236, 214, 255, 0.45) 100%);
+  border-bottom: 2px dashed #f3c4e2;
+  padding: 12px 20px;
+}
+
+.corner-flower {
+  position: absolute;
+  font-size: 0.95rem;
+  color: #f472b6;
+  opacity: 0.65;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.flower-tl {
+  top: 6px;
+  left: 8px;
+}
+
+.flower-tr {
+  top: 6px;
+  right: 8px;
+}
+
+.badge-joystick-state {
+  background: #fff5fb;
+  color: #a21caf;
+  border: 2px solid #f5bfe2;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-weight: 800;
+}
+
+.badge-soft-pill {
+  background: #f8edff;
+  color: #8645b0;
+  border: 1.5px solid #e3c6ff;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   JOYSTICK VIRTUAL KAWAII (ESTILO CONSOLA CUTE DE VIDEOJUEGO)
+   ========================================================================== */
+.joystick-zone {
+  position: relative;
+  width: 246px;
+  height: 246px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffdf9 0%, #ffe6f4 58%, #efd8ff 100%);
+  border: 4px solid #ffffff;
+  outline: 3px dashed #f2a7d4;
+  box-shadow:
+    inset 0 6px 20px rgba(216, 142, 232, 0.28),
+    0 12px 28px rgba(235, 148, 205, 0.32);
+  touch-action: none; /* Crítico para operar con dedo sin hacer scroll en móvil */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+}
+
+.joystick-zone:active {
+  cursor: grabbing;
+  outline-color: #d946ef;
+}
+
+.joystick-zone.joystick-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  filter: grayscale(0.35);
+}
+
+/* Brillitos internos del aro del joystick */
+.joy-sparkle {
+  position: absolute;
+  color: #e879f9;
+  font-size: 0.85rem;
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.sp-1 { top: 22%; left: 22%; }
+.sp-2 { top: 22%; right: 22%; color: #f472b6; }
+.sp-3 { bottom: 22%; left: 22%; color: #f472b6; }
+.sp-4 { bottom: 22%; right: 22%; }
+
+/* Punto neutral central visible */
+.joystick-center-mark {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2.5px dashed #e082c8;
+  background-color: rgba(255, 182, 217, 0.35);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Palanca móvil (Thumb estilo tapita de joystick kawaii 3D) */
+.joystick-thumb {
+  position: absolute;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #ff9ec7 0%, #d896ff 100%);
+  border: 4px solid #fffdf9;
+  color: #ffffff;
+  font-size: 1.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 8px 0 #c96bb8,
+    0 12px 22px rgba(214, 102, 185, 0.45),
+    inset 0 3px 6px rgba(255, 255, 255, 0.75);
+  transform: translate3d(0px, 0px, 0px);
+  transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.15s ease;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.thumb-flower-icon {
+  filter: drop-shadow(0 2px 3px rgba(145, 45, 115, 0.35));
+  line-height: 1;
+}
+
+.joystick-thumb.dragging {
+  transition: none; /* Respuesta instantánea en tiempo real al dedo/mouse */
+  background: linear-gradient(145deg, #ff7eb6 0%, #b86bff 100%);
+  box-shadow:
+    0 4px 0 #b04ea3,
+    0 0 26px rgba(255, 115, 185, 0.8),
+    inset 0 3px 8px rgba(255, 255, 255, 0.85);
+}
+
+/* Etiquetas cardinales dentro del aro */
+.joy-label {
+  position: absolute;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #8b4c9e;
+  background: rgba(255, 255, 255, 0.78);
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #f3c4e2;
+  pointer-events: none;
+}
+
+.joy-up { top: 10px; }
+.joy-down { bottom: 10px; }
+.joy-left { left: 10px; }
+.joy-right { right: 10px; }
+
+/* ==========================================================================
+   BOTONES ESTILO VIDEOJUEGO CUTE (3D TÁCTIL Y PARO PRIORITARIO)
+   ========================================================================== */
+.stop-priority-btn {
+  background: linear-gradient(135deg, #ff6b9d 0%, #ec4899 55%, #c026d3 100%);
+  color: #ffffff !important;
+  border: 3px solid #fffdf9;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  box-shadow:
+    0 6px 0 #be185d,
+    0 10px 24px rgba(236, 72, 153, 0.42);
+  transition: transform 0.1s ease, box-shadow 0.12s ease;
+}
+
+.stop-priority-btn:hover {
+  background: linear-gradient(135deg, #ff5790 0%, #db2777 55%, #a21caf 100%);
+  transform: translateY(-1px);
+}
+
+.stop-priority-btn:active {
+  transform: translateY(4px);
+  box-shadow:
+    0 2px 0 #be185d,
+    0 4px 12px rgba(236, 72, 153, 0.55);
+}
+
+/* Botones de maniobra 90°, 360° y comandos dinámicos del catálogo */
+.cmd-sec-btn {
+  position: relative;
+  min-height: 72px;
+  background: linear-gradient(180deg, #fffdf9 0%, #ffe8f5 100%);
+  color: var(--pastel-plum) !important;
+  border: 2px solid #f5b8de !important;
+  border-radius: 22px !important;
+  box-shadow:
+    0 5px 0 #e59ecb,
+    0 8px 16px rgba(229, 158, 203, 0.24);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: transform 0.1s ease, box-shadow 0.12s ease, background 0.15s ease;
+}
+
+.cmd-sec-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #fff5fb 0%, #f5d6ff 100%);
+  border-color: #d896ff !important;
+  transform: translateY(-2px);
+}
+
+.cmd-sec-btn:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #e59ecb;
+}
+
+.cmd-sec-btn:disabled {
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+.icon-pastel {
+  color: #d9468f;
+}
+
+.btn-deco-corner {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  font-size: 0.68rem;
+  color: #c084fc;
+}
+
+/* ==========================================================================
+   CONTROLES DE DEMO (SELECT Y BOTONES PASTEL)
+   ========================================================================== */
+.pastel-select {
+  background-color: #fffdf9 !important;
+  color: var(--pastel-plum) !important;
+  border: 2px solid #eab5dc !important;
+  border-radius: 18px !important;
+  font-weight: 700;
+  padding: 10px 14px;
+  box-shadow: inset 0 2px 5px rgba(234, 181, 220, 0.2);
+}
+
+.pastel-select:focus {
+  border-color: #c084fc !important;
+  box-shadow: 0 0 0 0.22rem rgba(216, 142, 232, 0.25) !important;
+}
+
+.demo-hint-box {
+  background: linear-gradient(135deg, #fff5fa 0%, #f7eeff 100%);
+  border: 1.5px dashed #eab5dc;
+}
+
+.btn-cute-primary {
+  background: linear-gradient(135deg, #ff94c2 0%, #b87aff 100%);
+  color: #ffffff !important;
+  border: 2.5px solid #ffffff;
+  border-radius: 999px;
+  box-shadow:
+    0 5px 0 #b85ec9,
+    0 8px 18px rgba(184, 122, 255, 0.35);
+  transition: transform 0.1s ease, box-shadow 0.12s ease;
+}
+
+.btn-cute-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ff80b7 0%, #a855f7 100%);
+  transform: translateY(-1px);
+}
+
+.btn-cute-primary:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #b85ec9;
+}
+
+.btn-cute-cancel {
+  background: linear-gradient(135deg, #fff0f6 0%, #fde68a 100%);
+  color: #7c2d12 !important;
+  border: 2px solid #f9a8d4;
+  border-radius: 999px;
+  box-shadow: 0 4px 0 #e5989b;
+  transition: transform 0.1s ease, box-shadow 0.12s ease;
+}
+
+.btn-cute-cancel:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #e5989b;
+}
+
+/* ==========================================================================
+   PIE DE PÁGINA PASTEL
+   ========================================================================== */
+.pastel-footer {
+  background: linear-gradient(90deg, #fff5fa 0%, #fffdf9 50%, #f6edff 100%);
+  border-top: 2px dashed var(--pastel-border);
+}
+
+/* Ajustes para pantallas móviles compactas */
+@media (max-width: 380px) {
+  .joystick-zone {
+    width: 214px;
+    height: 214px;
+  }
+
+  .joystick-thumb {
+    width: 66px;
+    height: 66px;
+    font-size: 1.55rem;
+  }
+}
