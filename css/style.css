@@ -1,0 +1,889 @@
+/**
+ * Hoja de Estilos Glassmorphism Pastel - Práctica 4.3
+ * Reglas Estrictas:
+ * 1. Cero Scroll en la página principal (100dvh / overflow: hidden).
+ * 2. Única excepción con scroll: Tabla de Historial (Monitoreo) e Inventario/Auditoría (Admin).
+ * 3. Paleta Glassmorphism Pastel luminosa, moderna y de alto contraste.
+ */
+
+:root {
+  /* Paleta Pastel Luminosa */
+  --pastel-bg-from: #f8fafc;
+  --pastel-bg-to: #eef2ff;
+  --glass-surface: rgba(255, 255, 255, 0.78);
+  --glass-surface-hover: rgba(255, 255, 255, 0.92);
+  --glass-surface-solid: #ffffff;
+  --glass-border: rgba(255, 255, 255, 0.85);
+  --glass-border-subtle: rgba(148, 163, 184, 0.22);
+  --glass-shadow: 0 4px 16px rgba(139, 92, 246, 0.06);
+
+  /* Acentos Pastel */
+  --accent-cyan: #0284c7;
+  --accent-cyan-soft: #e0f2fe;
+  --accent-pink: #ec4899;
+  --accent-pink-soft: #fce7f3;
+  --accent-purple: #7c3aed;
+  --accent-purple-soft: #ede9fe;
+  --accent-emerald: #059669;
+  --accent-emerald-soft: #d1fae5;
+  --accent-amber: #d97706;
+  --accent-amber-soft: #fef3c7;
+  --accent-coral: #ef4444;
+  --accent-coral-soft: #fee2e2;
+
+  /* Tipografía y Contraste */
+  --text-headline: #1e1b2e;
+  --text-body: #475569;
+  --text-muted: #64748b;
+  --text-light: #ffffff;
+}
+
+/* =====================================================================
+   REGLA ESTRICTA 1: CERO SCROLL EN LA PÁGINA (100dvh / OVERFLOW HIDDEN)
+   ===================================================================== */
+html, body {
+  height: 100%;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body.viewport-app {
+  display: flex;
+  flex-direction: column;
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text-headline);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #eef2ff 100%);
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Aura de Fondo Animada Suave */
+.ambient-aura {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 12% 15%, rgba(236, 72, 153, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 88% 20%, rgba(2, 132, 199, 0.09) 0%, transparent 50%),
+    radial-gradient(circle at 50% 85%, rgba(124, 58, 237, 0.08) 0%, transparent 55%);
+}
+
+/* =====================================================================
+   1. ENCABEZADO SUPERIOR SIMPLIFICADO
+   ===================================================================== */
+.platform-header {
+  position: relative;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--glass-border-subtle);
+  min-height: 44px;
+}
+
+.logo-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.15);
+}
+
+.brand-title {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--text-headline);
+}
+
+.role-select {
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 8px;
+  color: var(--text-headline);
+  padding: 0.2rem 1.6rem 0.2rem 0.6rem;
+  max-width: 140px;
+}
+
+.btn-sync {
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--glass-border-subtle);
+  color: var(--text-headline);
+  border-radius: 8px;
+  padding: 0.22rem 0.65rem;
+  transition: all 0.2s ease;
+}
+.btn-sync:hover {
+  background: var(--accent-cyan-soft);
+  color: var(--accent-cyan);
+}
+
+/* =====================================================================
+   2. NAVEGACIÓN EN PESTAÑAS (SEGMENTED PILL)
+   ===================================================================== */
+.nav-tabs-bar {
+  position: relative;
+  z-index: 10;
+}
+
+.nav-segmented-pill {
+  display: flex;
+  align-items: center;
+  background: rgba(226, 232, 240, 0.65);
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  gap: 2px;
+}
+
+.tab-item {
+  flex: 1;
+  background: transparent;
+  border: none;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  padding: 0.35rem 0.5rem;
+  border-radius: 9px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tab-item.active {
+  background: #ffffff;
+  color: var(--accent-cyan);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+/* =====================================================================
+   3. BARRA DE INDICADORES DE RED (3 EN 1 FILA)
+   ===================================================================== */
+.status-indicator-strip {
+  position: relative;
+  z-index: 10;
+}
+
+.strip-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  padding: 0.3rem 0.45rem;
+  text-align: center;
+  box-shadow: var(--glass-shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 44px;
+}
+
+.strip-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--text-headline);
+  white-space: nowrap;
+}
+
+.badge-pill,
+.badge.rounded-pill {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.badge-warning-pastel,
+.badge-state-warning {
+  background: var(--accent-amber-soft) !important;
+  color: var(--accent-amber) !important;
+}
+
+.badge-success-pastel,
+.badge-state-online {
+  background: var(--accent-emerald-soft) !important;
+  color: var(--accent-emerald) !important;
+}
+
+.badge-neutral-pastel,
+.badge-state-neutral {
+  background: #f1f5f9 !important;
+  color: var(--text-muted) !important;
+}
+
+.badge-danger-pastel,
+.badge-state-offline {
+  background: var(--accent-coral-soft) !important;
+  color: var(--accent-coral) !important;
+}
+
+.dot-pulse,
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  background-color: currentColor;
+}
+
+.dot-pulse,
+.status-dot.dot-online,
+.status-dot.dot-warning {
+  animation: pulseDot 1.4s infinite ease-in-out;
+}
+
+.status-dot.dot-online {
+  background-color: var(--accent-emerald);
+}
+.status-dot.dot-warning {
+  background-color: var(--accent-amber);
+}
+.status-dot.dot-offline {
+  background-color: var(--accent-coral);
+}
+.status-dot.dot-neutral {
+  background-color: var(--text-muted);
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+/* Banner Invitado */
+.guest-banner {
+  background: linear-gradient(90deg, #fef3c7, #fffbeb);
+  border: 1px solid #fde68a;
+  border-radius: 9px;
+}
+.guest-timer-text {
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #b45309;
+}
+.btn-xs {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  font-weight: 800;
+  border-radius: 6px;
+}
+.btn-amber {
+  background: #f59e0b;
+  color: #fff;
+  border: none;
+}
+
+/* =====================================================================
+   4. TARJETAS GENERALES Y LAYOUT COMPACTO (100dvh)
+   ===================================================================== */
+#app-main-viewport {
+  position: relative;
+  z-index: 5;
+}
+
+.app-view {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.app-view.d-none {
+  display: none !important;
+}
+
+.glass-card {
+  background: var(--glass-surface);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 14px;
+  box-shadow: var(--glass-shadow);
+  padding: 0.45rem 0.65rem;
+}
+
+.card-header-clean {
+  margin-bottom: 0.35rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.header-icon-box {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+}
+
+.header-title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-headline);
+}
+
+.badge-soft {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.12rem 0.45rem;
+  border-radius: 6px;
+}
+.badge-neutral { background: #f1f5f9; color: var(--text-muted); }
+.badge-cyan { background: var(--accent-cyan-soft); color: var(--accent-cyan); }
+.badge-purple { background: var(--accent-purple-soft); color: var(--accent-purple); }
+.badge-emerald { background: var(--accent-emerald-soft); color: var(--accent-emerald); }
+
+/* =====================================================================
+   VISTA 1: CONTROL (MANDO COMPACTO TIPO FOTOGRAFÍA)
+   ===================================================================== */
+.control-grid-layout {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.38rem;
+}
+
+/* Tarjeta 1: Control de Dirección */
+.card-direction {
+  flex: 0 0 auto;
+}
+
+.joystick-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.joystick-zone {
+  width: 122px;
+  height: 122px;
+  border-radius: 50%;
+  position: relative;
+  background: radial-gradient(circle, rgba(240, 249, 255, 0.85) 0%, rgba(224, 242, 254, 0.45) 100%);
+  border: 2px solid rgba(186, 230, 253, 0.9);
+  box-shadow: inset 0 0 12px rgba(2, 132, 199, 0.12), 0 4px 14px rgba(2, 132, 199, 0.08);
+  touch-action: none;
+}
+
+.joy-ring-guide {
+  position: absolute;
+  inset: 18px;
+  border-radius: 50%;
+  border: 1px dashed rgba(14, 165, 233, 0.35);
+  pointer-events: none;
+}
+
+.joy-cross-guide {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.joy-cross-guide::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  right: 10px;
+  height: 1px;
+  background: rgba(14, 165, 233, 0.2);
+}
+.joy-cross-guide::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  bottom: 10px;
+  width: 1px;
+  background: rgba(14, 165, 233, 0.2);
+}
+
+.joystick-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  position: absolute;
+  left: calc(50% - 22px);
+  top: calc(50% - 22px);
+  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+  cursor: grab;
+  transition: transform 0.05s linear;
+}
+.joystick-thumb.dragging {
+  cursor: grabbing;
+  box-shadow: 0 0 18px rgba(2, 132, 199, 0.6);
+  transform: scale(1.05);
+}
+
+.telemetry-box {
+  background: rgba(248, 250, 252, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 8px;
+  padding: 0.2rem 0.3rem;
+}
+.telemetry-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  display: block;
+  letter-spacing: 0.5px;
+}
+.telemetry-val {
+  font-family: monospace;
+  font-size: 0.86rem;
+  font-weight: 900;
+  color: var(--text-headline);
+}
+.telemetry-val-highlight {
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+.direction-box {
+  padding: 0.2rem 0.4rem;
+}
+
+.btn-stop-huge {
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  border: none;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  padding: 0.4rem 0.6rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.35);
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+.btn-stop-huge:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 6px rgba(225, 29, 72, 0.4);
+}
+
+/* Tarjeta 2: Funciones del Vehículo */
+.card-functions {
+  flex: 0 0 auto;
+}
+
+.btn-vehicle-action {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 10px;
+  padding: 0.35rem 0.45rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.15s ease;
+}
+.btn-vehicle-action:hover, .btn-vehicle-action:active {
+  background: #ffffff;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.12);
+}
+
+.action-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.action-title {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--text-headline);
+  display: block;
+  line-height: 1.2;
+}
+.action-sub {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  display: block;
+}
+
+.btn-vehicle-mini {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 9px;
+  padding: 0.3rem 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 38px;
+}
+.mini-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+.mini-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-headline);
+  display: block;
+  line-height: 1.1;
+}
+.mini-sub {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  display: block;
+}
+.speed-mini-box {
+  padding: 0.2rem 0.4rem;
+}
+.speed-val-badge {
+  font-size: 0.65rem;
+  color: var(--accent-cyan);
+}
+.slider-micro {
+  height: 4px;
+  margin: 0;
+  padding: 0;
+}
+
+/* Tarjeta 3: Modo Automático (DEMO) */
+.card-demo {
+  flex: 0 0 auto;
+}
+
+.select-clean {
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 8px;
+  padding: 0.25rem 0.5rem;
+}
+
+.demo-step-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  background: var(--accent-cyan-soft);
+  color: var(--accent-cyan);
+  padding: 0.25rem 0.55rem;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.btn-demo-run {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  font-weight: 800;
+  border: none;
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+}
+.btn-demo-run:hover { color: #ffffff; filter: brightness(1.05); }
+
+.btn-demo-stop {
+  background: rgba(241, 245, 249, 0.9);
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  color: var(--text-muted);
+  font-weight: 800;
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+}
+.btn-demo-stop:not(:disabled) {
+  background: var(--accent-coral-soft);
+  color: var(--accent-coral);
+  border-color: #fca5a5;
+}
+
+/* =====================================================================
+   VISTA 2: MONITOREO (TELEMETRÍA + HISTORIAL CON SCROLL FLEXIBLE)
+   ===================================================================== */
+.monitoreo-flex-layout {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.card-last-move {
+  flex: 0 0 auto;
+}
+
+.mon-hero-circle {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--accent-cyan-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+}
+
+.mon-hero-category {
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.mon-hero-title {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--text-headline);
+  line-height: 1.2;
+}
+
+.badge-code {
+  font-size: 0.68rem;
+  font-weight: 800;
+  background: var(--accent-cyan-soft);
+  color: var(--accent-cyan);
+  padding: 0.1rem 0.45rem;
+  border-radius: 6px;
+}
+
+.mon-subcard {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 9px;
+  padding: 0.3rem 0.4rem;
+}
+.mon-subcard-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.mon-subcard-val {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--text-headline);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* REGLA ESTRICTA 2: HISTORIAL CON SCROLL INTERNO FLEXIBLE */
+.card-history-table {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.history-table-scroll-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(226, 232, 240, 0.7);
+}
+
+.table-clean {
+  font-size: 0.75rem;
+  margin: 0;
+  width: 100%;
+}
+.table-clean thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f8fafc;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.35rem 0.5rem;
+}
+.table-clean tbody td {
+  padding: 0.4rem 0.5rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.btn-outline-clean {
+  font-size: 0.68rem;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 0.15rem 0.35rem;
+}
+
+/* =====================================================================
+   VISTA 3: ADMINISTRACIÓN (SCROLL INTERNO PARA NO ROMPER 100dvh)
+   ===================================================================== */
+.admin-scroll-layout {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.metric-card {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  padding: 0.35rem 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  box-shadow: var(--glass-shadow);
+}
+.metric-icon {
+  font-size: 1.1rem;
+}
+.metric-lbl {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+.metric-num {
+  font-size: 0.95rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.btn-cyan {
+  background: var(--accent-cyan);
+  color: #ffffff;
+  font-weight: 800;
+  border: none;
+  border-radius: 8px;
+}
+.btn-emerald {
+  background: var(--accent-emerald);
+  color: #ffffff;
+  font-weight: 800;
+  border: none;
+  border-radius: 8px;
+}
+
+.step-card-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.25rem 0.45rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.step-badge-order {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent-cyan-soft);
+  color: var(--accent-cyan);
+  font-size: 0.7rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =====================================================================
+   5. PIE DE PÁGINA FIJO Y DISCRETO
+   ===================================================================== */
+.platform-footer {
+  position: relative;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid var(--glass-border-subtle);
+  min-height: 24px;
+}
+
+.footer-credit-text {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* =====================================================================
+   FEEDBACK VISUAL AL RECIBIR COMANDO / DEMO (DESTELLO)
+   ===================================================================== */
+.cmd-flash-active {
+  box-shadow: 0 0 16px rgba(236, 72, 153, 0.65), inset 0 0 10px rgba(236, 72, 153, 0.35) !important;
+  border-color: #ec4899 !important;
+  background: linear-gradient(135deg, #fce7f3, #ffffff) !important;
+  transform: scale(1.02);
+  transition: all 0.1s ease;
+}
+
+/* Clases de Utilidad de Colores Pastel */
+.text-cyan { color: var(--accent-cyan) !important; }
+.text-pink { color: var(--accent-pink) !important; }
+.text-purple { color: var(--accent-purple) !important; }
+.text-emerald { color: var(--accent-emerald) !important; }
+.text-amber { color: var(--accent-amber) !important; }
+
+.bg-cyan-soft { background: var(--accent-cyan-soft) !important; }
+.bg-purple-soft { background: var(--accent-purple-soft) !important; }
+.bg-emerald-soft { background: var(--accent-emerald-soft) !important; }
+
+/* Scrollbars Delgados para Contenedores Internos */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.7);
+}
+
+/* Responsividad para pantallas mayores (Tablets y Desktop) */
+@media (min-width: 992px) {
+  .control-grid-layout {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 0.5rem;
+  }
+  .card-direction {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+  .card-functions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .card-demo {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}

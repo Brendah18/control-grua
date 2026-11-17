@@ -388,8 +388,13 @@ class PlatformApp {
   }
 
   async handleJoystickDirection(direction) {
+    const textDir = direction === "DETENER" ? "En espera" : direction.replace(/_/g, " ");
     if (this.ui.badgeJoystickDir) {
-      this.ui.badgeJoystickDir.textContent = direction === "DETENER" ? "NEUTRAL" : direction;
+      this.ui.badgeJoystickDir.textContent = textDir;
+    }
+    const lblJoyDir = document.getElementById("lbl-joy-dir");
+    if (lblJoyDir) {
+      lblJoyDir.textContent = textDir;
     }
 
     if (this.currentRole === "INVITADO" && !["AVANZAR", "RETROCEDER", "DETENER"].includes(direction)) {
@@ -542,7 +547,10 @@ class PlatformApp {
       const cmdNombre = String(payload.estado.comando);
       if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = cmdNombre;
       if (this.ui.badgeJoystickDir && !this.joystick?.isDragging) {
-        this.ui.badgeJoystickDir.textContent = cmdNombre === "DETENER" ? "NEUTRAL" : cmdNombre;
+        const textDir = cmdNombre === "DETENER" ? "En espera" : cmdNombre.replace(/_/g, " ");
+        this.ui.badgeJoystickDir.textContent = textDir;
+        const lblJoyDir = document.getElementById("lbl-joy-dir");
+        if (lblJoyDir) lblJoyDir.textContent = textDir;
       }
     }
   }

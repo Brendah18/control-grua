@@ -163,6 +163,14 @@ export class VirtualJoystick {
     }
 
     const angleDeg = Math.atan2(dy, dx) * (180 / Math.PI);
+    const positiveAngle = Math.round((angleDeg + 360) % 360);
+    const powerPct = Math.round(normalizedDistance * 100);
+
+    const lblAngle = document.getElementById("lbl-joy-angle");
+    const lblPower = document.getElementById("lbl-joy-power");
+    if (lblAngle) lblAngle.textContent = `${positiveAngle}°`;
+    if (lblPower) lblPower.textContent = `${powerPct}%`;
+
     let nextDirection = "DETENER";
 
     if (angleDeg >= -135 && angleDeg < -45) {
@@ -173,6 +181,11 @@ export class VirtualJoystick {
       nextDirection = "RETROCEDER";
     } else {
       nextDirection = "IZQUIERDA";
+    }
+
+    const lblJoyDir = document.getElementById("lbl-joy-dir");
+    if (lblJoyDir) {
+      lblJoyDir.textContent = nextDirection === "DETENER" ? "En espera" : nextDirection;
     }
 
     this.emitIfDirectionChanged(nextDirection);
@@ -191,6 +204,13 @@ export class VirtualJoystick {
     this.thumb.classList.remove("dragging");
     this.thumb.style.transform = "translate3d(0px, 0px, 0px)";
 
+    const lblAngle = document.getElementById("lbl-joy-angle");
+    const lblPower = document.getElementById("lbl-joy-power");
+    const lblJoyDir = document.getElementById("lbl-joy-dir");
+    if (lblAngle) lblAngle.textContent = "0°";
+    if (lblPower) lblPower.textContent = "0%";
+    if (lblJoyDir) lblJoyDir.textContent = "En espera";
+
     if (this.currentDirection !== "DETENER") {
       this.currentDirection = "DETENER";
       this.onDirectionChange("DETENER");
@@ -201,6 +221,14 @@ export class VirtualJoystick {
     this.isDragging = false;
     this.thumb.classList.remove("dragging");
     this.thumb.style.transform = "translate3d(0px, 0px, 0px)";
+
+    const lblAngle = document.getElementById("lbl-joy-angle");
+    const lblPower = document.getElementById("lbl-joy-power");
+    const lblJoyDir = document.getElementById("lbl-joy-dir");
+    if (lblAngle) lblAngle.textContent = "0°";
+    if (lblPower) lblPower.textContent = "0%";
+    if (lblJoyDir) lblJoyDir.textContent = "En espera";
+
     this.currentDirection = "DETENER";
     this.onDirectionChange("DETENER");
   }

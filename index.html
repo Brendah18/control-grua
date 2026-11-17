@@ -2,9 +2,9 @@
 <html lang="es" data-bs-theme="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="Plataforma Integral IoT: Control, Monitoreo y Administración RBAC en AWS EC2, Amazon RDS y WebSockets" />
-  <title>Plataforma IoT · Control, Monitoreo &amp; Administración</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="description" content="Plataforma IoT: Control, Monitoreo y Administración RBAC en AWS EC2, Amazon RDS y WebSockets" />
+  <title>EXCAVADORA IOT · Control, Monitoreo &amp; Administración</title>
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Quicksand:wght@600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Quicksand:wght@600;700&display=swap"
     rel="stylesheet"
   />
 
@@ -31,411 +31,303 @@
     href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
   />
 
-  <!-- Hoja de Estilos Glassmorphism Pastel -->
+  <!-- Hojas de Estilos (Soporta styles.css y style.css) -->
   <link rel="stylesheet" href="./css/styles.css" />
+  <link rel="stylesheet" href="./css/style.css" />
 </head>
-<body class="d-flex flex-column min-vh-100 position-relative">
+<body class="viewport-app">
 
   <!-- Aura de Fondo Animada Pastel -->
   <div class="ambient-aura" aria-hidden="true"></div>
 
   <!-- =====================================================================
-       CABECERA PRINCIPAL & NAVEGACIÓN DE LAS 3 VISTAS + SELECTOR DE ROL (RBAC)
+       1. ENCABEZADO SUPERIOR SIMPLIFICADO (CERO DATOS TÉCNICOS INNECESARIOS)
        ===================================================================== -->
-  <header class="navbar platform-navbar py-2 px-3">
-    <div class="container-fluid px-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
-      
-      <!-- Marca y Estado del Vehículo -->
-      <div class="d-flex align-items-center gap-2">
-        <div class="logo-glow-box">
-          <img src="./favicon.svg" alt="Excavadora IoT" width="34" height="34" class="rounded-3" />
-        </div>
-        <div>
-          <div class="d-flex align-items-center gap-2">
-            <h1 class="brand-title mb-0 fw-extrabold">EXCAVADORA IoT</h1>
-            <span class="badge-platform-ver">4.3 FULL</span>
-          </div>
-          <small class="text-soft-muted d-block" style="font-size: 0.76rem;">
-            Unidad ID: <strong id="lbl-vehiculo-id" class="text-pink-accent">1</strong> · 
-            <span id="lbl-unidad-serie" class="text-cyan-accent">VIN-EXC-2026-001</span> · AWS EC2 &amp; RDS
-          </small>
-        </div>
+  <header class="platform-header px-3 py-1 d-flex align-items-center justify-content-between">
+    <!-- Ícono + Título -->
+    <div class="d-flex align-items-center gap-2">
+      <div class="logo-box">
+        <i class="bi bi-ev-front-fill text-cyan fs-5"></i>
       </div>
+      <h1 class="brand-title mb-0">EXCAVADORA IOT</h1>
+    </div>
 
-      <!-- NAVEGACIÓN CENTRAL DE LAS 3 VISTAS: CONTROL | MONITOREO | ADMINISTRACIÓN -->
-      <nav class="nav-views-cluster d-flex align-items-center gap-1" aria-label="Selector de Vista Principal">
-        <button id="nav-btn-control" type="button" class="nav-tab-pill active" data-view="control">
-          <i class="bi bi-controller me-1"></i>Control
-        </button>
-        <button id="nav-btn-monitoreo" type="button" class="nav-tab-pill" data-view="monitoreo">
-          <i class="bi bi-speedometer2 me-1"></i>Monitoreo
-        </button>
-        <button id="nav-btn-admin" type="button" class="nav-tab-pill" data-view="admin">
-          <i class="bi bi-shield-lock me-1"></i>Administración
-        </button>
-      </nav>
-
-      <!-- SIMULADOR DE PERFIL / ROL (RBAC) & BOTÓN SINCRONIZAR -->
-      <div class="d-flex align-items-center gap-2">
-        <div class="d-flex align-items-center gap-1">
-          <label for="select-user-role" class="small text-soft-muted d-none d-sm-inline fw-bold">Rol:</label>
-          <select id="select-user-role" class="form-select form-select-sm rbac-role-selector">
-            <option value="ADMINISTRADOR">👑 ADMINISTRADOR (Empresa)</option>
-            <option value="USUARIO" selected>👤 USUARIO (Comprador)</option>
-            <option value="INVITADO">🎟️ INVITADO (Prospecto Demo)</option>
-          </select>
-        </div>
-        <button id="btn-refresh-health" type="button" class="btn btn-sm btn-sync-pulse px-3" title="Sincronizar conexión con AWS EC2">
-          <i class="bi bi-arrow-repeat me-1"></i>
-          <span>Sincronizar</span>
-        </button>
+    <!-- Selector Discreto de Rol + Botón Sincronizar -->
+    <div class="d-flex align-items-center gap-2">
+      <div class="role-selector-wrap d-flex align-items-center gap-1">
+        <label for="select-user-role" class="small text-soft-muted fw-bold d-none d-sm-inline">Rol:</label>
+        <select id="select-user-role" class="form-select form-select-sm role-select">
+          <option value="ADMINISTRADOR">👑 Administrador</option>
+          <option value="USUARIO" selected>👤 Usuario</option>
+          <option value="INVITADO">🎟️ Invitado</option>
+        </select>
       </div>
-
+      <button id="btn-refresh-health" type="button" class="btn btn-sm btn-sync" title="Sincronizar conexión con AWS EC2">
+        <i class="bi bi-arrow-repeat me-1"></i>
+        <span class="d-none d-sm-inline">Sincronizar</span>
+      </button>
     </div>
   </header>
 
   <!-- =====================================================================
-       BARRA DE LOS 3 INDICADORES REALES (WSS, API AWS, AMAZON RDS)
+       2. NAVEGACIÓN PRINCIPAL EN PESTAÑAS (SEGMENTED TABS)
        ===================================================================== -->
-  <section class="status-bar-indicators py-2 px-3">
-    <div class="container-fluid px-0">
-      <div class="row g-2 text-center">
-        <!-- Indicador 1: WebSocket WSS -->
-        <div class="col-12 col-md-4">
-          <div class="indicator-glass-card d-flex align-items-center justify-content-between px-3 py-2">
-            <span class="small fw-bold text-headline">
-              <i class="bi bi-broadcast text-pink-accent me-2"></i>WebSocket WSS
-            </span>
-            <span id="badge-ws" class="badge rounded-pill badge-state-warning">
-              <span class="status-dot dot-warning"></span>Conectando...
-            </span>
+  <nav class="nav-tabs-bar px-3 py-1">
+    <div class="nav-segmented-pill">
+      <button id="nav-btn-control" type="button" class="tab-item active" data-view="control">
+        <i class="bi bi-controller me-1"></i>CONTROL
+      </button>
+      <button id="nav-btn-monitoreo" type="button" class="tab-item" data-view="monitoreo">
+        <i class="bi bi-speedometer2 me-1"></i>MONITOREO
+      </button>
+      <button id="nav-btn-admin" type="button" class="tab-item d-none" data-view="admin">
+        <i class="bi bi-shield-lock me-1"></i>ADMINISTRACIÓN
+      </button>
+    </div>
+  </nav>
+
+  <!-- =====================================================================
+       3. BARRA DE INDICADORES DE RED (3 TARJETAS COMPACTAS EN 1 FILA)
+       ===================================================================== -->
+  <section class="status-indicator-strip px-3 py-1">
+    <div class="row g-2">
+      <!-- Indicador 1: WebSocket WSS -->
+      <div class="col-4">
+        <div class="strip-card">
+          <div class="strip-label">WebSocket WSS</div>
+          <div id="badge-ws" class="badge-pill badge-warning-pastel">
+            <span class="dot-pulse"></span>Conectando
           </div>
         </div>
-
-        <!-- Indicador 2: API AWS (ÚNICAMENTE API AWS) -->
-        <div class="col-12 col-md-4">
-          <div class="indicator-glass-card d-flex align-items-center justify-content-between px-3 py-2">
-            <span class="small fw-bold text-headline">
-              <i class="bi bi-cloud-check text-cyan-accent me-2"></i>API AWS
-            </span>
-            <span id="badge-api" class="badge rounded-pill badge-state-warning">
-              <span class="status-dot dot-warning"></span>Comprobando...
-            </span>
+      </div>
+      <!-- Indicador 2: API AWS (SIN "21 servicios") -->
+      <div class="col-4">
+        <div class="strip-card">
+          <div class="strip-label">API AWS</div>
+          <div id="badge-api" class="badge-pill badge-warning-pastel">
+            <span class="dot-pulse"></span>Comprobando
           </div>
         </div>
-
-        <!-- Indicador 3: Amazon RDS -->
-        <div class="col-12 col-md-4">
-          <div class="indicator-glass-card d-flex align-items-center justify-content-between px-3 py-2">
-            <span class="small fw-bold text-headline">
-              <i class="bi bi-database text-lilac-accent me-2"></i>Amazon RDS
-            </span>
-            <span id="badge-rds" class="badge rounded-pill badge-state-neutral">
-              <span class="status-dot dot-neutral"></span>Sin verificar
-            </span>
+      </div>
+      <!-- Indicador 3: Amazon RDS -->
+      <div class="col-4">
+        <div class="strip-card">
+          <div class="strip-label">Amazon RDS</div>
+          <div id="badge-rds" class="badge-pill badge-neutral-pastel">
+            <span class="dot-neutral"></span>Sin verificar
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ALERTA DE SESIÓN TEMPORAL DE INVITADO -->
-  <div id="alert-guest-session" class="container-fluid px-3 mb-2 d-none">
-    <div class="guest-session-alert p-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+  <!-- BANNER COMPACTO SESIÓN INVITADO -->
+  <div id="alert-guest-session" class="px-3 pt-1 d-none">
+    <div class="guest-banner d-flex align-items-center justify-content-between px-3 py-1">
       <div class="d-flex align-items-center gap-2">
-        <i class="bi bi-clock-history fs-5 text-warning-pastel"></i>
-        <div>
-          <span class="fw-bold text-headline">MODO INVITADO: Prueba de Demostración Temporal</span>
-          <small class="d-block text-soft-muted">Comandos restringidos (AVANZAR, RETROCEDER, DETENER) · Exclusividad de unidad</small>
-        </div>
+        <i class="bi bi-clock-history text-amber fs-6"></i>
+        <span class="small fw-bold text-headline">Prueba Temporal Invitado</span>
       </div>
       <div class="d-flex align-items-center gap-2">
-        <span class="small text-headline fw-bold">Tiempo restante:</span>
-        <span id="guest-timer-display" class="guest-countdown-timer">05:00</span>
-        <button id="btn-request-guest-trial" type="button" class="btn btn-sm btn-warning fw-bold">
-          Iniciar Prueba
-        </button>
+        <span class="small text-soft-muted">Tiempo:</span>
+        <span id="guest-timer-display" class="guest-timer-text">05:00</span>
+        <button id="btn-request-guest-trial" type="button" class="btn btn-xs btn-amber">Reiniciar</button>
       </div>
     </div>
   </div>
 
   <!-- =====================================================================
-       CONTENIDO PRINCIPAL (3 VISTAS AISLADAS CONmutables)
+       4. CONTENIDO PRINCIPAL: VISTAS (CERO SCROLL GENERAL - 100dvh)
        ===================================================================== -->
-  <main class="container-fluid px-3 flex-grow-1 mb-3">
+  <main id="app-main-viewport" class="flex-grow-1 px-3 py-1 overflow-hidden d-flex flex-column">
 
     <!-- -------------------------------------------------------------------
-         VISTA 1: CONTROL (PRÁCTICA 4.1)
-         Joystick Direccional, STOP Prioritario, D-pad, Claxon, Sliders y Demos
+         VISTA 1: CONTROL (MANDO COMPACTO TIPO FOTOGRAFÍA)
          ------------------------------------------------------------------- -->
-    <div id="view-control" class="platform-view active">
-      <div class="row g-3">
+    <div id="view-control" class="app-view active">
+      <div class="control-grid-layout">
+        
+        <!-- Tarjeta 1: Control de Dirección -->
+        <div class="glass-card card-direction">
+          <div class="card-header-clean d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <div class="header-icon-box bg-cyan-soft text-cyan">
+                <i class="bi bi-compass"></i>
+              </div>
+              <span class="header-title">Control de Dirección</span>
+            </div>
+            <span id="badge-direccion-joystick" class="badge-soft badge-neutral">En espera</span>
+          </div>
 
-        <!-- Columna Izquierda: Joystick Analógico + Botón STOP Prioritario -->
-        <div class="col-12 col-lg-6">
-          <div class="glass-panel h-100 d-flex flex-column">
-            <div class="glass-panel-header d-flex justify-content-between align-items-center">
-              <span class="d-flex align-items-center gap-2 fw-extrabold">
-                <i class="bi bi-joystick text-pink-accent fs-5"></i>
-                <span>Joystick Analógico Táctil</span>
-              </span>
-              <span id="badge-direccion-joystick" class="badge badge-state-neutral">
-                NEUTRAL
-              </span>
+          <div class="card-body-clean d-flex align-items-center justify-content-between gap-3">
+            <!-- Joystick Circular Táctil -->
+            <div class="joystick-wrapper flex-shrink-0">
+              <div id="joystick-zone" class="joystick-zone">
+                <div class="joy-ring-guide"></div>
+                <div class="joy-cross-guide"></div>
+                <div id="joystick-thumb" class="joystick-thumb">
+                  <i class="bi bi-arrows-move"></i>
+                </div>
+              </div>
             </div>
 
-            <div class="p-4 d-flex flex-column align-items-center justify-content-center flex-grow-1">
-              <!-- Joystick Circular con Touch Events Mobile First -->
-              <div id="joystick-zone" class="joystick-zone" aria-label="Joystick de Control">
-                <span class="joy-label joy-up">▲ AVANZAR</span>
-                <span class="joy-label joy-down">▼ RETROCEDER</span>
-                <span class="joy-label joy-left">◀ IZQ</span>
-                <span class="joy-label joy-right">DER ▶</span>
-                <div class="joystick-center-mark"></div>
-                <div id="joystick-thumb" class="joystick-thumb">
-                  <i class="bi bi-crosshair fs-4 text-light"></i>
+            <!-- Cuadrícula de Telemetría + Botón STOP -->
+            <div class="telemetry-stop-column flex-grow-1 d-flex flex-column justify-content-between">
+              <!-- ÁNGULO y POTENCIA -->
+              <div class="row g-2 mb-1">
+                <div class="col-6">
+                  <div class="telemetry-box text-center">
+                    <span class="telemetry-label">ÁNGULO</span>
+                    <div id="lbl-joy-angle" class="telemetry-val">0°</div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="telemetry-box text-center">
+                    <span class="telemetry-label">POTENCIA</span>
+                    <div id="lbl-joy-power" class="telemetry-val">0%</div>
+                  </div>
                 </div>
               </div>
 
-              <p class="small text-soft-muted text-center mt-3 mb-3 px-2">
-                Desliza la palanca para mover la excavadora. Al soltarla se envía <strong>DETENER</strong> automáticamente.
-              </p>
+              <!-- DIRECCIÓN -->
+              <div class="telemetry-box direction-box text-center mb-2">
+                <span class="telemetry-label">DIRECCIÓN</span>
+                <div id="lbl-joy-dir" class="telemetry-val-highlight text-cyan">En espera</div>
+              </div>
 
-              <!-- Botón Prioritario DETENER Completo -->
-              <button id="btn-stop-priority" type="button" class="btn btn-priority-stop w-100 py-3 text-uppercase">
-                <i class="bi bi-shield-slash-fill me-2 fs-5"></i>DETENER VEHÍCULO (PARO TOTAL)
+              <!-- Botón Rojo Grande: DETENER VEHÍCULO -->
+              <button id="btn-stop-priority" type="button" class="btn-stop-huge">
+                <i class="bi bi-octagon-fill me-2"></i>
+                <span>DETENER VEHÍCULO</span>
               </button>
             </div>
           </div>
         </div>
 
-        <!-- Columna Derecha: D-pad Compacto, Hardware, Maniobras y Secuencias DEMO -->
-        <div class="col-12 col-lg-6 d-flex flex-column gap-3">
-
-          <!-- Mandos Direccionales Rápidos (D-pad Grid) -->
-          <div class="glass-panel p-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <span class="small fw-bold text-headline text-uppercase">
-                <i class="bi bi-grid-3x3-gap-fill text-pink-accent me-1"></i>Mandos Rápidos D-Pad
-              </span>
-              <span class="small text-soft-muted">Comando: <strong id="lbl-comando-actual" class="text-pink-accent">DETENER</strong></span>
-            </div>
-
-            <div class="dpad-container mx-auto my-2">
-              <div class="dpad-grid">
-                <div></div>
-                <button id="btn-joy-up" type="button" class="btn dpad-btn joy-btn-up" data-dir="AVANZAR">
-                  <i class="bi bi-caret-up-fill fs-5 text-pink-accent"></i>
-                  <span class="small fw-bold">AVANZAR</span>
-                </button>
-                <div></div>
-
-                <button id="btn-joy-left" type="button" class="btn dpad-btn joy-btn-left" data-dir="IZQUIERDA">
-                  <i class="bi bi-caret-left-fill fs-5 text-pink-accent"></i>
-                  <span class="small fw-bold">IZQ</span>
-                </button>
-
-                <!-- STOP Central Rojo -->
-                <button id="btn-joy-stop" type="button" class="btn dpad-btn joy-btn-stop" data-dir="DETENER">
-                  <i class="bi bi-octagon-fill fs-4 text-light"></i>
-                  <span class="small fw-extrabold text-light">STOP</span>
-                </button>
-
-                <button id="btn-joy-right" type="button" class="btn dpad-btn joy-btn-right" data-dir="DERECHA">
-                  <i class="bi bi-caret-right-fill fs-5 text-pink-accent"></i>
-                  <span class="small fw-bold">DER</span>
-                </button>
-
-                <div></div>
-                <button id="btn-joy-down" type="button" class="btn dpad-btn joy-btn-down" data-dir="RETROCEDER">
-                  <i class="bi bi-caret-down-fill fs-5 text-pink-accent"></i>
-                  <span class="small fw-bold">ATRÁS</span>
-                </button>
-                <div></div>
+        <!-- Tarjeta 2: Funciones del Vehículo -->
+        <div class="glass-card card-functions">
+          <div class="card-header-clean d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <div class="header-icon-box bg-purple-soft text-purple">
+                <i class="bi bi-grid-fill"></i>
               </div>
+              <span class="header-title">Funciones del Vehículo</span>
             </div>
+            <span class="badge-soft badge-cyan">7 Funciones</span>
           </div>
 
-          <!-- Controles de Hardware: Claxon, Volumen y Velocidad -->
-          <div class="glass-panel p-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <span class="small fw-bold text-headline text-uppercase">
-                <i class="bi bi-sliders2 text-cyan-accent me-1"></i>Potencia &amp; Hardware
-              </span>
-              <button id="btn-claxon" type="button" class="btn btn-sm btn-info fw-bold px-3 text-white">
-                <i class="bi bi-megaphone-fill me-1"></i>Tocar Claxon
-              </button>
-            </div>
-
+          <div class="card-body-clean d-flex flex-column gap-2">
+            <!-- Grid 2x2 Botones de Maniobra -->
             <div class="row g-2">
-              <div class="col-12 col-sm-6">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <label for="slider-volume" class="small fw-bold text-soft-muted mb-0">Volumen:</label>
-                  <span id="lbl-volume-val" class="badge bg-light text-primary border">80%</span>
-                </div>
-                <input type="range" class="form-range custom-cockpit-range" id="slider-volume" min="0" max="100" value="80" />
+              <div class="col-6">
+                <button type="button" class="btn-vehicle-action cmd-sec-btn" data-cmd-name="GIRAR_IZQUIERDA">
+                  <div class="action-icon text-cyan"><i class="bi bi-arrow-counterclockwise"></i></div>
+                  <div class="action-text text-start">
+                    <span class="action-title">Cabina Izquierda</span>
+                    <span class="action-sub">Giro de torreta</span>
+                  </div>
+                </button>
               </div>
-              <div class="col-12 col-sm-6">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <label for="slider-speed" class="small fw-bold text-soft-muted mb-0">Velocidad:</label>
-                  <span id="lbl-speed-val" class="badge bg-light text-primary border">Normal (70%)</span>
+              <div class="col-6">
+                <button type="button" class="btn-vehicle-action cmd-sec-btn" data-cmd-name="GIRAR_DERECHA">
+                  <div class="action-icon text-cyan"><i class="bi bi-arrow-clockwise"></i></div>
+                  <div class="action-text text-start">
+                    <span class="action-title">Cabina Derecha</span>
+                    <span class="action-sub">Giro de torreta</span>
+                  </div>
+                </button>
+              </div>
+              <div class="col-6">
+                <button type="button" class="btn-vehicle-action cmd-sec-btn" data-cmd-name="BAJAR_BRAZO">
+                  <div class="action-icon text-amber"><i class="bi bi-box-arrow-in-down"></i></div>
+                  <div class="action-text text-start">
+                    <span class="action-title">Bajar Garra</span>
+                    <span class="action-sub">Brazo hidráulico</span>
+                  </div>
+                </button>
+              </div>
+              <div class="col-6">
+                <button type="button" class="btn-vehicle-action cmd-sec-btn" data-cmd-name="SUBIR_BRAZO">
+                  <div class="action-icon text-amber"><i class="bi bi-box-arrow-in-up"></i></div>
+                  <div class="action-text text-start">
+                    <span class="action-title">Subir Garra</span>
+                    <span class="action-sub">Brazo hidráulico</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Fila Inferior 3 Controles: Luz, Sonido y Velocidad -->
+            <div class="row g-2">
+              <div class="col-4">
+                <button type="button" class="btn-vehicle-mini cmd-sec-btn" data-cmd-name="ABRIR_PALA">
+                  <div class="mini-icon text-emerald"><i class="bi bi-lightbulb-fill"></i></div>
+                  <div class="mini-text text-start">
+                    <span class="mini-title">Luz</span>
+                    <span class="mini-sub">Sistema ópt...</span>
+                  </div>
+                </button>
+              </div>
+              <div class="col-4">
+                <button id="btn-claxon" type="button" class="btn-vehicle-mini">
+                  <div class="mini-icon text-purple"><i class="bi bi-volume-up-fill"></i></div>
+                  <div class="mini-text text-start">
+                    <span class="mini-title">Sonido</span>
+                    <span class="mini-sub">Alerta acús...</span>
+                  </div>
+                </button>
+              </div>
+              <div class="col-4">
+                <div class="btn-vehicle-mini speed-mini-box">
+                  <div class="mini-icon text-cyan"><i class="bi bi-speedometer2"></i></div>
+                  <div class="mini-text text-start flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <span class="mini-title">Velocidad</span>
+                      <span id="lbl-speed-val" class="speed-val-badge">70%</span>
+                    </div>
+                    <input id="slider-speed" type="range" class="form-range slider-micro" min="20" max="100" value="70" />
+                  </div>
                 </div>
-                <input type="range" class="form-range custom-cockpit-range range-speed" id="slider-speed" min="10" max="100" step="5" value="70" />
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Maniobras Rápidas y Secuencias DEMO (CON FEEDBACK VISUAL EN TIEMPO REAL) -->
-          <div class="glass-panel p-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <span class="small fw-bold text-headline text-uppercase">
-                <i class="bi bi-magic text-lilac-accent me-1"></i>Maniobras &amp; Secuencia DEMO
-              </span>
-              <span id="badge-demo-status" class="badge badge-state-neutral">Inactiva</span>
+        <!-- Tarjeta 3: Modo Automático (DEMO) -->
+        <div class="glass-card card-demo">
+          <div class="card-header-clean d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <div class="header-icon-box bg-emerald-soft text-emerald">
+                <i class="bi bi-play-circle-fill"></i>
+              </div>
+              <span class="header-title">Modo Automático (DEMO)</span>
+            </div>
+            <span id="badge-demo-status" class="badge-soft badge-neutral">Inactivo</span>
+          </div>
+
+          <div class="card-body-clean d-flex flex-column gap-2">
+            <!-- Selector de Demo + Estado de Paso en Vivo -->
+            <div class="d-flex align-items-center gap-2">
+              <div class="flex-grow-1">
+                <select id="select-demo" class="form-select form-select-sm select-clean">
+                  <option value="1">Demo principal</option>
+                </select>
+              </div>
+              <div class="demo-step-badge flex-shrink-0">
+                <i class="bi bi-cpu text-cyan me-1"></i>
+                <span id="lbl-demo-current-step">Secuencia en espera</span>
+                <span id="lbl-demo-step-details" class="d-none"></span>
+              </div>
             </div>
 
-            <div class="row g-2 mb-2">
-              <div class="col-3">
-                <button type="button" class="btn w-100 py-1 btn-outline-secondary cmd-sec-btn" data-cmd-name="GIRO_90_IZQ">90° Izq</button>
-              </div>
-              <div class="col-3">
-                <button type="button" class="btn w-100 py-1 btn-outline-secondary cmd-sec-btn" data-cmd-name="GIRO_90_DER">90° Der</button>
-              </div>
-              <div class="col-3">
-                <button type="button" class="btn w-100 py-1 btn-outline-secondary cmd-sec-btn" data-cmd-name="GIRO_360_IZQ">360° Izq</button>
-              </div>
-              <div class="col-3">
-                <button type="button" class="btn w-100 py-1 btn-outline-secondary cmd-sec-btn" data-cmd-name="GIRO_360_DER">360° Der</button>
-              </div>
-            </div>
-
-            <!-- CONTENEDOR DE FEEDBACK VISUAL DEMO EN TIEMPO REAL -->
-            <div id="demo-live-step-container" class="demo-live-box my-2 p-2 rounded-3 text-center">
-              <span class="small fw-bold text-soft-muted d-block mb-1">
-                <i class="bi bi-activity text-pink-accent me-1"></i>Ejecución DEMO en Vivo:
-              </span>
-              <div id="lbl-demo-current-step" class="fs-5 fw-extrabold text-pink-accent">
-                Secuencia Inactiva
-              </div>
-              <small id="lbl-demo-step-details" class="text-soft-muted d-block mt-1">
-                Presiona "Iniciar DEMO" para comenzar el recorrido temporizado en AWS
-              </small>
-            </div>
-
-            <div class="d-flex gap-2 mt-2">
-              <select id="select-demo" class="form-select form-select-sm bg-white border">
-                <option value="">Cargando coreografías...</option>
-              </select>
-              <button id="btn-demo-start" type="button" class="btn btn-sm btn-primary fw-bold text-nowrap">
+            <!-- Botones Iniciar y Cancelar DEMO -->
+            <div class="d-flex align-items-center gap-2">
+              <button id="btn-demo-start" type="button" class="btn btn-sm btn-demo-run flex-grow-1">
                 <i class="bi bi-play-fill me-1"></i>Iniciar DEMO
               </button>
-              <button id="btn-demo-cancel" type="button" class="btn btn-sm btn-danger fw-bold text-nowrap" disabled>
-                <i class="bi bi-x-circle-fill me-1"></i>Cancelar
+              <button id="btn-demo-cancel" type="button" class="btn btn-sm btn-demo-stop flex-grow-1" disabled>
+                <i class="bi bi-square-fill me-1"></i>Cancelar
               </button>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- -------------------------------------------------------------------
-         VISTA 2: MONITOREO (PRÁCTICA 4.2)
-         Telemetría en Vivo (Solo Lectura) + Tabla de Historial (10 registros RDS)
-         ------------------------------------------------------------------- -->
-    <div id="view-monitoreo" class="platform-view d-none">
-      <div class="row g-3">
-
-        <!-- Telemetría en Tiempo Real (Solo Lectura) -->
-        <div class="col-12 col-lg-5">
-          <div class="glass-panel h-100 p-3 d-flex flex-column gap-3">
-            <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
-              <span class="fw-bold text-headline d-flex align-items-center gap-2">
-                <i class="bi bi-speedometer text-cyan-accent fs-5"></i>
-                <span>Telemetría en Vivo</span>
-              </span>
-              <span id="mon-vehicle-online-badge" class="badge badge-state-online">
-                <span class="status-dot dot-online"></span>Activo en RDS
-              </span>
-            </div>
-
-            <!-- Lista de Telemetría -->
-            <div class="d-flex flex-column gap-2">
-              <!-- Item 1: Conexión WSS -->
-              <div class="telemetry-row-card">
-                <span class="telemetry-tag"><i class="bi bi-broadcast me-2 text-pink-accent"></i>Conexión WSS:</span>
-                <span id="mon-wss-text" class="telemetry-data text-success-pastel">Conectado WSS</span>
-              </div>
-
-              <!-- Item 2: Último Comando -->
-              <div class="telemetry-row-card">
-                <span class="telemetry-tag"><i class="bi bi-cpu me-2 text-pink-accent"></i>Último Comando:</span>
-                <span id="mon-last-command" class="telemetry-data text-pink-accent fw-extrabold text-uppercase">DETENER</span>
-              </div>
-
-              <!-- Item 3: Última Actividad (Timestamp) -->
-              <div class="telemetry-row-card">
-                <span class="telemetry-tag"><i class="bi bi-clock-history me-2 text-cyan-accent"></i>Última Actividad:</span>
-                <div class="text-end">
-                  <div id="mon-last-timestamp" class="telemetry-data text-headline" style="font-size: 0.88rem;">—</div>
-                  <small class="text-soft-muted d-block" style="font-size: 0.72rem;">Huso local (es-MX)</small>
-                </div>
-              </div>
-
-              <!-- Item 4: Velocidad Actual -->
-              <div class="telemetry-row-card">
-                <span class="telemetry-tag"><i class="bi bi-speedometer2 me-2 text-warning-pastel"></i>Velocidad Actual:</span>
-                <span id="mon-speed-val" class="telemetry-data text-warning-pastel">70% (Normal)</span>
-              </div>
-
-              <!-- Item 5: Nivel de Volumen -->
-              <div class="telemetry-row-card">
-                <span class="telemetry-tag"><i class="bi bi-volume-up me-2 text-lilac-accent"></i>Nivel de Volumen:</span>
-                <span id="mon-volume-val" class="telemetry-data text-lilac-accent">80%</span>
-              </div>
-            </div>
-
-            <div class="mt-auto p-2 rounded-3 bg-light border text-soft-muted small">
-              <i class="bi bi-shield-check text-cyan-accent me-1"></i>
-              Datos obtenidos directamente desde la API REST en AWS EC2 y canal WebSocket. Cero datos simulados.
-            </div>
-          </div>
-        </div>
-
-        <!-- Tabla de Historial (10 Registros Reales en Amazon RDS) -->
-        <div class="col-12 col-lg-7">
-          <div class="glass-panel h-100 p-3 d-flex flex-column">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <span class="fw-bold text-headline d-flex align-items-center gap-2">
-                <i class="bi bi-journal-medical text-lilac-accent fs-5"></i>
-                <span>Historial de Movimientos (Amazon RDS)</span>
-              </span>
-              <div class="d-flex align-items-center gap-2">
-                <span id="mon-history-count" class="badge badge-state-neutral">Últimos 10</span>
-                <button id="btn-refresh-monitoreo" type="button" class="btn btn-sm btn-outline-info py-0 px-2" title="Recargar">
-                  <i class="bi bi-arrow-clockwise"></i>
-                </button>
-              </div>
-            </div>
-
-            <div class="cockpit-table-scroll flex-grow-1">
-              <table class="table table-hover align-middle mb-0 cockpit-history-table">
-                <thead>
-                  <tr>
-                    <th class="text-center" style="width: 44px;">#</th>
-                    <th>Movimiento</th>
-                    <th>Fecha</th>
-                    <th>Hora</th>
-                  </tr>
-                </thead>
-                <tbody id="mon-history-tbody">
-                  <tr>
-                    <td colspan="4" class="text-center py-4 text-soft-muted">
-                      Cargando historial desde Amazon RDS...
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
             </div>
           </div>
         </div>
@@ -444,178 +336,277 @@
     </div>
 
     <!-- -------------------------------------------------------------------
-         VISTA 3: ADMINISTRACIÓN & RBAC (PRÁCTICA 4.3)
-         Dashboard, Modelos vs Unidades Físicas, Clientes, Editor Demos y Auditoría
+         VISTA 2: MONITOREO (TELEMETRÍA + HISTORIAL CON SCROLL FLEXIBLE)
          ------------------------------------------------------------------- -->
-    <div id="view-admin" class="platform-view d-none">
-      <div class="d-flex flex-column gap-3">
+    <div id="view-monitoreo" class="app-view d-none">
+      <div class="monitoreo-flex-layout">
 
-        <!-- Métricas del Dashboard de Flota -->
-        <div class="row g-2">
-          <div class="col-6 col-md-3">
-            <div class="admin-metric-card">
-              <span class="small text-soft-muted fw-bold d-block text-uppercase">Unidades Físicas</span>
-              <div id="metric-unidades" class="metric-number text-pink-accent">1</div>
-              <small class="text-soft-muted" style="font-size: 0.72rem;">Activas en RDS</small>
+        <!-- Tarjeta 1: Último Movimiento Reportado -->
+        <div class="glass-card card-last-move flex-shrink-0">
+          <div class="card-header-clean d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <div class="header-icon-box bg-cyan-soft text-cyan">
+                <i class="bi bi-activity"></i>
+              </div>
+              <span class="header-title">Último Movimiento Reportado</span>
             </div>
+            <span id="mon-vehicle-online-badge" class="badge-soft badge-neutral">Sin datos actualizados</span>
           </div>
-          <div class="col-6 col-md-3">
-            <div class="admin-metric-card card-cyan">
-              <span class="small text-soft-muted fw-bold d-block text-uppercase">Modelos Comerciales</span>
-              <div id="metric-modelos" class="metric-number text-cyan-accent">2</div>
-              <small class="text-soft-muted" style="font-size: 0.72rem;">Catálogo global</small>
+
+          <div class="card-body-clean">
+            <!-- Hero Central del Comando -->
+            <div class="mon-hero-box d-flex align-items-center gap-3 mb-2">
+              <div class="mon-hero-circle flex-shrink-0">
+                <i id="mon-last-icon" class="bi bi-activity text-cyan"></i>
+              </div>
+              <div class="flex-grow-1">
+                <div class="mon-hero-category">ESTADO / COMANDO REPORTADO</div>
+                <h3 id="mon-last-command" class="mon-hero-title mb-1">Sin datos actualizados</h3>
+                <div class="mon-hero-tags d-flex align-items-center gap-2">
+                  <span class="badge-code">Código #<span id="mon-last-code">--</span></span>
+                  <span id="mon-last-timestamp" class="small text-soft-muted">Consultando API...</span>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="admin-metric-card card-lilac">
-              <span class="small text-soft-muted fw-bold d-block text-uppercase">Usuarios / Clientes</span>
-              <div id="metric-usuarios" class="metric-number text-lilac-accent">3</div>
-              <small class="text-soft-muted" style="font-size: 0.72rem;">Roles RBAC</small>
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="admin-metric-card card-green">
-              <span class="small text-soft-muted fw-bold d-block text-uppercase">Coreografías DEMO</span>
-              <div id="metric-demos" class="metric-number text-success-pastel">1</div>
-              <small class="text-soft-muted" style="font-size: 0.72rem;">Guardadas en BD</small>
+
+            <!-- 3 Mini Cajas Inferiores en Fila -->
+            <div class="row g-2">
+              <div class="col-4">
+                <div class="mon-subcard text-center">
+                  <div class="mon-subcard-label"><i class="bi bi-calendar3 me-1"></i>FECHA VERIFICADA</div>
+                  <strong id="mon-last-date" class="mon-subcard-val">--/--/----</strong>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="mon-subcard text-center">
+                  <div class="mon-subcard-label"><i class="bi bi-clock me-1"></i>HORA EXACTA</div>
+                  <strong id="mon-last-time" class="mon-subcard-val">--:--:--</strong>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="mon-subcard text-center">
+                  <div class="mon-subcard-label"><i class="bi bi-truck me-1"></i>VEHÍCULO MONITOREADO</div>
+                  <strong id="mon-monitored-vehicle" class="mon-subcard-val">Excavadora IoT (ID #1)</strong>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Secciones de Administración -->
-        <div class="row g-3">
-
-          <!-- Columna Izquierda: Gestión de Unidades Físicas y Asignaciones -->
-          <div class="col-12 col-lg-7">
-            <div class="glass-panel p-3 h-100 d-flex flex-column">
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <span class="fw-bold text-headline d-flex align-items-center gap-2">
-                  <i class="bi bi-truck text-cyan-accent fs-5"></i>
-                  <span>Inventario de Unidades Físicas (VIN/Serie &amp; Propietarios)</span>
-                </span>
-                <button id="btn-refresh-admin-units" type="button" class="btn btn-sm btn-outline-info py-0 px-2">
-                  <i class="bi bi-arrow-clockwise"></i>
-                </button>
+        <!-- Tarjeta 2: Últimos 10 Movimientos Individuales (Amazon RDS) (SCROLL INTERNO) -->
+        <div class="glass-card card-history-table flex-grow-1 d-flex flex-column min-h-0">
+          <div class="card-header-clean d-flex align-items-center justify-content-between flex-shrink-0">
+            <div class="d-flex align-items-center gap-2">
+              <div class="header-icon-box bg-purple-soft text-purple">
+                <i class="bi bi-list-columns-reverse"></i>
               </div>
-
-              <!-- Tabla de Unidades Físicas con Propietario -->
-              <div class="admin-table-container mb-3 flex-grow-1">
-                <table class="table table-hover align-middle mb-0 cockpit-history-table">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Serie / VIN</th>
-                      <th>Modelo Comercial</th>
-                      <th>Propietario Asignado</th>
-                      <th>Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody id="tbody-admin-unidades">
-                    <tr>
-                      <td colspan="5" class="text-center py-3 text-soft-muted">Cargando unidades desde Amazon RDS...</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <!-- Formulario de Asignación de Unidad a Usuario -->
-              <div class="p-3 rounded-3 bg-light border">
-                <span class="small fw-bold text-headline d-block mb-2 text-uppercase">
-                  <i class="bi bi-person-check-fill text-pink-accent me-1"></i>Asignar Unidad Física a Cliente
-                </span>
-                <div class="row g-2 align-items-center">
-                  <div class="col-12 col-sm-4">
-                    <select id="select-asignar-unidad" class="form-select form-select-sm bg-white border">
-                      <option value="1">Unidad #1 (VIN-EXC-2026-001)</option>
-                    </select>
-                  </div>
-                  <div class="col-12 col-sm-5">
-                    <select id="select-asignar-usuario" class="form-select form-select-sm bg-white border">
-                      <option value="2">Carlos Mendoza (Comprador)</option>
-                      <option value="3">Invitado Demo Temporal</option>
-                    </select>
-                  </div>
-                  <div class="col-12 col-sm-3">
-                    <button id="btn-asignar-unidad" type="button" class="btn btn-sm btn-info w-100 fw-bold text-white">
-                      Asignar
-                    </button>
-                  </div>
-                </div>
-              </div>
-
+              <span class="header-title">Últimos 10 Movimientos Individuales (Amazon RDS)</span>
             </div>
-          </div>
-
-          <!-- Columna Derecha: Editor Visual de Demos & Bitácora de Auditoría -->
-          <div class="col-12 col-lg-5 d-flex flex-column gap-3">
-
-            <!-- EDITOR VISUAL DE COREOGRAFÍAS DEMO -->
-            <div class="glass-panel p-3">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="fw-bold text-headline d-flex align-items-center gap-2">
-                  <i class="bi bi-sliders text-pink-accent fs-5"></i>
-                  <span>Editor de Coreografías DEMO</span>
-                </span>
-                <button id="btn-add-demo-step" type="button" class="btn btn-sm btn-outline-pink py-1 px-2 fw-bold" style="border: 1px solid var(--pastel-pink); color: var(--pastel-pink);">
-                  <i class="bi bi-plus-circle me-1"></i>Paso
-                </button>
-              </div>
-
-              <div class="mb-2">
-                <label for="input-demo-name" class="small text-soft-muted fw-bold mb-1">Nombre de la Secuencia:</label>
-                <input id="input-demo-name" type="text" class="form-control form-control-sm bg-white border" value="Demo Personalizada 4.3" />
-              </div>
-
-              <!-- Lista de Pasos Dinámicos -->
-              <div id="demo-editor-steps-list" class="demo-editor-canvas mb-2" style="max-height: 180px; overflow-y: auto;">
-                <div class="step-card-item" data-orden="1">
-                  <span class="step-badge-order">1</span>
-                  <select class="form-select form-select-sm step-cmd-select bg-white border" style="max-width: 130px;">
-                    <option value="1" selected>AVANZAR</option>
-                    <option value="3">GIRAR IZQ</option>
-                    <option value="4">GIRAR DER</option>
-                    <option value="2">RETROCEDER</option>
-                    <option value="9">DETENER</option>
-                  </select>
-                  <input type="number" class="form-control form-control-sm step-dur-input bg-white border" value="1800" style="width: 75px;" placeholder="ms" />
-                  <button type="button" class="btn btn-sm text-danger btn-remove-step p-0"><i class="bi bi-trash"></i></button>
-                </div>
-              </div>
-
-              <button id="btn-save-custom-demo" type="button" class="btn btn-sm w-100 fw-bold text-white" style="background: var(--pastel-pink);">
-                <i class="bi bi-save2-fill me-1"></i>Guardar Secuencia en Amazon RDS
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge-soft badge-cyan"><span class="dot-pulse"></span>Sincronizando RDS...</span>
+              <span id="mon-history-count" class="badge-soft badge-purple">0 / 10 recientes</span>
+              <button id="btn-refresh-monitoreo" type="button" class="btn btn-xs btn-outline-clean" title="Recargar historial">
+                <i class="bi bi-arrow-repeat"></i>
               </button>
             </div>
-
-            <!-- BITÁCORA DE AUDITORÍA Y SEGURIDAD -->
-            <div class="glass-panel p-3">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="small fw-bold text-headline text-uppercase">
-                  <i class="bi bi-shield-lock-fill text-cyan-accent me-1"></i>Bitácora de Auditoría
-                </span>
-                <span class="badge bg-light text-dark border" style="font-size: 0.7rem;">Seguridad RBAC</span>
-              </div>
-
-              <div class="admin-table-container" style="max-height: 160px;">
-                <table class="table table-hover align-middle mb-0 cockpit-history-table">
-                  <thead>
-                    <tr>
-                      <th>Acción</th>
-                      <th>Usuario / IP</th>
-                      <th>Fecha / Hora</th>
-                    </tr>
-                  </thead>
-                  <tbody id="tbody-admin-auditoria">
-                    <tr>
-                      <td colspan="3" class="text-center py-2 text-soft-muted">Consultando auditoría...</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
           </div>
 
+          <!-- Tabla con Scroll Interno Flexible -->
+          <div class="history-table-scroll-wrap flex-grow-1 overflow-y-auto">
+            <table class="table table-clean mb-0">
+              <thead>
+                <tr>
+                  <th class="text-center" style="width: 45px;">#</th>
+                  <th>MOVIMIENTO</th>
+                  <th>FECHA</th>
+                  <th>HORA</th>
+                </tr>
+              </thead>
+              <tbody id="mon-history-tbody">
+                <tr>
+                  <td colspan="4" class="text-center py-4 text-soft-muted">
+                    <div class="spinner-border spinner-border-sm text-cyan me-2" role="status"></div>
+                    Consultando últimos 10 movimientos desde Amazon RDS...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- -------------------------------------------------------------------
+         VISTA 3: ADMINISTRACIÓN (DASHBOARD, INVENTARIO, ASIGNACIÓN, DEMOS)
+         ------------------------------------------------------------------- -->
+    <div id="view-admin" class="app-view d-none">
+      <div class="admin-scroll-layout flex-grow-1 overflow-y-auto d-flex flex-column gap-2 pe-1">
+        
+        <!-- Fila de 4 Métricas Resumidas -->
+        <div class="row g-2 flex-shrink-0">
+          <div class="col-6 col-md-3">
+            <div class="metric-card">
+              <div class="metric-icon text-pink"><i class="bi bi-cpu-fill"></i></div>
+              <div>
+                <div class="metric-lbl">Total Unidades</div>
+                <div id="metric-unidades" class="metric-num text-pink">1</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="metric-card">
+              <div class="metric-icon text-cyan"><i class="bi bi-layers-fill"></i></div>
+              <div>
+                <div class="metric-lbl">Modelos</div>
+                <div id="metric-modelos" class="metric-num text-cyan">2</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="metric-card">
+              <div class="metric-icon text-purple"><i class="bi bi-people-fill"></i></div>
+              <div>
+                <div class="metric-lbl">Usuarios</div>
+                <div id="metric-usuarios" class="metric-num text-purple">3</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="metric-card">
+              <div class="metric-icon text-emerald"><i class="bi bi-check-circle-fill"></i></div>
+              <div>
+                <div class="metric-lbl">Vendidas / Demos</div>
+                <div id="metric-demos" class="metric-num text-emerald">1</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Asignación Rápida de Vehículo a Cliente -->
+        <div class="glass-card flex-shrink-0">
+          <div class="card-header-clean d-flex align-items-center justify-content-between">
+            <span class="header-title"><i class="bi bi-person-check-fill text-cyan me-2"></i>Asignar Unidad a Comprador</span>
+            <span class="badge-soft badge-cyan">Comercial</span>
+          </div>
+          <div class="card-body-clean">
+            <div class="row g-2 align-items-end">
+              <div class="col-12 col-md-5">
+                <label class="small text-soft-muted fw-bold mb-1">Unidad Física (VIN):</label>
+                <select id="select-asignar-unidad" class="form-select form-select-sm select-clean">
+                  <option value="1">Unidad #1 - VIN-EXC-2026-001 (Excavadora IoT)</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-5">
+                <label class="small text-soft-muted fw-bold mb-1">Comprador Asignado:</label>
+                <select id="select-asignar-usuario" class="form-select form-select-sm select-clean">
+                  <option value="2">Carlos Mendoza (carlos@cliente.com)</option>
+                  <option value="1">Brenda Hernandez (Admin Empresa)</option>
+                  <option value="3">Invitado Demo Temporal</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-2">
+                <button id="btn-asignar-unidad" type="button" class="btn btn-sm btn-cyan w-100">
+                  <i class="bi bi-check2-circle me-1"></i>Asignar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inventario de Flota (Tabla con scroll interno) -->
+        <div class="glass-card flex-shrink-0">
+          <div class="card-header-clean d-flex align-items-center justify-content-between">
+            <span class="header-title"><i class="bi bi-truck text-purple me-2"></i>Inventario de Maquinaria IoT</span>
+            <button id="btn-refresh-admin-units" type="button" class="btn btn-xs btn-outline-clean">
+              <i class="bi bi-arrow-repeat me-1"></i>Actualizar
+            </button>
+          </div>
+          <div class="table-responsive" style="max-height: 140px;">
+            <table class="table table-clean mb-0">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>N° SERIE / VIN</th>
+                  <th>MODELO</th>
+                  <th>PROPIETARIO</th>
+                  <th>ESTADO</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-admin-unidades">
+                <tr>
+                  <td class="text-pink fw-bold">#1</td>
+                  <td class="text-cyan fw-bold">VIN-EXC-2026-001</td>
+                  <td class="fw-bold">Excavadora CAT-IoT 320</td>
+                  <td class="text-secondary">Carlos Mendoza</td>
+                  <td><span class="badge-soft badge-emerald">Activa</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Editor Visual de Demos IoT -->
+        <div class="glass-card flex-shrink-0">
+          <div class="card-header-clean d-flex align-items-center justify-content-between">
+            <span class="header-title"><i class="bi bi-sliders text-emerald me-2"></i>Editor Visual de Secuencias DEMO</span>
+            <button id="btn-add-demo-step" type="button" class="btn btn-xs btn-emerald">
+              <i class="bi bi-plus-circle me-1"></i>Agregar Paso
+            </button>
+          </div>
+          <div class="card-body-clean">
+            <div class="row g-2 align-items-center mb-2">
+              <div class="col-12 col-md-7">
+                <input id="input-demo-name" type="text" class="form-control form-control-sm select-clean" value="Demo Principal 4.3" placeholder="Nombre de la secuencia..." />
+              </div>
+              <div class="col-12 col-md-5 d-flex gap-2">
+                <button id="btn-save-custom-demo" type="button" class="btn btn-sm btn-emerald w-100">
+                  <i class="bi bi-cloud-arrow-up-fill me-1"></i>Guardar en RDS
+                </button>
+              </div>
+            </div>
+            <div id="demo-editor-steps-list" class="demo-steps-container d-flex flex-wrap gap-2">
+              <!-- Paso 1 por defecto -->
+              <div class="step-card-item" data-orden="1">
+                <span class="step-badge-order">1</span>
+                <select class="form-select form-select-sm step-cmd-select" style="max-width: 120px;">
+                  <option value="1" selected>AVANZAR</option>
+                  <option value="3">GIRAR IZQ</option>
+                  <option value="4">GIRAR DER</option>
+                  <option value="2">RETROCEDER</option>
+                  <option value="9">DETENER</option>
+                </select>
+                <input type="number" class="form-control form-control-sm step-dur-input" value="2500" style="width: 75px;" placeholder="ms" />
+                <button type="button" class="btn btn-sm text-danger btn-remove-step p-0"><i class="bi bi-trash"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bitácora de Auditoría -->
+        <div class="glass-card flex-shrink-0">
+          <div class="card-header-clean d-flex align-items-center justify-content-between">
+            <span class="header-title"><i class="bi bi-shield-check text-cyan me-2"></i>Bitácora de Auditoría Inmutable</span>
+            <span class="badge-soft badge-purple">Seguridad</span>
+          </div>
+          <div class="table-responsive" style="max-height: 120px;">
+            <table class="table table-clean mb-0">
+              <thead>
+                <tr>
+                  <th>ACCIÓN</th>
+                  <th>USUARIO / DETALLE</th>
+                  <th>HORA</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-admin-auditoria">
+                <tr>
+                  <td class="text-pink fw-bold">LOGIN</td>
+                  <td class="text-secondary">Inicio de sesión exitoso</td>
+                  <td class="text-cyan small">En vivo</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
       </div>
@@ -624,17 +615,31 @@
   </main>
 
   <!-- =====================================================================
-       PIE DE PÁGINA OBLIGATORIO CON CRÉDITOS EXACTOS
+       5. PIE DE PÁGINA FIJO Y DISCRETO (Brenda Joselyn Hernandez Perez)
        ===================================================================== -->
-  <footer class="platform-footer py-2 text-center mt-auto">
-    <div class="container">
-      <p class="mb-0 small fw-bold text-soft-muted">
-        Desarrollado por Brenda Joselyn Hernandez Perez · 2026
-      </p>
-    </div>
+  <footer class="platform-footer px-3 py-1 text-center flex-shrink-0">
+    <small class="footer-credit-text">Desarrollado por Brenda Joselyn Hernandez Perez · 2026</small>
   </footer>
 
-  <!-- Script ES6 Module Principal -->
+  <!-- Elementos de Respaldo Ocultos para Compatibilidad JS al 100% -->
+  <div class="d-none" aria-hidden="true">
+    <span id="lbl-vehiculo-id">1</span>
+    <span id="lbl-unidad-serie">VIN-EXC-2026-001</span>
+    <span id="lbl-comando-actual">DETENER</span>
+    <button id="btn-joy-up" data-dir="AVANZAR"></button>
+    <button id="btn-joy-down" data-dir="RETROCEDER"></button>
+    <button id="btn-joy-left" data-dir="IZQUIERDA"></button>
+    <button id="btn-joy-right" data-dir="DERECHA"></button>
+    <button id="btn-joy-stop" data-dir="DETENER"></button>
+    <input id="slider-volume" type="range" value="80" />
+    <span id="lbl-volume-val">80%</span>
+    <span id="mon-wss-dot"></span>
+    <span id="mon-wss-text"></span>
+    <span id="mon-speed-val">70%</span>
+    <span id="mon-volume-val">80%</span>
+  </div>
+
+  <!-- Scripts Modulares ES6 -->
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>

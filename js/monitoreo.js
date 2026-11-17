@@ -213,6 +213,16 @@ export class MonitoreoController {
       this.ui.horaUltimoMov.textContent = horaStr;
     }
 
+    const elCode = document.getElementById("mon-last-code");
+    if (elCode) {
+      elCode.textContent = estado.codigo ?? estado.id_comando ?? "--";
+    }
+
+    const elVeh = document.getElementById("mon-monitored-vehicle");
+    if (elVeh) {
+      elVeh.textContent = `Excavadora IoT (ID #${this.vehiculoId})`;
+    }
+
     if (this.ui.badgeConexionVehiculo) {
       const isOnline = Boolean(Number(estado.conectado ?? 1));
       this.ui.badgeConexionVehiculo.className = isOnline
