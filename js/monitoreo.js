@@ -117,7 +117,7 @@ export class MonitoreoController {
     if (this.ui.tbodyHistorial) {
       this.ui.tbodyHistorial.innerHTML = `
         <tr>
-          <td colspan="4" class="text-center py-3 text-soft-lilac fw-bold">
+          <td colspan="4" class="text-center py-3 text-soft-muted fw-bold">
             <div class="spinner-border spinner-border-sm text-pink-accent me-2" role="status"></div>
             Cargando últimos 10 movimientos desde RDS...
           </td>
@@ -154,7 +154,7 @@ export class MonitoreoController {
     if (showSpinner && this.ui.tbodyHistorial) {
       this.ui.tbodyHistorial.innerHTML = `
         <tr>
-          <td colspan="4" class="text-center py-3 text-soft-lilac fw-bold">
+          <td colspan="4" class="text-center py-3 text-soft-muted fw-bold">
             <div class="spinner-border spinner-border-sm text-pink-accent me-2" role="status"></div>
             Consultando Amazon RDS...
           </td>
@@ -256,7 +256,7 @@ export class MonitoreoController {
       }
       this.ui.tbodyHistorial.innerHTML = `
         <tr>
-          <td colspan="4" class="text-center py-3 text-soft-lilac fw-bold">
+          <td colspan="4" class="text-center py-3 text-soft-muted fw-bold">
             Sin movimientos registrados en el historial de Amazon RDS.
           </td>
         </tr>
@@ -283,15 +283,15 @@ export class MonitoreoController {
           <tr class="mon-table-row">
             <td class="fw-extrabold text-pink-accent text-center">${numeroFila}</td>
             <td>
-              <div class="d-inline-flex align-items-center gap-2 fw-bold text-light">
+              <div class="d-inline-flex align-items-center gap-2 fw-bold text-headline">
                 <span class="mon-row-icon-badge">
                   <i class="bi ${iconClass}"></i>
                 </span>
                 <span>${nombreMov.replace(/_/g, " ")}</span>
               </div>
             </td>
-            <td class="text-light fw-semibold">${fechaStr}</td>
-            <td class="text-soft-lilac fw-bold">${horaStr}</td>
+            <td class="text-primary fw-semibold">${fechaStr}</td>
+            <td class="text-soft-muted fw-bold">${horaStr}</td>
           </tr>
         `;
       })

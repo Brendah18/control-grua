@@ -1,7 +1,7 @@
 /**
  * Gestor de Conexión WebSocket Seguro WSS hacia AWS EC2 (ES6 Module)
  * - Conexión estricta a wss://52.4.170.82:8000/ws/1 con fallback inteligente a wss://52.4.170.82:8000/ws
- * - Reconexión automática indestructible y feedback visual inmediato.
+ * - Feedback visual de la DEMO en tiempo real (Paso a paso en pantalla e iluminación de botones).
  */
 
 import { CONFIG } from "./config.js";
@@ -82,7 +82,7 @@ export function destelloVisualControl(rawCommandName) {
     }
     el._flashTimer = setTimeout(() => {
       el.classList.remove("cmd-flash-active");
-    }, 650);
+    }, 700);
   });
 }
 
@@ -141,6 +141,38 @@ export class IoTWebSocketClient {
           parsed.comando ||
           null;
 
+        // Feedback Visual de la DEMO en tiempo real (Paso a paso)
+        if (evento === "DEMO_PASO" && nombreComando) {
+          const lblStep = document.getElementById("lbl-demo-current-step");
+          const lblDetails = document.getElementById("lbl-demo-step-details");
+          if (lblStep) {
+            lblStep.textContent = `Movimiento actual: ${nombreComando}`;
+          }
+          if (lblDetails) {
+            lblDetails.textContent = `Paso #${parsed.orden} · Duración: ${parsed.duracion_ms} ms · AWS RDS`;
+          }
+          destelloVisualControl(nombreComando);
+        } else if (evento === "DEMO_PAUSA") {
+          const lblStep = document.getElementById("lbl-demo-current-step");
+          const lblDetails = document.getElementById("lbl-demo-step-details");
+          if (lblStep) {
+            lblStep.textContent = `Pausa intermedia (${parsed.pausa_ms} ms)`;
+          }
+          if (lblDetails) {
+            lblDetails.textContent = "Preparando siguiente maniobra en AWS...";
+          }
+        } else if (evento === "DEMO_FINALIZADA") {
+          const lblStep = document.getElementById("lbl-demo-current-step");
+          const lblDetails = document.getElementById("lbl-demo-step-details");
+          if (lblStep) {
+            lblStep.textContent = "Secuencia DEMO finalizada con éxito ✨";
+          }
+          if (lblDetails) {
+            lblDetails.textContent = "Vehículo en estado neutral DETENER";
+          }
+          destelloVisualControl("DETENER");
+        }
+
         const esEventoMovimiento =
           evento === "MOVIMIENTO_INDIVIDUAL" ||
           evento === "ESTADO_ACTUALIZADO" ||
@@ -152,7 +184,7 @@ export class IoTWebSocketClient {
           Boolean(nombreComando);
 
         if (esEventoMovimiento) {
-          if (nombreComando && evento !== "CONEXION_ESTABLECIDA") {
+          if (nombreComando && evento !== "CONEXION_ESTABLECIDA" && evento !== "DEMO_PASO") {
             destelloVisualControl(nombreComando);
           }
 
@@ -179,7 +211,6 @@ export class IoTWebSocketClient {
     this.socket.onclose = () => {
       this.onStatusChange("disconnected");
       if (!this.manualClose) {
-        // Si nunca conectó a /ws/1, intenta alternar a /ws
         if (!this.hasConnectedOnce) {
           this.useFallbackUrl = !this.useFallbackUrl;
         }

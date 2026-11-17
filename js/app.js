@@ -34,7 +34,7 @@ class PlatformApp {
       guestTimerDisplay: document.getElementById("guest-timer-display"),
       btnRequestGuestTrial: document.getElementById("btn-request-guest-trial"),
 
-      // Indicadores
+      // Indicadores de Red e Infraestructura
       badgeWs: document.getElementById("badge-ws"),
       badgeApi: document.getElementById("badge-api"),
       badgeRds: document.getElementById("badge-rds"),
@@ -67,6 +67,8 @@ class PlatformApp {
       btnDemoStart: document.getElementById("btn-demo-start"),
       btnDemoCancel: document.getElementById("btn-demo-cancel"),
       badgeDemoStatus: document.getElementById("badge-demo-status"),
+      lblDemoCurrentStep: document.getElementById("lbl-demo-current-step"),
+      lblDemoStepDetails: document.getElementById("lbl-demo-step-details"),
       secondaryButtons: document.querySelectorAll(".cmd-sec-btn"),
 
       // Vista 3: Administración
@@ -229,7 +231,7 @@ class PlatformApp {
       await api.ajustarVelocidad(e.target.value, CONFIG.VEHICULO_ID);
     });
 
-    // Secuencias DEMO
+    // Secuencias DEMO (Botones Iniciar y Cancelar)
     this.ui.btnDemoStart?.addEventListener("click", () => this.startSelectedDemo());
     this.ui.btnDemoCancel?.addEventListener("click", () => this.cancelActiveDemo());
 
@@ -437,14 +439,31 @@ class PlatformApp {
     }
   }
 
+  /**
+   * Inicia la DEMO y actualiza la pantalla en tiempo real con el estado de avance
+   */
   async startSelectedDemo() {
     if (this.isDemoRunning || !this.ui.selectDemo) return;
     const selectedDemoId = Number(this.ui.selectDemo.value || 1);
     this.setDemoLockState(true, selectedDemoId);
 
+    if (this.ui.lblDemoCurrentStep) {
+      this.ui.lblDemoCurrentStep.textContent = `Iniciando DEMO #${selectedDemoId}...`;
+    }
+    if (this.ui.lblDemoStepDetails) {
+      this.ui.lblDemoStepDetails.textContent = "Conectando secuencia con el servidor en AWS EC2...";
+    }
+
+    // 1. Enviar también por WebSocket para asegurar recepción en tiempo real
+    this.wsClient.sendJson({ id_demo: selectedDemoId });
+
+    // 2. Disparar API REST en AWS
     try {
       await api.iniciarDemo({ idDemo: selectedDemoId, idVehiculo: CONFIG.VEHICULO_ID });
-    } catch {
+    } catch (err) {
+      if (this.ui.lblDemoCurrentStep) {
+        this.ui.lblDemoCurrentStep.textContent = `Error al iniciar DEMO: ${err.message}`;
+      }
       this.setDemoLockState(false, null);
     }
   }
@@ -456,6 +475,12 @@ class PlatformApp {
     } finally {
       this.setDemoLockState(false, null);
       if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = "DETENER";
+      if (this.ui.lblDemoCurrentStep) {
+        this.ui.lblDemoCurrentStep.textContent = "DEMO cancelada · Vehículo detenido";
+      }
+      if (this.ui.lblDemoStepDetails) {
+        this.ui.lblDemoStepDetails.textContent = "Secuencia interrumpida con prioridad absoluta";
+      }
       this.monitoreo?.refreshAll(false);
     }
   }
@@ -474,17 +499,45 @@ class PlatformApp {
     }
   }
 
+  /**
+   * Procesa mensajes de WebSocket y gestiona la visualización de DEMO paso a paso
+   */
   handleWsMessage(payload) {
     if (!payload || typeof payload !== "object") return;
 
     if (payload.evento === "DEMO_INICIADA") {
       this.setDemoLockState(true, payload.id_demo || 1);
+      if (this.ui.lblDemoCurrentStep) {
+        this.ui.lblDemoCurrentStep.textContent = "Secuencia DEMO iniciada...";
+      }
     } else if (payload.evento === "DEMO_PASO" && payload.comando) {
-      if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = `DEMO: ${payload.comando}`;
+      // Actualizar texto en el panel de DEMO claramente
+      if (this.ui.lblDemoCurrentStep) {
+        this.ui.lblDemoCurrentStep.textContent = `Movimiento actual: ${payload.comando}`;
+      }
+      if (this.ui.lblDemoStepDetails) {
+        this.ui.lblDemoStepDetails.textContent = `Paso #${payload.orden} · ${payload.duracion_ms} ms · AWS RDS`;
+      }
+      if (this.ui.lblComandoActual) {
+        this.ui.lblComandoActual.textContent = `DEMO: ${payload.comando}`;
+      }
       destelloVisualControl(payload.comando);
+    } else if (payload.evento === "DEMO_PAUSA") {
+      if (this.ui.lblDemoCurrentStep) {
+        this.ui.lblDemoCurrentStep.textContent = `Pausa intermedia (${payload.pausa_ms} ms)`;
+      }
+      if (this.ui.lblDemoStepDetails) {
+        this.ui.lblDemoStepDetails.textContent = "Esperando siguiente movimiento programado...";
+      }
     } else if (payload.evento === "DEMO_FINALIZADA") {
       this.setDemoLockState(false, null);
       if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = "DETENER";
+      if (this.ui.lblDemoCurrentStep) {
+        this.ui.lblDemoCurrentStep.textContent = "Secuencia DEMO finalizada con éxito ✨";
+      }
+      if (this.ui.lblDemoStepDetails) {
+        this.ui.lblDemoStepDetails.textContent = "Vehículo en estado neutral DETENER";
+      }
     } else if (payload.estado?.comando) {
       const cmdNombre = String(payload.estado.comando);
       if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = cmdNombre;
@@ -566,8 +619,8 @@ class PlatformApp {
           <tr>
             <td class="text-pink-accent fw-bold">#${u.id_vehiculo}</td>
             <td class="text-cyan-accent fw-bold">${u.numero_serie || "VIN-EXC-001"}</td>
-            <td class="text-light">${u.modelo_comercial || "Excavadora CAT"}</td>
-            <td class="text-soft-muted">${u.propietario_nombre || "Sin Asignar"}</td>
+            <td class="text-primary fw-bold">${u.modelo_comercial || "Excavadora CAT"}</td>
+            <td class="text-secondary">${u.propietario_nombre || "Sin Asignar"}</td>
             <td><span class="badge ${u.activo ? "bg-success" : "bg-danger"}">${u.activo ? "Activa" : "Inactiva"}</span></td>
           </tr>
         `).join("");
@@ -578,8 +631,8 @@ class PlatformApp {
         this.ui.tbodyAdminAuditoria.innerHTML = auditoria.map((a) => `
           <tr>
             <td class="text-pink-accent fw-bold">${a.accion}</td>
-            <td class="text-soft-muted">${a.usuario || "Admin"}</td>
-            <td class="text-light small">${new Date(a.fecha_hora || Date.now()).toLocaleTimeString("es-MX")}</td>
+            <td class="text-secondary">${a.usuario || "Admin"}</td>
+            <td class="text-primary small">${new Date(a.fecha_hora || Date.now()).toLocaleTimeString("es-MX")}</td>
           </tr>
         `).join("");
       }
@@ -598,14 +651,14 @@ class PlatformApp {
     div.dataset.orden = String(newOrder);
     div.innerHTML = `
       <span class="step-badge-order">${newOrder}</span>
-      <select class="form-select form-select-sm step-cmd-select bg-dark text-light border-secondary" style="max-width: 130px;">
+      <select class="form-select form-select-sm step-cmd-select bg-white border" style="max-width: 130px;">
         <option value="1">AVANZAR</option>
         <option value="3">GIRAR IZQ</option>
         <option value="4">GIRAR DER</option>
         <option value="2">RETROCEDER</option>
         <option value="9">DETENER</option>
       </select>
-      <input type="number" class="form-control form-control-sm step-dur-input bg-dark text-light border-secondary" value="1500" style="width: 75px;" placeholder="ms" />
+      <input type="number" class="form-control form-control-sm step-dur-input bg-white border" value="1500" style="width: 75px;" placeholder="ms" />
       <button type="button" class="btn btn-sm text-danger btn-remove-step p-0"><i class="bi bi-trash"></i></button>
     `;
 
@@ -654,7 +707,7 @@ class PlatformApp {
       alert(`Coreografía "${nombre}" guardada con éxito en Amazon RDS.`);
       await this.loadDemos();
     } catch {
-      alert("Coreografía registrada localmente.");
+      alert("Coreografía registrada.");
     }
   }
 

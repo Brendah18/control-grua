@@ -54,48 +54,62 @@ class ApiClient {
   }
 
   /**
-   * Verifica salud real de API AWS (21 servicios) y Amazon RDS
+   * Verifica la salud real de la API AWS y de Amazon RDS
+   * Pone ambos en verde ("Disponible") cuando la base de datos responde correctamente.
    */
   async checkInfrastructureHealth() {
     let apiAvailable = false;
-    let rdsState = "unverified";
+    let rdsState = "unavailable";
 
+    // 1. Probar GET /api/vehiculos
     try {
       const res = await this.request(
         CONFIG.ENDPOINTS.VEHICULOS,
         { method: "GET" },
         5000
       );
-      apiAvailable = res.ok;
-
-      if (
-        Array.isArray(res.data) &&
-        res.data.length > 0 &&
-        res.data[0].id_vehiculo !== undefined
-      ) {
-        rdsState = "available";
-      } else if (res.data && typeof res.data === "object" && "rds_status" in res.data) {
-        rdsState = res.data.rds_status === "online" ? "available" : "unavailable";
+      if (res.ok) {
+        apiAvailable = true;
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          rdsState = "available";
+        }
       }
     } catch {
       apiAvailable = false;
-      rdsState = "unavailable";
     }
 
-    if (apiAvailable && rdsState === "unverified") {
+    // 2. Probar GET /api/health/db
+    if (!apiAvailable || rdsState !== "available") {
       try {
         const dbRes = await this.request(
           CONFIG.ENDPOINTS.HEALTH_DB,
           { method: "GET" },
-          3500
+          4000
         );
         if (dbRes.ok && dbRes.data) {
+          apiAvailable = true;
+          if (dbRes.data.status === "online" || dbRes.data.rds_status === "online") {
+            rdsState = "available";
+          }
+        }
+      } catch {
+        // mantener rdsState
+      }
+    }
+
+    // 3. Probar GET /api/vehiculos/{id}/historial
+    if (apiAvailable && rdsState !== "available") {
+      try {
+        const histRes = await this.request(
+          CONFIG.ENDPOINTS.HISTORIAL_VEHICULO(this.vehiculoId),
+          { method: "GET" },
+          4000
+        );
+        if (histRes.ok) {
           rdsState = "available";
         }
-      } catch (err) {
-        if (err && err.status && err.status !== 404) {
-          rdsState = "unavailable";
-        }
+      } catch {
+        // mantener
       }
     }
 
@@ -141,6 +155,9 @@ class ApiClient {
     }
   }
 
+  /**
+   * Consulta GET a la ruta de la API en AWS que devuelve el historial de Amazon RDS.
+   */
   async obtenerHistorialVehiculo(idVehiculo = this.vehiculoId, limit = CONFIG.HISTORIAL_LIMIT || 10) {
     let records = [];
     try {
