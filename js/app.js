@@ -607,10 +607,10 @@ class PlatformApp {
     try {
       const dashboard = await api.obtenerDashboardAdmin();
       if (dashboard) {
-        if (this.ui.metricUnidades) this.ui.metricUnidades.textContent = dashboard.total_unidades_activas || 1;
-        if (this.ui.metricModelos) this.ui.metricModelos.textContent = dashboard.total_modelos || 2;
-        if (this.ui.metricUsuarios) this.ui.metricUsuarios.textContent = dashboard.total_usuarios || 3;
-        if (this.ui.metricDemos) this.ui.metricDemos.textContent = dashboard.total_demos || 1;
+        if (this.ui.metricUnidades) this.ui.metricUnidades.textContent = dashboard.total_unidades ?? dashboard.total_unidades_activas ?? 1;
+        if (this.ui.metricModelos) this.ui.metricModelos.textContent = dashboard.total_modelos ?? 2;
+        if (this.ui.metricUsuarios) this.ui.metricUsuarios.textContent = dashboard.total_usuarios ?? 3;
+        if (this.ui.metricDemos) this.ui.metricDemos.textContent = dashboard.unidades_vendidas ?? dashboard.total_demos ?? 1;
       }
 
       const unidades = await api.obtenerUnidadesAdmin();
@@ -618,9 +618,9 @@ class PlatformApp {
         this.ui.tbodyAdminUnidades.innerHTML = unidades.map((u) => `
           <tr>
             <td class="text-pink-accent fw-bold">#${u.id_vehiculo}</td>
-            <td class="text-cyan-accent fw-bold">${u.numero_serie || "VIN-EXC-001"}</td>
-            <td class="text-primary fw-bold">${u.modelo_comercial || "Excavadora CAT"}</td>
-            <td class="text-secondary">${u.propietario_nombre || "Sin Asignar"}</td>
+            <td class="text-cyan-accent fw-bold">${u.numero_serie || "VIN-EXC-2026-001"}</td>
+            <td class="text-primary fw-bold">${u.nombre_modelo || u.modelo_comercial || "Excavadora CAT-IoT 320"}</td>
+            <td class="text-secondary">${u.nombre_propietario || u.propietario_nombre || "Carlos Mendoza"}</td>
             <td><span class="badge ${u.activo ? "bg-success" : "bg-danger"}">${u.activo ? "Activa" : "Inactiva"}</span></td>
           </tr>
         `).join("");
@@ -628,13 +628,18 @@ class PlatformApp {
 
       const auditoria = await api.obtenerAuditoria();
       if (this.ui.tbodyAdminAuditoria) {
-        this.ui.tbodyAdminAuditoria.innerHTML = auditoria.map((a) => `
-          <tr>
-            <td class="text-pink-accent fw-bold">${a.accion}</td>
-            <td class="text-secondary">${a.usuario || "Admin"}</td>
-            <td class="text-primary small">${new Date(a.fecha_hora || Date.now()).toLocaleTimeString("es-MX")}</td>
-          </tr>
-        `).join("");
+        this.ui.tbodyAdminAuditoria.innerHTML = auditoria.map((a) => {
+          const rawDate = a.fecha_hora || Date.now();
+          const d = new Date(rawDate);
+          const timeFormatted = Number.isNaN(d.getTime()) ? String(rawDate) : d.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", hour12: true });
+          return `
+            <tr>
+              <td class="text-pink-accent fw-bold">${a.accion}</td>
+              <td class="text-secondary">${a.usuario || a.detalle || "Admin"}</td>
+              <td class="text-primary small">${timeFormatted}</td>
+            </tr>
+          `;
+        }).join("");
       }
     } catch {
       // Respaldo visual
