@@ -14,7 +14,7 @@ import {
  * Aplica un destello visual temporal en el botón o elemento direccional
  * correspondiente para confirmar en pantalla que la acción se ejecutó.
  */
-export function destelloVisualControl(rawCommandName) {
+export function destelloVisualControl(rawCommandName, duracionMs = 800) {
   if (!rawCommandName) return;
 
   const cmd = String(rawCommandName)
@@ -71,6 +71,9 @@ export function destelloVisualControl(rawCommandName) {
     elementsToFlash.push(thumb);
   }
 
+  // Mantener encendido durante la duración del movimiento para visibilidad perfecta
+  const tiempoEncendido = Math.max(500, duracionMs - 150);
+
   elementsToFlash.forEach((el) => {
     if (!el) return;
     el.classList.remove("cmd-flash-active");
@@ -82,7 +85,7 @@ export function destelloVisualControl(rawCommandName) {
     }
     el._flashTimer = setTimeout(() => {
       el.classList.remove("cmd-flash-active");
-    }, 700);
+    }, tiempoEncendido);
   });
 }
 
@@ -151,7 +154,7 @@ export class IoTWebSocketClient {
           if (lblDetails) {
             lblDetails.textContent = `Paso #${parsed.orden} · Duración: ${parsed.duracion_ms} ms · AWS RDS`;
           }
-          destelloVisualControl(nombreComando);
+          destelloVisualControl(nombreComando, parsed.duracion_ms || 2500);
         } else if (evento === "DEMO_PAUSA") {
           const lblStep = document.getElementById("lbl-demo-current-step");
           const lblDetails = document.getElementById("lbl-demo-step-details");
@@ -161,6 +164,7 @@ export class IoTWebSocketClient {
           if (lblDetails) {
             lblDetails.textContent = "Preparando siguiente maniobra en AWS...";
           }
+          destelloVisualControl("DETENER", parsed.pausa_ms || 1200);
         } else if (evento === "DEMO_FINALIZADA") {
           const lblStep = document.getElementById("lbl-demo-current-step");
           const lblDetails = document.getElementById("lbl-demo-step-details");

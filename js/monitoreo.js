@@ -321,37 +321,70 @@ export class MonitoreoController {
   }
 
   /**
-   * Extrae y procesa la fecha correctamente usando new Date(fechaString)
-   * Formatea la salida a huso horario local (toLocaleString('es-MX', { hour12: true }))
-   * evitando valores "undefined" o desfasados.
+   * Extrae y procesa la fecha correctamente usando Date y huso horario local de México ('es-MX').
+   * Resuelve el desfase UTC de Amazon RDS y añade fallback de formato 12 horas (a. m. / p. m.)
+   * para evitar descalces, fechas 'undefined' o 'Invalid Date' en celulares.
    */
   formatBackendTimestamp(rawTimestamp) {
     if (!rawTimestamp) {
       return { fechaStr: "—", horaStr: "—", fullStr: "Sin actividad registrada" };
     }
 
-    const rawStr = String(rawTimestamp).trim();
-    const normalizedIso =
-      rawStr.includes("T") || rawStr.endsWith("Z")
-        ? rawStr
-        : rawStr.replace(" ", "T");
+    let parsedDate = null;
 
-    const parsedDate = new Date(normalizedIso);
-    if (Number.isNaN(parsedDate.getTime())) {
-      const parts = rawStr.split(/[T ]/);
-      return {
-        fechaStr: parts[0] || rawStr,
-        horaStr: parts[1] || "—",
-        fullStr: rawStr
-      };
+    if (rawTimestamp instanceof Date) {
+      parsedDate = rawTimestamp;
+    } else {
+      const rawStr = String(rawTimestamp).trim();
+      // Si viene con formato MySQL "YYYY-MM-DD HH:mm:ss"
+      let isoStr = rawStr.replace(" ", "T");
+      // Si no contiene indicador de zona horaria (+, - o Z), Amazon RDS almacena en UTC:
+      if (
+        !isoStr.endsWith("Z") &&
+        !isoStr.includes("+") &&
+        !/[0-9]T[0-9]{2}:[0-9]{2}:[0-9]{2}-[0-9]{2}/.test(isoStr)
+      ) {
+        isoStr = `${isoStr}Z`;
+      }
+      parsedDate = new Date(isoStr);
+
+      // Si falló al añadir 'Z', reintentar con el string sin forzar UTC
+      if (Number.isNaN(parsedDate.getTime())) {
+        parsedDate = new Date(rawStr.replace(" ", "T"));
+      }
     }
 
+    // Fallback con Expresión Regular para navegadores móviles muy antiguos o formatos especiales
+    if (!parsedDate || Number.isNaN(parsedDate.getTime())) {
+      const match = String(rawTimestamp).match(
+        /(\d{4})[/-](\d{1,2})[/-](\d{1,2})(?:[T ](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/
+      );
+      if (match) {
+        const [, y, m, d, hh = "00", mm = "00", ss = "00"] = match;
+        const day = d.padStart(2, "0");
+        const month = m.padStart(2, "0");
+        const year = y;
+        let hNum = parseInt(hh, 10);
+        const ampm = hNum >= 12 ? "p. m." : "a. m.";
+        hNum = hNum % 12 || 12;
+        const hora12 = `${String(hNum).padStart(2, "0")}:${mm.padStart(2, "0")}:${ss.padStart(2, "0")} ${ampm}`;
+        return {
+          fechaStr: `${day}/${month}/${year}`,
+          horaStr: hora12,
+          fullStr: `${day}/${month}/${year}, ${hora12}`
+        };
+      }
+      return { fechaStr: "—", horaStr: "—", fullStr: String(rawTimestamp) };
+    }
+
+    // Formato México (Día/Mes/Año)
     const fechaStr = parsedDate.toLocaleDateString("es-MX", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit"
     });
 
+    // Formato 12 horas con AM/PM legible
     const horaStr = parsedDate.toLocaleTimeString("es-MX", {
       hour: "2-digit",
       minute: "2-digit",
@@ -359,15 +392,7 @@ export class MonitoreoController {
       hour12: true
     });
 
-    const fullStr = parsedDate.toLocaleString("es-MX", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true
-    });
+    const fullStr = `${fechaStr}, ${horaStr}`;
 
     return { fechaStr, horaStr, fullStr };
   }
