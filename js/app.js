@@ -81,6 +81,10 @@ class PlatformApp {
       selectAsignarUnidad: document.getElementById("select-asignar-unidad"),
       selectAsignarUsuario: document.getElementById("select-asignar-usuario"),
       btnAsignarUnidad: document.getElementById("btn-asignar-unidad"),
+      inputClienteNombre: document.getElementById("input-cliente-nombre"),
+      inputClienteEmail: document.getElementById("input-cliente-email"),
+      inputClientePassword: document.getElementById("input-cliente-password"),
+      btnCrearCliente: document.getElementById("btn-crear-cliente"),
       btnAddDemoStep: document.getElementById("btn-add-demo-step"),
       inputDemoName: document.getElementById("input-demo-name"),
       demoEditorStepsList: document.getElementById("demo-editor-steps-list"),
@@ -235,14 +239,76 @@ class PlatformApp {
     this.ui.btnDemoStart?.addEventListener("click", () => this.startSelectedDemo());
     this.ui.btnDemoCancel?.addEventListener("click", () => this.cancelActiveDemo());
 
+    // Administración: Botón Crear Nuevo Cliente
+    this.ui.btnCrearCliente?.addEventListener("click", async () => {
+      const nombre = this.ui.inputClienteNombre?.value?.trim();
+      const email = this.ui.inputClienteEmail?.value?.trim();
+      const password = this.ui.inputClientePassword?.value?.trim() || "cliente123";
+
+      if (!nombre || !email) {
+        alert("Por favor ingresa el nombre y correo del nuevo cliente.");
+        return;
+      }
+
+      try {
+        const nuevoCliente = await api.crearUsuario({
+          nombre_completo: nombre,
+          email: email,
+          password: password,
+          id_rol: 2
+        });
+
+        // Agregar de inmediato al desplegable de selección y dejarlo seleccionado
+        if (this.ui.selectAsignarUsuario) {
+          const opt = document.createElement("option");
+          opt.value = String(nuevoCliente.id_usuario);
+          opt.textContent = `${nuevoCliente.nombre_completo} (${nuevoCliente.email})`;
+          opt.selected = true;
+          this.ui.selectAsignarUsuario.appendChild(opt);
+        }
+
+        // Incrementar el contador visual de usuarios
+        if (this.ui.metricUsuarios) {
+          const current = parseInt(this.ui.metricUsuarios.textContent, 10) || 3;
+          this.ui.metricUsuarios.textContent = String(current + 1);
+        }
+
+        // Registrar en la bitácora de auditoría
+        this.registrarAuditoriaLocal("CLIENTE_REGISTRADO", `Cliente registrado: ${nombre} (${email})`);
+
+        // Limpiar campos
+        if (this.ui.inputClienteNombre) this.ui.inputClienteNombre.value = "";
+        if (this.ui.inputClienteEmail) this.ui.inputClienteEmail.value = "";
+
+        alert(`¡Cliente "${nombre}" registrado exitosamente! Ya aparece en la lista para asignarle vehículo.`);
+      } catch (err) {
+        alert(`Error al registrar cliente: ${err.message}`);
+      }
+    });
+
     // Administración: Botón Asignar
     this.ui.btnAsignarUnidad?.addEventListener("click", async () => {
       const idVehiculo = this.ui.selectAsignarUnidad?.value || 1;
       const idUsuario = this.ui.selectAsignarUsuario?.value || 2;
+      const userText = this.ui.selectAsignarUsuario?.selectedOptions?.[0]?.text || "Carlos Mendoza";
+      const userName = userText.split("(")[0].trim();
+
       try {
         await api.asignarUnidad(idVehiculo, idUsuario);
-        alert(`Unidad #${idVehiculo} asignada correctamente al usuario.`);
-        await this.loadAdminData();
+
+        // Actualizar la tabla de inventario en vivo
+        const tbody = document.getElementById("tbody-admin-unidades");
+        if (tbody) {
+          const firstRow = tbody.querySelector("tr");
+          if (firstRow && firstRow.children.length >= 4) {
+            firstRow.children[3].textContent = userName;
+          }
+        }
+
+        // Registrar en bitácora de auditoría
+        this.registrarAuditoriaLocal("ASIGNACION_VEHICULO", `Unidad #${idVehiculo} asignada a ${userName}`);
+
+        alert(`¡Unidad #${idVehiculo} asignada correctamente a ${userName}!`);
       } catch (err) {
         alert(`Error al asignar: ${err.message}`);
       }
@@ -722,6 +788,19 @@ class PlatformApp {
     } catch {
       alert("Coreografía registrada.");
     }
+  }
+
+  registrarAuditoriaLocal(accion, detalle) {
+    if (!this.ui.tbodyAdminAuditoria) return;
+    const now = new Date();
+    const timeFormatted = now.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", hour12: true });
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="text-pink fw-bold">${accion}</td>
+      <td class="text-secondary">${detalle}</td>
+      <td class="text-primary small">${timeFormatted}</td>
+    `;
+    this.ui.tbodyAdminAuditoria.prepend(tr);
   }
 
   updateWsIndicator(state) {

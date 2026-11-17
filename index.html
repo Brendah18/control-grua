@@ -483,32 +483,72 @@
           </div>
         </div>
 
-        <!-- Asignación Rápida de Vehículo a Cliente -->
-        <div class="glass-card flex-shrink-0">
-          <div class="card-header-clean d-flex align-items-center justify-content-between">
-            <span class="header-title"><i class="bi bi-person-check-fill text-cyan me-2"></i>Asignar Unidad a Comprador</span>
-            <span class="badge-soft badge-cyan">Comercial</span>
+        <!-- Gestión Comercial: Registrar Cliente y Asignar Unidad -->
+        <div class="row g-2 flex-shrink-0">
+          <!-- Tarjeta 1: Registrar Nuevo Cliente -->
+          <div class="col-12 col-lg-6">
+            <div class="glass-card h-100">
+              <div class="card-header-clean d-flex align-items-center justify-content-between">
+                <span class="header-title"><i class="bi bi-person-plus-fill text-purple me-2"></i>Registrar Nuevo Cliente</span>
+                <span class="badge-soft badge-purple">Clientes</span>
+              </div>
+              <div class="card-body-clean">
+                <div class="row g-2 mb-2">
+                  <div class="col-12 col-sm-6">
+                    <label class="small text-soft-muted fw-bold mb-1">Nombre Completo:</label>
+                    <input id="input-cliente-nombre" type="text" class="form-control form-control-sm select-clean" placeholder="Ej. Ana Gómez" />
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <label class="small text-soft-muted fw-bold mb-1">Correo Electrónico:</label>
+                    <input id="input-cliente-email" type="email" class="form-control form-control-sm select-clean" placeholder="ana@cliente.com" />
+                  </div>
+                </div>
+                <div class="row g-2 align-items-end">
+                  <div class="col-12 col-sm-7">
+                    <label class="small text-soft-muted fw-bold mb-1">Contraseña de Acceso:</label>
+                    <input id="input-cliente-password" type="password" class="form-control form-control-sm select-clean" placeholder="••••••••" value="cliente123" />
+                  </div>
+                  <div class="col-12 col-sm-5">
+                    <button id="btn-crear-cliente" type="button" class="btn btn-sm btn-cyan w-100">
+                      <i class="bi bi-person-check me-1"></i>Guardar Cliente
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="card-body-clean">
-            <div class="row g-2 align-items-end">
-              <div class="col-12 col-md-5">
-                <label class="small text-soft-muted fw-bold mb-1">Unidad Física (VIN):</label>
-                <select id="select-asignar-unidad" class="form-select form-select-sm select-clean">
-                  <option value="1">Unidad #1 - VIN-EXC-2026-001 (Excavadora IoT)</option>
-                </select>
+
+          <!-- Tarjeta 2: Asignar Unidad a Comprador -->
+          <div class="col-12 col-lg-6">
+            <div class="glass-card h-100">
+              <div class="card-header-clean d-flex align-items-center justify-content-between">
+                <span class="header-title"><i class="bi bi-person-check-fill text-cyan me-2"></i>Asignar Unidad a Comprador</span>
+                <span class="badge-soft badge-cyan">Comercial</span>
               </div>
-              <div class="col-12 col-md-5">
-                <label class="small text-soft-muted fw-bold mb-1">Comprador Asignado:</label>
-                <select id="select-asignar-usuario" class="form-select form-select-sm select-clean">
-                  <option value="2">Carlos Mendoza (carlos@cliente.com)</option>
-                  <option value="1">Brenda Hernandez (Admin Empresa)</option>
-                  <option value="3">Invitado Demo Temporal</option>
-                </select>
-              </div>
-              <div class="col-12 col-md-2">
-                <button id="btn-asignar-unidad" type="button" class="btn btn-sm btn-cyan w-100">
-                  <i class="bi bi-check2-circle me-1"></i>Asignar
-                </button>
+              <div class="card-body-clean">
+                <div class="row g-2 mb-2">
+                  <div class="col-12">
+                    <label class="small text-soft-muted fw-bold mb-1">Unidad Física (VIN):</label>
+                    <select id="select-asignar-unidad" class="form-select form-select-sm select-clean">
+                      <option value="1">Unidad #1 - VIN-EXC-2026-001 (Excavadora IoT)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row g-2 align-items-end">
+                  <div class="col-12 col-sm-7">
+                    <label class="small text-soft-muted fw-bold mb-1">Comprador Asignado:</label>
+                    <select id="select-asignar-usuario" class="form-select form-select-sm select-clean">
+                      <option value="2">Carlos Mendoza (carlos@cliente.com)</option>
+                      <option value="1">Brenda Hernandez (Admin Empresa)</option>
+                      <option value="3">Invitado Demo Temporal</option>
+                    </select>
+                  </div>
+                  <div class="col-12 col-sm-5">
+                    <button id="btn-asignar-unidad" type="button" class="btn btn-sm btn-cyan w-100">
+                      <i class="bi bi-check2-circle me-1"></i>Asignar Unidad
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
