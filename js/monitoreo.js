@@ -1,9 +1,12 @@
 /**
  * Módulo de Monitoreo en Tiempo Real (ES6 Module - Actividad 4.2)
- * - Consulta únicamente datos reales de Amazon RDS a través de la API en AWS EC2 y del WebSocket WSS.
- * - Actualiza la tarjeta de "Último Movimiento" (nombre del comando, icono representativo, Fecha y Hora del backend).
- * - Pinta la Tabla de Historial de los últimos 10 movimientos (#, Movimiento, Fecha y Hora) ordenada del más reciente al más antiguo.
- * - Resincroniza automáticamente la tabla cuando llega un evento de movimiento validado por WebSocket.
+ * Sección 2: SOLO LECTURA (telemetría compacta sin controles colados)
+ * - Conexión WSS (con punto visual verde/rojo)
+ * - Último Comando
+ * - Última Actividad (Timestamp con new Date(fechaString) y formato local 'es-MX')
+ * - Velocidad Actual
+ * - Nivel de Volumen
+ * - Tabla de Historial (10 registros desde Amazon RDS)
  */
 
 import { CONFIG } from "./config.js";
@@ -13,40 +16,90 @@ export class MonitoreoController {
   constructor() {
     this.vehiculoId = CONFIG.VEHICULO_ID;
     this.isFetchingHistory = false;
-
-    this.ui = {
-      iconUltimoMov: document.getElementById("mon-last-icon"),
-      nombreUltimoMov: document.getElementById("mon-last-command"),
-      fechaUltimoMov: document.getElementById("mon-last-date"),
-      horaUltimoMov: document.getElementById("mon-last-time"),
-      badgeConexionVehiculo: document.getElementById("mon-vehicle-online-badge"),
-      btnRefreshMonitoreo: document.getElementById("btn-refresh-monitoreo"),
-      tbodyHistorial: document.getElementById("mon-history-tbody"),
-      lblTotalMostrados: document.getElementById("mon-history-count")
-    };
-
-    this.bindEvents();
+    this.ui = {};
   }
 
-  bindEvents() {
-    if (this.ui.btnRefreshMonitoreo) {
+  initDomReferences() {
+    this.ui = {
+      // Telemetría de Solo Lectura
+      wssStatusDot: document.getElementById("mon-wss-dot"),
+      wssStatusText: document.getElementById("mon-wss-text"),
+      iconUltimoMov: document.getElementById("mon-last-icon"),
+      nombreUltimoMov: document.getElementById("mon-last-command"),
+      timestampUltimoMov: document.getElementById("mon-last-timestamp"),
+      fechaUltimoMov: document.getElementById("mon-last-date"),
+      horaUltimoMov: document.getElementById("mon-last-time"),
+      valVelocidad: document.getElementById("mon-speed-val"),
+      valVolumen: document.getElementById("mon-volume-val"),
+      badgeConexionVehiculo: document.getElementById("mon-vehicle-online-badge"),
+      tbodyHistorial: document.getElementById("mon-history-tbody"),
+      lblTotalMostrados: document.getElementById("mon-history-count"),
+      btnRefreshMonitoreo: document.getElementById("btn-refresh-monitoreo")
+    };
+
+    if (this.ui.btnRefreshMonitoreo && !this.ui.btnRefreshMonitoreo.dataset.bound) {
+      this.ui.btnRefreshMonitoreo.dataset.bound = "true";
       this.ui.btnRefreshMonitoreo.addEventListener("click", () => {
         this.refreshAll(true);
       });
     }
+  }
 
-    // Escuchar eventos en vivo provenientes de websocket.js
-    window.addEventListener("iot:ws-message", (event) => {
-      if (event && event.detail) {
-        this.onWebSocketEvent(event.detail);
-      }
-    });
+  ensureUi() {
+    if (!this.ui.nombreUltimoMov || !this.ui.tbodyHistorial) {
+      this.initDomReferences();
+    }
+  }
+
+  /**
+   * Actualiza el indicador visual de conexión WSS en la sección de monitoreo.
+   */
+  setWssStatus(status) {
+    this.ensureUi();
+    const isOnline = status === "online";
+    if (this.ui.wssStatusDot) {
+      this.ui.wssStatusDot.className = `status-dot ${isOnline ? "dot-online" : "dot-offline"}`;
+    }
+    if (this.ui.wssStatusText) {
+      this.ui.wssStatusText.textContent = isOnline
+        ? "Conectado WSS (En línea)"
+        : status === "connecting" || status === "reconnecting"
+        ? "Reconectando..."
+        : "Desconectado WSS";
+      this.ui.wssStatusText.className = `fw-bold ${isOnline ? "text-success-pastel" : "text-danger-pastel"}`;
+    }
+  }
+
+  /**
+   * Actualiza el nivel de volumen mostrado en la telemetría.
+   */
+  setVolumenTelemetry(val) {
+    this.ensureUi();
+    if (this.ui.valVolumen) {
+      this.ui.valVolumen.textContent = `${val}%`;
+    }
+  }
+
+  /**
+   * Actualiza el nivel de velocidad mostrado en la telemetría.
+   */
+  setVelocidadTelemetry(val) {
+    this.ensureUi();
+    if (this.ui.valVelocidad) {
+      const num = Number(val);
+      let label = `${num}%`;
+      if (num <= 35) label = `${num}% (Lento)`;
+      else if (num <= 75) label = `${num}% (Normal)`;
+      else label = `${num}% (Turbo)`;
+      this.ui.valVelocidad.textContent = label;
+    }
   }
 
   /**
    * Carga tanto el Último Movimiento como la Tabla de Historial (10 registros).
    */
   async refreshAll(showLoading = false) {
+    this.ensureUi();
     if (showLoading) {
       this.setLoadingState();
     }
@@ -57,6 +110,7 @@ export class MonitoreoController {
   }
 
   setLoadingState() {
+    this.ensureUi();
     if (this.ui.nombreUltimoMov) {
       this.ui.nombreUltimoMov.textContent = "Cargando...";
     }
@@ -65,7 +119,7 @@ export class MonitoreoController {
         <tr>
           <td colspan="4" class="text-center py-3 text-soft-lilac fw-bold">
             <div class="spinner-border spinner-border-sm text-pink-accent me-2" role="status"></div>
-            Cargando últimos 10 movimientos desde RDS... ✨
+            Cargando últimos 10 movimientos desde RDS...
           </td>
         </tr>
       `;
@@ -76,6 +130,7 @@ export class MonitoreoController {
    * Consulta GET /api/vehiculos/{id}/estado y actualiza la tarjeta de "Último Movimiento".
    */
   async fetchAndRenderUltimoEstado() {
+    this.ensureUi();
     try {
       const estado = await api.obtenerEstadoVehiculo(this.vehiculoId);
       if (!estado) {
@@ -84,7 +139,7 @@ export class MonitoreoController {
       }
       this.renderEstadoCard(estado);
     } catch {
-      this.renderEmptyEstado("Error al consultar estado");
+      this.renderEmptyEstado("En espera de datos");
     }
   }
 
@@ -92,6 +147,7 @@ export class MonitoreoController {
    * Consulta GET /api/vehiculos/{id}/historial y pinta los últimos 10 registros reales.
    */
   async fetchAndRenderHistorial(showSpinner = false) {
+    this.ensureUi();
     if (this.isFetchingHistory) return;
     this.isFetchingHistory = true;
 
@@ -100,7 +156,7 @@ export class MonitoreoController {
         <tr>
           <td colspan="4" class="text-center py-3 text-soft-lilac fw-bold">
             <div class="spinner-border spinner-border-sm text-pink-accent me-2" role="status"></div>
-            Cargando historial desde Amazon RDS... ✨
+            Consultando Amazon RDS...
           </td>
         </tr>
       `;
@@ -118,7 +174,7 @@ export class MonitoreoController {
           <tr>
             <td colspan="4" class="text-center py-3 text-danger fw-bold">
               <i class="bi bi-exclamation-triangle-fill me-1"></i>
-              Error al obtener el historial (${err.message || "Error de red"}).
+              Error al consultar historial (${err.message || "Sin conexión"}).
             </td>
           </tr>
         `;
@@ -129,57 +185,26 @@ export class MonitoreoController {
   }
 
   /**
-   * Procesa en tiempo real los mensajes que llegan desde websocket.js:
-   * - Actualiza el panel de "Último Movimiento" en vivo.
-   * - Si el movimiento persiste en RDS (no es paso interno de DEMO), actualiza la tabla de 10 registros.
-   */
-  async onWebSocketEvent(payload) {
-    if (!payload || typeof payload !== "object") return;
-
-    const evento = String(payload.evento || "").toUpperCase();
-
-    if (payload.estado && typeof payload.estado === "object") {
-      this.renderEstadoCard(payload.estado);
-    } else if (payload.comando) {
-      await this.fetchAndRenderUltimoEstado();
-    }
-
-    const esEventoDemoSinHistorial =
-      evento === "DEMO_INICIADA" ||
-      evento === "DEMO_PASO" ||
-      evento === "DEMO_PAUSA" ||
-      evento === "DEMO_FINALIZADA" ||
-      payload.guardado_en_historial === false;
-
-    if (
-      !esEventoDemoSinHistorial &&
-      (evento === "MOVIMIENTO_INDIVIDUAL" ||
-        evento === "ESTADO_ACTUALIZADO" ||
-        payload.guardado_en_historial === true)
-    ) {
-      await this.fetchAndRenderHistorial(false);
-    }
-  }
-
-  /**
-   * Pinta la tarjeta de "Último Movimiento" con los datos reales del backend.
+   * Pinta los datos de Último Movimiento / Actividad con formato de fecha seguro.
    */
   renderEstadoCard(estado) {
+    this.ensureUi();
     const comandoNombre = String(
-      estado.comando || estado.nombre || "SIN MOVIMIENTOS"
+      estado.comando || estado.nombre || "DETENER"
     ).toUpperCase();
 
     const rawTimestamp =
-      estado.fecha_actualizacion || estado.fecha_hora || null;
-    const { fechaStr, horaStr } = this.formatBackendTimestamp(rawTimestamp);
+      estado.fecha_actualizacion || estado.fecha_hora || estado.timestamp || null;
+    const { fechaStr, horaStr, fullStr } = this.formatBackendTimestamp(rawTimestamp);
 
     if (this.ui.nombreUltimoMov) {
       this.ui.nombreUltimoMov.textContent = comandoNombre.replace(/_/g, " ");
     }
     if (this.ui.iconUltimoMov) {
-      this.ui.iconUltimoMov.className = `bi ${this.getIconForCommand(
-        comandoNombre
-      )} mon-hero-icon`;
+      this.ui.iconUltimoMov.className = `bi ${this.getIconForCommand(comandoNombre)} mon-hero-icon`;
+    }
+    if (this.ui.timestampUltimoMov) {
+      this.ui.timestampUltimoMov.textContent = fullStr;
     }
     if (this.ui.fechaUltimoMov) {
       this.ui.fechaUltimoMov.textContent = fechaStr;
@@ -194,17 +219,21 @@ export class MonitoreoController {
         ? "badge rounded-pill badge-pastel-online"
         : "badge rounded-pill badge-pastel-neutral";
       this.ui.badgeConexionVehiculo.innerHTML = isOnline
-        ? `<span class="status-dot dot-online"></span>Activo en RDS ✨`
+        ? `<span class="status-dot dot-online"></span>Activo en RDS`
         : `<span class="status-dot dot-neutral"></span>En espera`;
     }
   }
 
   renderEmptyEstado(mensaje) {
+    this.ensureUi();
     if (this.ui.nombreUltimoMov) {
       this.ui.nombreUltimoMov.textContent = mensaje;
     }
     if (this.ui.iconUltimoMov) {
       this.ui.iconUltimoMov.className = "bi bi-slash-circle mon-hero-icon";
+    }
+    if (this.ui.timestampUltimoMov) {
+      this.ui.timestampUltimoMov.textContent = "—";
     }
     if (this.ui.fechaUltimoMov) {
       this.ui.fechaUltimoMov.textContent = "—";
@@ -215,9 +244,10 @@ export class MonitoreoController {
   }
 
   /**
-   * Pinta la tabla responsiva con las 4 columnas requeridas: #, Movimiento, Fecha, Hora.
+   * Pinta la tabla responsiva con las 4 columnas: #, Movimiento, Fecha, Hora.
    */
   renderHistorialTable(registros) {
+    this.ensureUi();
     if (!this.ui.tbodyHistorial) return;
 
     if (!Array.isArray(registros) || registros.length === 0) {
@@ -227,7 +257,7 @@ export class MonitoreoController {
       this.ui.tbodyHistorial.innerHTML = `
         <tr>
           <td colspan="4" class="text-center py-3 text-soft-lilac fw-bold">
-            🌸 Sin movimientos registrados en el historial de Amazon RDS.
+            Sin movimientos registrados en el historial de Amazon RDS.
           </td>
         </tr>
       `;
@@ -246,21 +276,21 @@ export class MonitoreoController {
         ).toUpperCase();
         const iconClass = this.getIconForCommand(nombreMov);
         const { fechaStr, horaStr } = this.formatBackendTimestamp(
-          item.fecha_hora || item.fecha_actualizacion
+          item.fecha_hora || item.fecha_actualizacion || item.timestamp
         );
 
         return `
           <tr class="mon-table-row">
             <td class="fw-extrabold text-pink-accent text-center">${numeroFila}</td>
             <td>
-              <div class="d-inline-flex align-items-center gap-2 fw-bold text-plum">
+              <div class="d-inline-flex align-items-center gap-2 fw-bold text-light">
                 <span class="mon-row-icon-badge">
                   <i class="bi ${iconClass}"></i>
                 </span>
                 <span>${nombreMov.replace(/_/g, " ")}</span>
               </div>
             </td>
-            <td class="text-plum fw-semibold">${fechaStr}</td>
+            <td class="text-light fw-semibold">${fechaStr}</td>
             <td class="text-soft-lilac fw-bold">${horaStr}</td>
           </tr>
         `;
@@ -291,11 +321,13 @@ export class MonitoreoController {
   }
 
   /**
-   * Extrae la Fecha y Hora exactas devueltas por el backend en RDS sin inventar marcas temporales.
+   * Extrae y procesa la fecha correctamente usando new Date(fechaString)
+   * Formatea la salida a huso horario local (toLocaleString('es-MX', { hour12: true }))
+   * evitando valores "undefined" o desfasados.
    */
   formatBackendTimestamp(rawTimestamp) {
     if (!rawTimestamp) {
-      return { fechaStr: "Sin fecha", horaStr: "Sin hora" };
+      return { fechaStr: "—", horaStr: "—", fullStr: "Sin actividad registrada" };
     }
 
     const rawStr = String(rawTimestamp).trim();
@@ -309,7 +341,8 @@ export class MonitoreoController {
       const parts = rawStr.split(/[T ]/);
       return {
         fechaStr: parts[0] || rawStr,
-        horaStr: parts[1] || "—"
+        horaStr: parts[1] || "—",
+        fullStr: rawStr
       };
     }
 
@@ -326,6 +359,42 @@ export class MonitoreoController {
       hour12: true
     });
 
-    return { fechaStr, horaStr };
+    const fullStr = parsedDate.toLocaleString("es-MX", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true
+    });
+
+    return { fechaStr, horaStr, fullStr };
   }
+}
+
+// Instancia compartida y funciones exportadas
+export const monitoreoInstance = new MonitoreoController();
+
+/**
+ * Actualiza inmediatamente la tarjeta de "Último Movimiento" cuando llega un evento por WebSocket.
+ */
+export async function actualizarUltimoMovimiento(estadoPayload) {
+  if (
+    estadoPayload &&
+    typeof estadoPayload === "object" &&
+    (estadoPayload.comando || estadoPayload.nombre) &&
+    (estadoPayload.fecha_actualizacion || estadoPayload.fecha_hora || estadoPayload.timestamp)
+  ) {
+    monitoreoInstance.renderEstadoCard(estadoPayload);
+  } else {
+    await monitoreoInstance.fetchAndRenderUltimoEstado();
+  }
+}
+
+/**
+ * Recarga inmediatamente la "Tabla de Historial (10 registros)" desde la API en AWS.
+ */
+export async function recargarTablaHistorial() {
+  await monitoreoInstance.fetchAndRenderHistorial(false);
 }

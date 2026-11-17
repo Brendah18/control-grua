@@ -16,7 +16,7 @@ export const CONFIG = Object.freeze({
   HISTORIAL_LIMIT: 10,
 
   // Identificador de origen para movimientos manuales enviados desde esta app
-  ORIGEN_CONTROL: "WEB-CONTROL-GH",
+  ORIGEN_CONTROL: "WEB-EXCAVADORA-IOT",
 
   // Intervalo de verificación periódica (ping HTTPS) hacia la API AWS (ms)
   HEALTH_POLL_INTERVAL_MS: 12000,
@@ -43,7 +43,11 @@ export const CONFIG = Object.freeze({
     DEMO_INICIAR: "/api/demos/iniciar",
     CONTROL_DEMO_EJECUTAR: (idDemo) => `/api/control/demos/${idDemo}/ejecutar`,
     DEMO_CANCELAR: "/api/demos/cancelar",
-    HEALTH_DB: "/api/health/db"
+    HEALTH_DB: "/api/health/db",
+    // Endpoints de Hardware
+    CONTROL_CLAXON: "/api/control/claxon",
+    CONTROL_VOLUMEN: "/api/control/volumen",
+    CONTROL_VELOCIDAD: "/api/control/velocidad"
   },
 
   // Catálogo base por nombre/código

@@ -1,19 +1,19 @@
 <!DOCTYPE html>
-<html lang="es" data-bs-theme="light">
+<html lang="es" data-bs-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="Aplicación Web IoT: Control y Monitoreo en Tiempo Real - Edición Pastel Kawaii · AWS EC2, Amazon RDS y WebSocket WSS" />
-  <title>✨ Vehículo IoT · Control &amp; Monitoreo 🌸</title>
+  <meta name="description" content="Excavadora IoT · Panel de Control y Monitoreo Industrial en Tiempo Real con AWS EC2, Amazon RDS y WebSocket Seguro WSS" />
+  <title>Excavadora IoT · Control &amp; Monitoreo</title>
 
-  <!-- Favicon IoT con ruta relativa compatible con subrutas de GitHub Pages -->
+  <!-- Favicon IoT -->
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
 
-  <!-- Tipografías redondeadas y cute (Quicksand y Nunito) -->
+  <!-- Tipografía Moderna High-Tech -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Quicksand:wght@600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Nunito:wght@500;600;700;800&family=Quicksand:wght@600;700&display=swap"
     rel="stylesheet"
   />
 
@@ -31,60 +31,50 @@
     href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
   />
 
-  <!-- Hoja de estilos personalizada (ruta relativa para GitHub Pages) -->
+  <!-- Hoja de estilos personalizada -->
   <link rel="stylesheet" href="./css/styles.css" />
 </head>
-<body class="d-flex flex-column min-vh-100 bg-pastel-cream text-plum position-relative overflow-x-hidden">
-
-  <!-- Decoración de fondo flotante (Brillitos ✨, Estrellitas ★ y Florecitas 🌸) -->
-  <div class="floating-decorations" aria-hidden="true">
-    <span class="deco-item deco-1">✨</span>
-    <span class="deco-item deco-2">🌸</span>
-    <span class="deco-item deco-3">★</span>
-    <span class="deco-item deco-4">✿</span>
-    <span class="deco-item deco-5">✨</span>
-    <span class="deco-item deco-6">🌷</span>
-  </div>
+<body class="d-flex flex-column min-vh-100 cockpit-bg text-light overflow-x-hidden">
 
   <!-- =====================================================================
-       CABECERA PASTEL SUPERIOR
+       CABECERA DEL PANEL INDUSTRIAL IoT
        ===================================================================== -->
-  <header class="navbar pastel-header py-2">
-    <div class="container-fluid px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+  <header class="navbar cockpit-header py-2 px-3">
+    <div class="container-fluid px-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
       <div class="d-flex align-items-center gap-2">
-        <div class="logo-bubble">
-          <img src="./favicon.svg" alt="IoT Icon" width="38" height="38" class="rounded-4" />
+        <div class="cockpit-logo-frame">
+          <img src="./favicon.svg" alt="Excavadora IoT" width="34" height="34" class="rounded-3" />
         </div>
         <div>
-          <h1 class="h6 mb-0 fw-extrabold title-gradient d-flex align-items-center gap-1">
-            <span>🌸 CONTROL &amp; MONITOREO VEHÍCULO IoT</span>
-            <span class="sparkle-inline">✨</span>
+          <h1 class="h6 mb-0 fw-extrabold cockpit-title d-flex align-items-center gap-2">
+            <span>EXCAVADORA IoT</span>
+            <span class="badge-tech-edition">PRO V4.2</span>
           </h1>
-          <small class="text-soft-lilac d-block fw-semibold" style="font-size: 0.74rem;">
-            ✿ ID Vehículo: <span id="lbl-vehiculo-id" class="badge-mini-id">1</span> · Etapa 1 y 2 (Control + Monitoreo AWS) ★
+          <small class="cockpit-subtitle d-block">
+            Unidad ID: <strong id="lbl-vehiculo-id" class="text-pink-accent">1</strong> · Telemetría AWS EC2 &amp; Amazon RDS
           </small>
         </div>
       </div>
 
-      <!-- Botón rápido estilo cute para verificar salud de servicios -->
-      <button id="btn-refresh-health" type="button" class="btn btn-cute-sync btn-sm" title="Verificar conexión ahora">
-        <i class="bi bi-stars me-1"></i>
+      <!-- Botón de Sincronización Inmediata -->
+      <button id="btn-refresh-health" type="button" class="btn btn-cockpit-sync btn-sm" title="Sincronizar conexión ahora">
+        <i class="bi bi-arrow-repeat me-1"></i>
         <span>Sincronizar</span>
       </button>
     </div>
   </header>
 
   <!-- =====================================================================
-       BARRA DE LOS 3 INDICADORES REALES (SIEMPRE VISIBLE)
+       BARRA DE LOS 3 INDICADORES REALES (AWS EC2, RDS, WSS)
        ===================================================================== -->
-  <section class="pastel-status-bar py-2 px-3">
-    <div class="container">
+  <section class="cockpit-status-bar py-2 px-3">
+    <div class="container-fluid px-0">
       <div class="row g-2 text-center">
         <!-- Indicador 1: WebSocket WSS -->
         <div class="col-12 col-md-4">
-          <div class="status-pill d-flex align-items-center justify-content-between px-3 py-2">
-            <span class="small fw-bold text-plum">
-              <i class="bi bi-broadcast text-pink-accent me-1"></i>WebSocket WSS <span class="tiny-star">✦</span>
+          <div class="cockpit-indicator-card d-flex align-items-center justify-content-between px-3 py-2">
+            <span class="small fw-bold text-light">
+              <i class="bi bi-broadcast text-pink-accent me-2"></i>WebSocket WSS
             </span>
             <span id="badge-ws" class="badge rounded-pill badge-pastel-warning">
               <span class="status-dot dot-warning"></span>Conectando...
@@ -94,9 +84,9 @@
 
         <!-- Indicador 2: API AWS (21 servicios) -->
         <div class="col-12 col-md-4">
-          <div class="status-pill d-flex align-items-center justify-content-between px-3 py-2">
-            <span class="small fw-bold text-plum">
-              <i class="bi bi-cloud-heart-fill text-lilac-accent me-1"></i>API AWS (21 servicios) <span class="tiny-star">✦</span>
+          <div class="cockpit-indicator-card d-flex align-items-center justify-content-between px-3 py-2">
+            <span class="small fw-bold text-light">
+              <i class="bi bi-cloud-check text-cyan-accent me-2"></i>API AWS (21 servicios)
             </span>
             <span id="badge-api" class="badge rounded-pill badge-pastel-warning">
               <span class="status-dot dot-warning"></span>Comprobando...
@@ -106,9 +96,9 @@
 
         <!-- Indicador 3: Amazon RDS -->
         <div class="col-12 col-md-4">
-          <div class="status-pill d-flex align-items-center justify-content-between px-3 py-2">
-            <span class="small fw-bold text-plum">
-              <i class="bi bi-database-fill-heart text-pink-accent me-1"></i>Amazon RDS <span class="tiny-star">✦</span>
+          <div class="cockpit-indicator-card d-flex align-items-center justify-content-between px-3 py-2">
+            <span class="small fw-bold text-light">
+              <i class="bi bi-database text-lilac-accent me-2"></i>Amazon RDS
             </span>
             <span id="badge-rds" class="badge rounded-pill badge-pastel-neutral">
               <span class="status-dot dot-neutral"></span>Sin verificar
@@ -120,292 +110,390 @@
   </section>
 
   <!-- =====================================================================
-       CONTENIDO PRINCIPAL (DOS COLUMNAS BALANCEADAS:
-       IZQUIERDA FIJA [JOYSTICK + DETENER] | DERECHA CON PESTAÑAS [CONTROL / MONITOREO])
+       SUB-BARRA: ESTADO ACTIVO + PESTAÑAS RESPONSIVAS
        ===================================================================== -->
-  <main class="container my-3 flex-grow-1 position-relative z-1">
-
-    <!-- Tarjeta Superior + Pestañas de Navegación ("Control" y "Monitoreo") debajo de los indicadores -->
-    <div class="card pastel-card status-banner-card mb-3">
-      <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div class="d-flex flex-wrap align-items-center gap-2">
-          <span class="badge badge-ribbon">✨ ESTADO ACTUAL 🌸</span>
-          <span id="lbl-comando-actual" class="fw-extrabold text-uppercase command-active-text">DETENER</span>
-          <span class="small text-soft-lilac fw-semibold ms-md-2">
-            <i class="bi bi-heart-fill text-pink-accent me-1"></i>Última respuesta:
-            <span id="lbl-ultima-respuesta" class="text-plum fw-bold">Listo para operar ✨</span>
-          </span>
-        </div>
-
-        <!-- PESTAÑAS DE NAVEGACIÓN ("Control" y "Monitoreo") DEBAJO DE LOS INDICADORES -->
-        <nav class="nav-view-switcher d-flex align-items-center gap-1" aria-label="Cambiar panel derecho entre Control y Monitoreo">
-          <button
-            id="tab-btn-control"
-            type="button"
-            class="btn btn-tab-pastel active"
-            data-target-view="control"
-          >
-            <i class="bi bi-controller me-1"></i>Control 🌸
-          </button>
-          <button
-            id="tab-btn-monitoreo"
-            type="button"
-            class="btn btn-tab-pastel"
-            data-target-view="monitoreo"
-          >
-            <i class="bi bi-activity me-1"></i>Monitoreo ✨
-          </button>
-        </nav>
+  <section class="container-fluid px-3 my-2">
+    <div class="cockpit-banner-bar d-flex flex-wrap align-items-center justify-content-between gap-2 p-2 rounded-4">
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge badge-tech-status">COMANDO ACTIVO</span>
+        <span id="lbl-comando-actual" class="fw-extrabold text-uppercase text-light command-display-label">DETENER</span>
+        <span class="small text-soft-lilac ms-2 d-none d-sm-inline">
+          <i class="bi bi-activity text-pink-accent me-1"></i>
+          <span id="lbl-ultima-respuesta">Listo para operar</span>
+        </span>
       </div>
-    </div>
 
-    <!-- CUADRÍCULA PRINCIPAL DE DOS COLUMNAS -->
-    <div class="row g-3">
+      <!-- Pestañas de Navegación ("Control" y "Monitoreo") -->
+      <nav class="nav-view-switcher d-flex align-items-center gap-1" aria-label="Cambio de vista móvil">
+        <button
+          id="tab-btn-control"
+          type="button"
+          class="btn btn-tab-cockpit active"
+          data-target-view="control"
+        >
+          <i class="bi bi-controller me-1"></i>Controles
+        </button>
+        <button
+          id="tab-btn-monitoreo"
+          type="button"
+          class="btn btn-tab-cockpit"
+          data-target-view="monitoreo"
+        >
+          <i class="bi bi-speedometer2 me-1"></i>Monitoreo
+        </button>
+      </nav>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       LAYOUT PRINCIPAL DE 2 SECCIONES ESTRICTAS (CSS GRID COMPACTO)
+       ===================================================================== -->
+  <main class="container-fluid px-3 flex-grow-1 mb-3">
+    <div class="cockpit-grid-container">
 
       <!-- =================================================================
-           COLUMNA IZQUIERDA (FIJA Y VISIBLE EN AMBAS VISTAS: JOYSTICK + DETENER)
+           SECCIÓN 1 (CONTROLES - SOLO INTERACTIVO)
+           Grid estilo Joystick compacto (▲, ▼, ◀, ▶, STOP central rojo),
+           Botón para "Tocar Claxon", Sliders de Volumen y Velocidad.
            ================================================================= -->
-      <div class="col-12 col-lg-6">
-        <div class="card pastel-card h-100">
-          <!-- Florecitas decorativas en las esquinas -->
-          <span class="corner-flower flower-tl" aria-hidden="true">✿</span>
-          <span class="corner-flower flower-tr" aria-hidden="true">✨</span>
+      <section id="section-controles" class="cockpit-section cockpit-section-controls">
 
-          <div class="card-header pastel-card-header d-flex justify-content-between align-items-center">
-            <span class="fw-extrabold text-plum d-flex align-items-center gap-1">
-              <i class="bi bi-controller text-pink-accent fs-5"></i>
-              <span>Joystick Direccional</span>
-              <span class="tiny-flower">🌸</span>
+        <!-- Tarjeta Principal de Mandos -->
+        <div class="card cockpit-card h-100">
+          <div class="card-header cockpit-card-header d-flex justify-content-between align-items-center">
+            <span class="fw-bold text-light d-flex align-items-center gap-2">
+              <i class="bi bi-joystick text-pink-accent"></i>
+              <span>SECCIÓN 1: CONTROLES DE LA EXCAVADORA</span>
             </span>
-            <span id="badge-direccion-joystick" class="badge badge-joystick-state">
-              ✿ NEUTRAL (CENTRO)
+            <span id="badge-direccion-joystick" class="badge badge-cockpit-tag">
+              NEUTRAL
             </span>
           </div>
 
-          <div class="card-body d-flex flex-column align-items-center justify-content-center py-4">
-            <!-- Área táctil del Joystick Circular Estilo Consola Cute -->
-            <div id="joystick-zone" class="joystick-zone" aria-label="Joystick de control direccional">
-              <!-- Destellos decorativos internos -->
-              <span class="joy-sparkle sp-1" aria-hidden="true">✦</span>
-              <span class="joy-sparkle sp-2" aria-hidden="true">✧</span>
-              <span class="joy-sparkle sp-3" aria-hidden="true">✿</span>
-              <span class="joy-sparkle sp-4" aria-hidden="true">✦</span>
+          <div class="card-body p-3 d-flex flex-column gap-3">
 
-              <!-- Etiquetas cardinales pasteles -->
-              <span class="joy-label joy-up">▲ AVANZAR</span>
-              <span class="joy-label joy-down">▼ RETROCEDER</span>
-              <span class="joy-label joy-left">◄ IZQ</span>
-              <span class="joy-label joy-right">DER ►</span>
+            <!-- 1. GRID ESTILO "JOYSTICK" COMPACTO (▲, ▼, ◀, ▶, STOP CENTRAL ROJO) -->
+            <div class="dpad-container mx-auto">
+              <div class="dpad-grid">
+                <!-- Fila 1: Arriba -->
+                <div></div>
+                <button
+                  id="btn-joy-up"
+                  type="button"
+                  class="btn dpad-btn joy-btn-up"
+                  data-dir="AVANZAR"
+                  title="Avanzar (Adelante)"
+                >
+                  <i class="bi bi-caret-up-fill dpad-icon"></i>
+                  <span class="dpad-text">▲ AVANZAR</span>
+                </button>
+                <div></div>
 
-              <!-- Punto neutral central visible con borde de flor -->
-              <div class="joystick-center-mark"></div>
+                <!-- Fila 2: Izquierda, STOP central rojo, Derecha -->
+                <button
+                  id="btn-joy-left"
+                  type="button"
+                  class="btn dpad-btn joy-btn-left"
+                  data-dir="IZQUIERDA"
+                  title="Girar Izquierda"
+                >
+                  <i class="bi bi-caret-left-fill dpad-icon"></i>
+                  <span class="dpad-text">◀ IZQ</span>
+                </button>
 
-              <!-- Palanca móvil (Thumb estilo botón de consola kawaii con florecita) -->
-              <div id="joystick-thumb" class="joystick-thumb">
-                <span class="thumb-flower-icon">🌸</span>
+                <!-- STOP CENTRAL ROJO -->
+                <button
+                  id="btn-joy-stop"
+                  type="button"
+                  class="btn dpad-btn joy-btn-stop"
+                  data-dir="DETENER"
+                  title="Paro Inmediato (STOP)"
+                >
+                  <i class="bi bi-octagon-fill dpad-stop-icon"></i>
+                  <span class="dpad-stop-text">STOP</span>
+                </button>
+
+                <button
+                  id="btn-joy-right"
+                  type="button"
+                  class="btn dpad-btn joy-btn-right"
+                  data-dir="DERECHA"
+                  title="Girar Derecha"
+                >
+                  <i class="bi bi-caret-right-fill dpad-icon"></i>
+                  <span class="dpad-text">DER ▶</span>
+                </button>
+
+                <!-- Fila 3: Abajo -->
+                <div></div>
+                <button
+                  id="btn-joy-down"
+                  type="button"
+                  class="btn dpad-btn joy-btn-down"
+                  data-dir="RETROCEDER"
+                  title="Retroceder (Atrás)"
+                >
+                  <i class="bi bi-caret-down-fill dpad-icon"></i>
+                  <span class="dpad-text">▼ ATRÁS</span>
+                </button>
+                <div></div>
               </div>
             </div>
 
-            <p class="small text-soft-lilac text-center mt-3 mb-3 px-2 fw-semibold">
-              ✨ Desliza el botón central para mover tu vehículo. Al soltarlo se envía <strong>DETENER</strong> automáticamente con prioridad absoluta. 🌸
-            </p>
-
-            <!-- BOTÓN DETENER DESTACADO Y PRIORITARIO (ESTILO ARCADE CUTE) -->
+            <!-- BOTÓN PRIORITARIO DETENER VEHÍCULO (ACCESO RÁPIDO) -->
             <button
               id="btn-stop-priority"
               type="button"
-              class="btn btn-lg w-100 fw-extrabold py-3 stop-priority-btn"
+              class="btn btn-danger-priority w-100 fw-extrabold py-2 text-uppercase"
             >
-              <span class="me-1">🛑</span>
-              <i class="bi bi-octagon-fill me-1"></i>DETENER VEHÍCULO (PARO TOTAL)
-              <span class="ms-1">✨</span>
+              <i class="bi bi-shield-slash-fill me-2"></i>DETENER VEHÍCULO (PARO TOTAL)
             </button>
+
+            <!-- 2. CONTROLES DE HARDWARE: CLAXON, VOLUMEN Y VELOCIDAD -->
+            <div class="hardware-box p-3 rounded-4">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                <span class="small fw-bold text-light text-uppercase">
+                  <i class="bi bi-sliders2 text-cyan-accent me-1"></i>Hardware &amp; Potencia
+                </span>
+
+                <!-- Botón Elegante para Tocar Claxon -->
+                <button
+                  id="btn-claxon"
+                  type="button"
+                  class="btn btn-claxon-cockpit"
+                  title="Tocar bocina / claxon del vehículo"
+                >
+                  <i class="bi bi-megaphone-fill me-1"></i>
+                  <span>Tocar Claxon</span>
+                </button>
+              </div>
+
+              <!-- Slider para Volumen -->
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label for="slider-volume" class="small fw-bold text-soft-lilac mb-0">
+                    <i class="bi bi-volume-up-fill text-pink-accent me-1"></i>Nivel de Volumen:
+                  </label>
+                  <span id="lbl-volume-val" class="badge badge-slider-val">80%</span>
+                </div>
+                <input
+                  type="range"
+                  class="form-range custom-cockpit-range"
+                  id="slider-volume"
+                  min="0"
+                  max="100"
+                  value="80"
+                />
+              </div>
+
+              <!-- Slider para Velocidad -->
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label for="slider-speed" class="small fw-bold text-soft-lilac mb-0">
+                    <i class="bi bi-speedometer text-cyan-accent me-1"></i>Selector de Velocidad:
+                  </label>
+                  <span id="lbl-speed-val" class="badge badge-slider-val">Normal (70%)</span>
+                </div>
+                <input
+                  type="range"
+                  class="form-range custom-cockpit-range range-speed"
+                  id="slider-speed"
+                  min="10"
+                  max="100"
+                  step="5"
+                  value="70"
+                />
+              </div>
+            </div>
+
+            <!-- 3. ACCESOS RÁPIDOS Y SECUENCIAS DEMO (COMPACTO) -->
+            <div class="row g-2">
+              <div class="col-6 col-sm-3">
+                <button type="button" class="btn w-100 py-2 cmd-sec-btn" data-cmd-name="GIRO_90_IZQ">
+                  <i class="bi bi-arrow-counterclockwise fs-5 d-block text-pink-accent"></i>
+                  <span class="small fw-bold">90° Izq</span>
+                </button>
+              </div>
+              <div class="col-6 col-sm-3">
+                <button type="button" class="btn w-100 py-2 cmd-sec-btn" data-cmd-name="GIRO_90_DER">
+                  <i class="bi bi-arrow-clockwise fs-5 d-block text-pink-accent"></i>
+                  <span class="small fw-bold">90° Der</span>
+                </button>
+              </div>
+              <div class="col-6 col-sm-3">
+                <button type="button" class="btn w-100 py-2 cmd-sec-btn" data-cmd-name="GIRO_360_IZQ">
+                  <i class="bi bi-arrow-repeat fs-5 d-block text-lilac-accent"></i>
+                  <span class="small fw-bold">360° Izq</span>
+                </button>
+              </div>
+              <div class="col-6 col-sm-3">
+                <button type="button" class="btn w-100 py-2 cmd-sec-btn" data-cmd-name="GIRO_360_DER">
+                  <i class="bi bi-bootstrap-reboot fs-5 d-block text-lilac-accent"></i>
+                  <span class="small fw-bold">360° Der</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Contenedor dinámico de comandos extra -->
+            <div id="dynamic-catalog-commands" class="row g-2"></div>
+
+            <!-- Secuencias Automáticas DEMO -->
+            <div class="demo-cockpit-box p-3 rounded-4">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="small fw-bold text-light">
+                  <i class="bi bi-magic text-pink-accent me-1"></i>Secuencias Automáticas (DEMO)
+                </span>
+                <span id="badge-demo-status" class="badge badge-pastel-neutral">Inactiva</span>
+              </div>
+              <select id="select-demo" class="form-select cockpit-select mb-2">
+                <option value="">Cargando coreografías...</option>
+              </select>
+              <div class="d-flex gap-2">
+                <button id="btn-demo-start" type="button" class="btn btn-cockpit-primary btn-sm flex-grow-1 fw-bold">
+                  <i class="bi bi-play-fill me-1"></i>Iniciar DEMO
+                </button>
+                <button id="btn-demo-cancel" type="button" class="btn btn-cockpit-cancel btn-sm fw-bold" disabled>
+                  <i class="bi bi-x-circle-fill me-1"></i>Cancelar
+                </button>
+              </div>
+            </div>
+
+            <!-- Zona de Joystick circular táctil opcional/soporte continuo -->
+            <div class="touch-joystick-drawer">
+              <details class="text-center">
+                <summary class="small text-soft-lilac py-1" style="cursor: pointer;">
+                  <i class="bi bi-hand-index-thumb me-1"></i>Modo Palanca Táctil Circular (Opcional)
+                </summary>
+                <div class="d-flex justify-content-center py-2">
+                  <div id="joystick-zone" class="joystick-zone">
+                    <span class="joy-label joy-up">▲</span>
+                    <span class="joy-label joy-down">▼</span>
+                    <span class="joy-label joy-left">◄</span>
+                    <span class="joy-label joy-right">►</span>
+                    <div class="joystick-center-mark"></div>
+                    <div id="joystick-thumb" class="joystick-thumb">
+                      <span class="thumb-flower-icon">✦</span>
+                    </div>
+                  </div>
+                </div>
+              </details>
+            </div>
+
           </div>
         </div>
-      </div>
+
+      </section>
 
       <!-- =================================================================
-           COLUMNA DERECHA (ALTERNA ENTRE PESTAÑA "CONTROL" Y PESTAÑA "MONITOREO")
+           SECCIÓN 2 (MONITOREO - SOLO LECTURA)
+           ESTRICTO: NO DEBE TENER CONTROLES NI BOTONES COLADOS.
+           Lista compacta:
+           1. Conexión WSS (con punto visual verde/rojo)
+           2. Último Comando
+           3. Última Actividad (Timestamp exacto)
+           4. Velocidad Actual
+           5. Nivel de Volumen
+           + Tabla de Historial (10 registros desde Amazon RDS)
            ================================================================= -->
-      <div class="col-12 col-lg-6">
+      <section id="section-monitoreo" class="cockpit-section cockpit-section-monitoring view-hidden-mobile">
 
-        <!-- ---------------------------------------------------------------
-             PANEL DERECHO A: PESTAÑA "CONTROL" (MANIOBRAS + SECUENCIAS DEMO)
-             --------------------------------------------------------------- -->
-        <div id="right-panel-control" class="d-flex flex-column gap-3 h-100">
-
-          <!-- Tarjeta 1: Giros Especiales y Comandos Secundarios del Catálogo -->
-          <div class="card pastel-card">
-            <span class="corner-flower flower-tl" aria-hidden="true">✨</span>
-            <span class="corner-flower flower-tr" aria-hidden="true">✿</span>
-
-            <div class="card-header pastel-card-header d-flex justify-content-between align-items-center">
-              <span class="fw-extrabold text-plum d-flex align-items-center gap-1">
-                <i class="bi bi-stars text-lilac-accent fs-5"></i>
-                <span>Maniobras y Giros Cute</span>
-                <span class="tiny-flower">🌷</span>
+        <div class="card cockpit-card h-100">
+          <div class="card-header cockpit-card-header d-flex justify-content-between align-items-center">
+            <span class="fw-bold text-light d-flex align-items-center gap-2">
+              <i class="bi bi-speedometer2 text-cyan-accent"></i>
+              <span>SECCIÓN 2: MONITOREO DE TELEMETRÍA (SOLO LECTURA)</span>
+            </span>
+            <div class="d-flex align-items-center gap-2">
+              <span id="mon-vehicle-online-badge" class="badge badge-pastel-online">
+                <span class="status-dot dot-online"></span>Activo en RDS
               </span>
-              <small class="badge badge-soft-pill">★ Toque único</small>
-            </div>
-            <div class="card-body">
-              <!-- Contenedor de botones secundarios (90°, 360° estilo gamepad) -->
-              <div id="secondary-commands-grid" class="row g-2">
-                <div class="col-6 col-sm-3">
-                  <button type="button" class="btn w-100 py-2 cmd-sec-btn" data-cmd-name="GIRO_90_IZQ">
-                    <span class="btn-deco-corner">✦</span>
-                    <i class="bi bi-arrow-counterclockwise d-block fs-4 icon-pastel"></i>
-                    <span class="small fw-bold">Giro 90° Izq</span>
-                  </button>
-                </div>
-                <div class="col-6 col-sm-3">
-                  <button type="button" class="btn w-100 py-2 cmd-sec-btn" data-cmd-name="GIRO_90_DER">
-                    <span class="btn-deco-corner">✦</span>
-                    <i class="bi bi-arrow-clockwise d-block fs-4 icon-pastel"></i>
-                    <span class="small fw-bold">Giro 90° Der</span>
-                  </button>
-                </div>
-                <div class="col-6 col-sm-3">
-                  <button type="button" class="btn w-100 py-2 cmd-sec-btn" data-cmd-name="GIRO_360_IZQ">
-                    <span class="btn-deco-corner">✿</span>
-                    <i class="bi bi-arrow-repeat d-block fs-4 icon-pastel"></i>
-                    <span class="small fw-bold">Giro 360° Izq</span>
-                  </button>
-                </div>
-                <div class="col-6 col-sm-3">
-                  <button type="button" class="btn w-100 py-2 cmd-sec-btn" data-cmd-name="GIRO_360_DER">
-                    <span class="btn-deco-corner">✿</span>
-                    <i class="bi bi-bootstrap-reboot d-block fs-4 icon-pastel"></i>
-                    <span class="small fw-bold">Giro 360° Der</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Comandos dinámicos extra cargados desde GET /api/comandos -->
-              <div id="dynamic-catalog-commands" class="row g-2 mt-2"></div>
+              <button id="btn-refresh-monitoreo" type="button" class="btn btn-sm btn-cockpit-sync py-1 px-2" title="Actualizar datos desde Amazon RDS">
+                <i class="bi bi-arrow-clockwise"></i>
+              </button>
             </div>
           </div>
 
-          <!-- Tarjeta 2: Ejecución de Secuencias DEMO -->
-          <div class="card pastel-card flex-grow-1">
-            <span class="corner-flower flower-tl" aria-hidden="true">🌸</span>
-            <span class="corner-flower flower-tr" aria-hidden="true">★</span>
+          <div class="card-body p-3 d-flex flex-column gap-3">
 
-            <div class="card-header pastel-card-header d-flex justify-content-between align-items-center">
-              <span class="fw-extrabold text-plum d-flex align-items-center gap-1">
-                <i class="bi bi-magic text-pink-accent fs-5"></i>
-                <span>Secuencias Automáticas (DEMO)</span>
-              </span>
-              <span id="badge-demo-status" class="badge badge-pastel-neutral">✿ Inactiva</span>
-            </div>
-            <div class="card-body d-flex flex-column justify-content-between">
-              <div>
-                <label for="select-demo" class="form-label small text-soft-lilac fw-bold mb-1">
-                  🌸 Seleccionar coreografía / secuencia (`GET /api/demos`):
-                </label>
-                <select id="select-demo" class="form-select pastel-select mb-2">
-                  <option value="">✨ Cargando secuencias DEMO...</option>
-                </select>
-                <p class="small text-soft-lilac fw-semibold mb-3 demo-hint-box p-2 rounded-4">
-                  <i class="bi bi-shield-heart text-pink-accent me-1"></i>
-                  El servidor AWS gestiona los tiempos de cada paso sin contaminar el historial individual. Mientras una DEMO está activa, los controles manuales se bloquean. ✨
-                </p>
-              </div>
+            <!-- LISTA COMPACTA DE TELEMETRÍA (SOLO LECTURA) -->
+            <div class="telemetry-read-list">
 
-              <div class="d-flex gap-2">
-                <button id="btn-demo-start" type="button" class="btn btn-cute-primary fw-extrabold flex-grow-1 py-2">
-                  <i class="bi bi-play-circle-fill me-1"></i>Iniciar DEMO ✨
-                </button>
-                <button id="btn-demo-cancel" type="button" class="btn btn-cute-cancel fw-extrabold py-2" disabled>
-                  <i class="bi bi-x-octagon-fill me-1"></i>Cancelar DEMO
-                </button>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- ---------------------------------------------------------------
-             PANEL DERECHO B: PESTAÑA "MONITOREO" (ÚLTIMO MOVIMIENTO + TABLA 10 REGISTROS)
-             --------------------------------------------------------------- -->
-        <div id="right-panel-monitoreo" class="d-flex flex-column gap-3 h-100 d-none">
-
-          <!-- Tarjeta 1: Último Movimiento en Tiempo Real -->
-          <div class="card pastel-card mon-hero-card">
-            <span class="corner-flower flower-tl" aria-hidden="true">🌸</span>
-            <span class="corner-flower flower-tr" aria-hidden="true">✨</span>
-
-            <div class="card-header pastel-card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-              <span class="fw-extrabold text-plum d-flex align-items-center gap-1">
-                <i class="bi bi-broadcast-pin text-pink-accent fs-5"></i>
-                <span>Último Movimiento</span>
-                <span class="tiny-flower">🌷</span>
-              </span>
-              <div class="d-flex align-items-center gap-2">
-                <span id="mon-vehicle-online-badge" class="badge rounded-pill badge-pastel-online">
-                  <span class="status-dot dot-online"></span>Activo en RDS ✨
+              <!-- Item 1: Conexión WSS -->
+              <div class="telemetry-read-item">
+                <div class="d-flex align-items-center gap-2">
+                  <span id="mon-wss-dot" class="status-dot dot-offline"></span>
+                  <span class="telemetry-label">Conexión WSS:</span>
+                </div>
+                <span id="mon-wss-text" class="telemetry-value text-danger-pastel fw-bold">
+                  Verificando...
                 </span>
-                <button id="btn-refresh-monitoreo" type="button" class="btn btn-sm btn-cute-sync py-1 px-2" title="Actualizar desde RDS">
-                  <i class="bi bi-arrow-clockwise"></i>
-                </button>
               </div>
-            </div>
 
-            <div class="card-body py-3 px-3">
-              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="mon-hero-icon-wrapper">
-                    <i id="mon-last-icon" class="bi bi-octagon-fill mon-hero-icon"></i>
-                  </div>
-                  <div>
-                    <span class="small text-soft-lilac fw-bold text-uppercase d-block">
-                      ✨ Comando Actual:
-                    </span>
-                    <h2 id="mon-last-command" class="h4 fw-extrabold mon-hero-command mb-0">
-                      Cargando...
-                    </h2>
-                  </div>
+              <!-- Item 2: Último Comando -->
+              <div class="telemetry-read-item">
+                <div class="d-flex align-items-center gap-2">
+                  <i id="mon-last-icon" class="bi bi-octagon-fill text-pink-accent fs-5"></i>
+                  <span class="telemetry-label">Último Comando:</span>
                 </div>
+                <span id="mon-last-command" class="telemetry-value text-pink-accent fw-extrabold text-uppercase">
+                  DETENER
+                </span>
+              </div>
 
-                <!-- Fecha y Hora exactas extraídas del backend -->
-                <div class="mon-timestamp-box px-3 py-2 rounded-4 d-flex flex-column gap-1 flex-grow-1 flex-sm-grow-0">
-                  <div class="d-flex align-items-center justify-content-between gap-3">
-                    <span class="small fw-bold text-soft-lilac">
-                      <i class="bi bi-calendar3-heart text-pink-accent me-1"></i>Fecha:
-                    </span>
-                    <span id="mon-last-date" class="small fw-extrabold text-plum">—</span>
-                  </div>
-                  <div class="d-flex align-items-center justify-content-between gap-3">
-                    <span class="small fw-bold text-soft-lilac">
-                      <i class="bi bi-clock-history text-lilac-accent me-1"></i>Hora:
-                    </span>
-                    <span id="mon-last-time" class="small fw-extrabold text-plum">—</span>
-                  </div>
+              <!-- Item 3: Última Actividad (Timestamp exacto) -->
+              <div class="telemetry-read-item">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-clock-history text-cyan-accent fs-5"></i>
+                  <span class="telemetry-label">Última Actividad:</span>
+                </div>
+                <div class="text-end">
+                  <div id="mon-last-timestamp" class="telemetry-value text-light fw-bold">—</div>
+                  <small class="text-soft-lilac" style="font-size: 0.72rem;">
+                    Fecha: <span id="mon-last-date">—</span> · Hora: <span id="mon-last-time">—</span>
+                  </small>
                 </div>
               </div>
+
+              <!-- Item 4: Velocidad Actual -->
+              <div class="telemetry-read-item">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-speedometer text-warning-pastel fs-5"></i>
+                  <span class="telemetry-label">Velocidad Actual:</span>
+                </div>
+                <span id="mon-speed-val" class="telemetry-value text-warning-pastel fw-bold">
+                  70% (Normal)
+                </span>
+              </div>
+
+              <!-- Item 5: Nivel de Volumen -->
+              <div class="telemetry-read-item">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-volume-up-fill text-lilac-accent fs-5"></i>
+                  <span class="telemetry-label">Nivel de Volumen:</span>
+                </div>
+                <span id="mon-volume-val" class="telemetry-value text-lilac-accent fw-bold">
+                  80%
+                </span>
+              </div>
+
             </div>
-          </div>
 
-          <!-- Tarjeta 2: Tabla de Historial (Últimos 10 registros) -->
-          <div class="card pastel-card flex-grow-1">
-            <span class="corner-flower flower-tl" aria-hidden="true">✿</span>
-            <span class="corner-flower flower-tr" aria-hidden="true">★</span>
+            <!-- TABLA DE HISTORIAL (10 REGISTROS REALES EN RDS) -->
+            <div class="history-table-container flex-grow-1">
+              <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                <span class="small fw-bold text-light text-uppercase">
+                  <i class="bi bi-table text-cyan-accent me-1"></i>Historial de Movimientos (Amazon RDS)
+                </span>
+                <span id="mon-history-count" class="badge badge-cockpit-tag">
+                  Últimos 10 registros
+                </span>
+              </div>
 
-            <div class="card-header pastel-card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-              <span class="fw-extrabold text-plum d-flex align-items-center gap-1">
-                <i class="bi bi-journal-medical text-lilac-accent fs-5"></i>
-                <span>Tabla de Historial (10 registros)</span>
-              </span>
-              <span id="mon-history-count" class="badge badge-soft-pill">
-                Últimos 10 registros
-              </span>
-            </div>
-
-            <div class="card-body p-0">
-              <div class="table-responsive mon-table-scroll">
-                <table class="table table-hover align-middle mb-0 pastel-history-table">
+              <div class="table-responsive cockpit-table-scroll rounded-3">
+                <table class="table table-hover align-middle mb-0 cockpit-history-table">
                   <thead>
                     <tr>
-                      <th scope="col" class="text-center" style="width: 52px;">#</th>
+                      <th scope="col" class="text-center" style="width: 44px;">#</th>
                       <th scope="col">Movimiento</th>
                       <th scope="col">Fecha</th>
                       <th scope="col">Hora</th>
@@ -414,33 +502,34 @@
                   <tbody id="mon-history-tbody">
                     <tr>
                       <td colspan="4" class="text-center py-3 text-soft-lilac fw-bold">
-                        Cargando historial desde Amazon RDS... ✨
+                        Cargando historial desde Amazon RDS...
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
             </div>
-          </div>
 
+          </div>
         </div>
 
-      </div>
+      </section>
+
     </div>
   </main>
 
   <!-- =====================================================================
-       PIE DE PÁGINA OBLIGATORIO (SIN SUPERPONER CONTROLES)
+       PIE DE PÁGINA OBLIGATORIO CON CRÉDITOS EXACTOS
        ===================================================================== -->
-  <footer class="pastel-footer py-3 mt-auto text-center position-relative z-1">
+  <footer class="cockpit-footer py-2 text-center mt-auto">
     <div class="container">
-      <p class="mb-0 small fw-bold text-plum">
-        Desarrollado por [Tu Nombre Completo] · 2026
+      <p class="mb-0 small fw-bold text-soft-lilac">
+        Desarrollado por Brenda Joselyn Hernandez Perez · 2026
       </p>
     </div>
   </footer>
 
-  <!-- Módulo Principal ES6 (Importa config.js, api.js, websocket.js, joystick.js y monitoreo.js) -->
+  <!-- Script ES6 Module Principal -->
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>

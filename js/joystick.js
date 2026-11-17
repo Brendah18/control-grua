@@ -1,8 +1,8 @@
 /**
  * Módulo de Joystick Virtual Circular (ES6 Module)
- * - Operable por Mouse y Pointer/Touch Events.
+ * - Soporte nativo para Touch Events en móviles (touchstart, touchmove, touchend con e.touches[0] y e.preventDefault()).
+ * - Soporte para Mouse en escritorio (mousedown, mousemove, mouseup).
  * - Mapeo directo a comandos reales: AVANZAR, RETROCEDER, IZQUIERDA, DERECHA y DETENER.
- * - Control de ráfagas (debouncing por cambio de estado).
  * - Retorno automático al centro y envío prioritario de DETENER al soltar.
  */
 
@@ -13,20 +13,44 @@ export class VirtualJoystick {
     this.onDirectionChange = onDirectionChange || (() => {});
 
     this.isDragging = false;
-    this.activePointerId = null;
     this.currentDirection = "DETENER";
     this.disabled = false;
-    this.deadzoneRatio = 0.28;
+    this.deadzoneRatio = 0.25;
 
     this.bindEvents();
   }
 
   bindEvents() {
-    this.zone.addEventListener("pointerdown", (e) => this.handlePointerDown(e));
-    window.addEventListener("pointermove", (e) => this.handlePointerMove(e));
-    window.addEventListener("pointerup", (e) => this.handlePointerUp(e));
-    window.addEventListener("pointercancel", (e) => this.handlePointerUp(e));
+    if (!this.zone) return;
 
+    // 1. Eventos Táctiles para Celular (passive: false es crítico para que e.preventDefault() bloquee el scroll)
+    this.zone.addEventListener(
+      "touchstart",
+      (e) => this.handleTouchStart(e),
+      { passive: false }
+    );
+    window.addEventListener(
+      "touchmove",
+      (e) => this.handleTouchMove(e),
+      { passive: false }
+    );
+    window.addEventListener(
+      "touchend",
+      (e) => this.handleTouchEnd(e),
+      { passive: false }
+    );
+    window.addEventListener(
+      "touchcancel",
+      (e) => this.handleTouchEnd(e),
+      { passive: false }
+    );
+
+    // 2. Eventos de Mouse para PC / Escritorio
+    this.zone.addEventListener("mousedown", (e) => this.handleMouseDown(e));
+    window.addEventListener("mousemove", (e) => this.handleMouseMove(e));
+    window.addEventListener("mouseup", () => this.handleMouseUp());
+
+    // Seguridad al perder foco o cambiar de pestaña en el celular
     window.addEventListener("blur", () => this.forceStop());
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
@@ -45,43 +69,69 @@ export class VirtualJoystick {
     }
   }
 
-  handlePointerDown(event) {
+  /**
+   * Inicio de toque en pantalla móvil (touchstart)
+   */
+  handleTouchStart(e) {
     if (this.disabled) return;
-    event.preventDefault();
+    if (e.cancelable) {
+      e.preventDefault();
+    }
+
+    const touch = e.touches && e.touches[0];
+    if (!touch) return;
 
     this.isDragging = true;
-    this.activePointerId = event.pointerId;
     this.thumb.classList.add("dragging");
-
-    try {
-      this.zone.setPointerCapture(event.pointerId);
-    } catch {
-      // Ignorar si no aplica
-    }
-
-    this.updateFromClientCoords(event.clientX, event.clientY);
+    this.updateFromClientCoords(touch.clientX, touch.clientY);
   }
 
-  handlePointerMove(event) {
+  /**
+   * Arrastre del dedo en pantalla móvil (touchmove)
+   * Usa e.touches[0].clientX y e.touches[0].clientY y evita el scroll con e.preventDefault()
+   */
+  handleTouchMove(e) {
     if (!this.isDragging || this.disabled) return;
-    if (this.activePointerId !== null && event.pointerId !== this.activePointerId) {
-      return;
+    if (e.cancelable) {
+      e.preventDefault();
     }
 
-    this.updateFromClientCoords(event.clientX, event.clientY);
+    const touch = e.touches && e.touches[0];
+    if (!touch) return;
+
+    this.updateFromClientCoords(touch.clientX, touch.clientY);
   }
 
-  handlePointerUp(event) {
+  /**
+   * Fin de toque en pantalla móvil (touchend / touchcancel)
+   */
+  handleTouchEnd(e) {
     if (!this.isDragging) return;
-    if (
-      event &&
-      this.activePointerId !== null &&
-      event.pointerId !== undefined &&
-      event.pointerId !== this.activePointerId
-    ) {
+    if (e && e.touches && e.touches.length > 0) {
       return;
     }
+    this.resetToCenterAndStop();
+  }
 
+  /**
+   * Soporte Mouse en escritorio
+   */
+  handleMouseDown(e) {
+    if (this.disabled || e.button !== 0) return;
+    e.preventDefault();
+
+    this.isDragging = true;
+    this.thumb.classList.add("dragging");
+    this.updateFromClientCoords(e.clientX, e.clientY);
+  }
+
+  handleMouseMove(e) {
+    if (!this.isDragging || this.disabled) return;
+    this.updateFromClientCoords(e.clientX, e.clientY);
+  }
+
+  handleMouseUp() {
+    if (!this.isDragging) return;
     this.resetToCenterAndStop();
   }
 
@@ -138,7 +188,6 @@ export class VirtualJoystick {
 
   resetToCenterAndStop() {
     this.isDragging = false;
-    this.activePointerId = null;
     this.thumb.classList.remove("dragging");
     this.thumb.style.transform = "translate3d(0px, 0px, 0px)";
 
@@ -150,7 +199,6 @@ export class VirtualJoystick {
 
   forceStop() {
     this.isDragging = false;
-    this.activePointerId = null;
     this.thumb.classList.remove("dragging");
     this.thumb.style.transform = "translate3d(0px, 0px, 0px)";
     this.currentDirection = "DETENER";

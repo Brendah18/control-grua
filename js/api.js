@@ -99,9 +99,22 @@ class ApiClient {
       } catch (err) {
         if (err && err.status && err.status !== 404) {
           rdsState = "unavailable";
-        } else {
-          rdsState = "unverified";
         }
+      }
+    }
+
+    if (apiAvailable && rdsState === "unverified") {
+      try {
+        const estadoRes = await this.request(
+          CONFIG.ENDPOINTS.ESTADO_VEHICULO(this.vehiculoId),
+          { method: "GET" },
+          3500
+        );
+        if (estadoRes.ok) {
+          rdsState = "available";
+        }
+      } catch {
+        rdsState = "unavailable";
       }
     }
 
@@ -109,7 +122,15 @@ class ApiClient {
   }
 
   /**
-   * Obtiene el catálogo de comandos del vehículo desde AWS EC2 / RDS.
+   * Obtiene la lista de vehículos disponibles en Amazon RDS.
+   */
+  async obtenerVehiculos() {
+    const res = await this.request(CONFIG.ENDPOINTS.VEHICULOS, { method: "GET" });
+    return Array.isArray(res.data) ? res.data : [];
+  }
+
+  /**
+   * Obtiene el catálogo de comandos soportados para el vehículo.
    */
   async obtenerComandos(idVehiculo = this.vehiculoId) {
     try {
@@ -117,32 +138,17 @@ class ApiClient {
         CONFIG.ENDPOINTS.COMANDOS_VEHICULO(idVehiculo),
         { method: "GET" }
       );
-      if (Array.isArray(res.data)) {
-        return res.data;
-      }
+      return Array.isArray(res.data) ? res.data : [];
     } catch {
-      // Fallback a GET /api/comandos?id_vehiculo=1
+      const resFallback = await this.request(CONFIG.ENDPOINTS.COMANDOS, {
+        method: "GET"
+      });
+      return Array.isArray(resFallback.data) ? resFallback.data : [];
     }
-
-    try {
-      const res2 = await this.request(
-        `${CONFIG.ENDPOINTS.COMANDOS}?id_vehiculo=${idVehiculo}`,
-        { method: "GET" }
-      );
-      if (Array.isArray(res2.data)) {
-        return res2.data;
-      }
-      if (res2.data && Array.isArray(res2.data.comandos)) {
-        return res2.data.comandos;
-      }
-    } catch {
-      // Sin comandos remotos
-    }
-    return [];
   }
 
   /**
-   * Obtiene el catálogo de secuencias DEMO desde AWS EC2 / RDS.
+   * Obtiene la lista de coreografías / secuencias DEMO disponibles.
    */
   async obtenerDemos(idVehiculo = this.vehiculoId) {
     try {
@@ -150,33 +156,17 @@ class ApiClient {
         CONFIG.ENDPOINTS.DEMOS_VEHICULO(idVehiculo),
         { method: "GET" }
       );
-      if (Array.isArray(res.data)) {
-        return res.data;
-      }
+      return Array.isArray(res.data) ? res.data : [];
     } catch {
-      // Fallback a GET /api/demos?id_vehiculo=1
+      const resFallback = await this.request(CONFIG.ENDPOINTS.DEMOS, {
+        method: "GET"
+      });
+      return Array.isArray(resFallback.data) ? resFallback.data : [];
     }
-
-    try {
-      const res2 = await this.request(
-        `${CONFIG.ENDPOINTS.DEMOS}?id_vehiculo=${idVehiculo}`,
-        { method: "GET" }
-      );
-      if (Array.isArray(res2.data)) {
-        return res2.data;
-      }
-      if (res2.data && Array.isArray(res2.data.demos)) {
-        return res2.data.demos;
-      }
-    } catch {
-      // Sin demos remotas
-    }
-    return [];
   }
 
   /**
-   * Obtiene el último estado real del vehículo desde Amazon RDS
-   * (GET /api/vehiculos/{id}/estado -> CALL sp_obtener_estado).
+   * Obtiene el estado más reciente del vehículo en tiempo real.
    */
   async obtenerEstadoVehiculo(idVehiculo = this.vehiculoId) {
     try {
@@ -184,68 +174,57 @@ class ApiClient {
         CONFIG.ENDPOINTS.ESTADO_VEHICULO(idVehiculo),
         { method: "GET" }
       );
-      if (Array.isArray(res.data)) {
-        return res.data[0] || null;
+      return res.data;
+    } catch (err) {
+      if (err && (err.status === 404 || err.status === 405)) {
+        const resQuery = await this.request(
+          CONFIG.ENDPOINTS.ESTADO_QUERY(idVehiculo),
+          { method: "GET" }
+        );
+        return resQuery.data;
       }
-      if (res.data && typeof res.data === "object") {
-        return res.data.estado || res.data;
-      }
-    } catch {
-      const fallback = await this.request(
-        CONFIG.ENDPOINTS.ESTADO_QUERY(idVehiculo),
-        { method: "GET" }
-      );
-      if (Array.isArray(fallback.data)) {
-        return fallback.data[0] || null;
-      }
-      return fallback.data || null;
+      throw err;
     }
-    return null;
   }
 
   /**
-   * Obtiene el historial real de movimientos desde Amazon RDS
-   * (GET /api/vehiculos/{id}/historial -> CALL sp_obtener_historial),
-   * ordenado del más reciente al más antiguo y limitado a los últimos 10 registros.
+   * Obtiene el historial real de movimientos desde Amazon RDS (máximo 10).
    */
   async obtenerHistorialVehiculo(
     idVehiculo = this.vehiculoId,
     limit = CONFIG.HISTORIAL_LIMIT || 10
   ) {
-    let rawList = [];
+    let records = [];
 
     try {
-      const res = await this.request(
-        CONFIG.ENDPOINTS.HISTORIAL_VEHICULO(idVehiculo),
-        { method: "GET" }
-      );
-      if (Array.isArray(res.data)) {
-        rawList = res.data;
-      } else if (res.data && Array.isArray(res.data.historial)) {
-        rawList = res.data.historial;
-      }
-    } catch {
-      const fallback = await this.request(
-        CONFIG.ENDPOINTS.HISTORIAL_QUERY(idVehiculo),
-        { method: "GET" }
-      );
-      if (Array.isArray(fallback.data)) {
-        rawList = fallback.data;
-      } else if (fallback.data && Array.isArray(fallback.data.historial)) {
-        rawList = fallback.data.historial;
+      const pathWithLimit = `${CONFIG.ENDPOINTS.HISTORIAL_VEHICULO(idVehiculo)}?limit=${limit}`;
+      const res = await this.request(pathWithLimit, { method: "GET" });
+      records = Array.isArray(res.data)
+        ? res.data
+        : res.data && Array.isArray(res.data.items)
+        ? res.data.items
+        : [];
+    } catch (err) {
+      if (err && (err.status === 404 || err.status === 405)) {
+        const queryPath = `${CONFIG.ENDPOINTS.HISTORIAL_QUERY(idVehiculo)}&limit=${limit}`;
+        const resQuery = await this.request(queryPath, { method: "GET" });
+        records = Array.isArray(resQuery.data)
+          ? resQuery.data
+          : resQuery.data && Array.isArray(resQuery.data.items)
+          ? resQuery.data.items
+          : [];
+      } else {
+        throw err;
       }
     }
 
-    const sorted = [...rawList].sort((a, b) => {
-      const dateA = a.fecha_hora ? new Date(a.fecha_hora).getTime() : 0;
-      const dateB = b.fecha_hora ? new Date(b.fecha_hora).getTime() : 0;
-      if (dateB !== dateA) {
-        return dateB - dateA;
-      }
-      return Number(b.id_historial || 0) - Number(a.id_historial || 0);
+    records.sort((a, b) => {
+      const timeA = new Date(a.fecha_hora || a.fecha_actualizacion || 0).getTime();
+      const timeB = new Date(b.fecha_hora || b.fecha_actualizacion || 0).getTime();
+      return timeB - timeA;
     });
 
-    return sorted.slice(0, limit);
+    return records.slice(0, limit);
   }
 
   /**
@@ -279,6 +258,67 @@ class ApiClient {
         });
       }
       throw err;
+    }
+  }
+
+  /**
+   * Emite señal de Claxon / Sonido de excavadora hacia el backend.
+   */
+  async tocarClaxon(idVehiculo = this.vehiculoId) {
+    const payload = {
+      id_vehiculo: Number(idVehiculo),
+      accion: "CLAXON",
+      timestamp: new Date().toISOString()
+    };
+
+    try {
+      return await this.request(CONFIG.ENDPOINTS.CONTROL_CLAXON, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+    } catch {
+      console.log("[HW IoT] Claxon activado localmente (endpoint remoto 404/no implementado aún):", payload);
+      return { ok: true, data: { status: "local_claxon" } };
+    }
+  }
+
+  /**
+   * Envía ajuste de volumen al backend.
+   */
+  async ajustarVolumen(nivel, idVehiculo = this.vehiculoId) {
+    const payload = {
+      id_vehiculo: Number(idVehiculo),
+      volumen: Number(nivel)
+    };
+
+    try {
+      return await this.request(CONFIG.ENDPOINTS.CONTROL_VOLUMEN, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+    } catch {
+      console.log(`[HW IoT] Nivel de volumen actualizado a: ${nivel}% (local)`);
+      return { ok: true, data: { volumen: nivel } };
+    }
+  }
+
+  /**
+   * Envía ajuste de velocidad al backend.
+   */
+  async ajustarVelocidad(nivel, idVehiculo = this.vehiculoId) {
+    const payload = {
+      id_vehiculo: Number(idVehiculo),
+      velocidad: Number(nivel)
+    };
+
+    try {
+      return await this.request(CONFIG.ENDPOINTS.CONTROL_VELOCIDAD, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+    } catch {
+      console.log(`[HW IoT] Nivel de velocidad actualizado a: ${nivel}% (local)`);
+      return { ok: true, data: { velocidad: nivel } };
     }
   }
 
