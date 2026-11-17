@@ -1,149 +1,230 @@
 /* ==========================================================================
-   EXCAVADORA IoT - PANEL DE CONTROL & MONITOREO INDUSTRIAL V4.2
-   Look: Dark Glassmorphism Premium / Heavy Equipment Cockpit
-   Paleta: Base Oscura (#090d16 / #131b2e), Neón Rosa Pastel (#ff70a6),
-           Lila Cibernético (#c084fc), Cyan Tecnológico (#38bdf8),
-           Rojo Paro (#ef4444) y Verde En Línea (#10b981).
+   VEHÍCULO IOT - PLATAFORMA INTEGRAL 4.1 + 4.2 + 4.3 (PRO EDITION)
+   UX/UI: Premium Cyber-Industrial Glassmorphism & Animated Mesh Aura
+   Paleta: Midnight Navy (#080c16), Cyber Pink (#ff5388), Neon Cyan (#00f2fe),
+           Amethyst Lilac (#a855f7), Emerald Live (#10b981), Amber Warn (#f59e0b)
    ========================================================================== */
 
 :root {
-  --bg-deep: #090d16;
-  --bg-card: rgba(19, 27, 46, 0.78);
-  --bg-card-hover: rgba(26, 38, 66, 0.88);
-  --bg-inner: rgba(10, 15, 28, 0.65);
-  
-  --accent-pink: #ff70a6;
-  --accent-pink-glow: rgba(255, 112, 166, 0.45);
-  --accent-cyan: #38bdf8;
-  --accent-cyan-glow: rgba(56, 189, 248, 0.35);
-  --accent-lilac: #c084fc;
-  --accent-lilac-glow: rgba(192, 132, 252, 0.35);
-  
+  --bg-core: #070a13;
+  --bg-card: rgba(16, 23, 41, 0.76);
+  --bg-card-hover: rgba(22, 32, 57, 0.88);
+  --bg-glass-subtle: rgba(255, 255, 255, 0.04);
+  --bg-glass-inset: rgba(10, 14, 26, 0.7);
+
+  --accent-pink: #ff5388;
+  --accent-pink-glow: rgba(255, 83, 136, 0.45);
+  --accent-cyan: #00f2fe;
+  --accent-cyan-glow: rgba(0, 242, 254, 0.4);
+  --accent-lilac: #a855f7;
+  --accent-lilac-glow: rgba(168, 85, 247, 0.35);
+
   --color-stop: #ef4444;
-  --color-stop-glow: rgba(239, 68, 68, 0.55);
+  --color-stop-glow: rgba(239, 68, 68, 0.6);
   --color-online: #10b981;
   --color-warning: #f59e0b;
-  
-  --text-main: #f8fafc;
+
+  --text-pure: #ffffff;
+  --text-main: #f1f5f9;
   --text-muted: #94a3b8;
   --text-soft: #cbd5e1;
-  
-  --border-glass: rgba(255, 255, 255, 0.1);
-  --border-accent: rgba(255, 112, 166, 0.28);
-  
-  --shadow-cockpit: 0 12px 35px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
-  --shadow-inner: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+
+  --border-glass: rgba(255, 255, 255, 0.12);
+  --border-glow-pink: rgba(255, 83, 136, 0.35);
+  --border-glow-cyan: rgba(0, 242, 254, 0.35);
+
+  --shadow-premium: 0 16px 40px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 0 25px rgba(255, 83, 136, 0.25);
+  --shadow-inset: inset 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
-/* Base y Reset */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
+/* ==========================================================================
+   FONDO ANIMADO PREMIUM (AURA MESH GRADIENT)
+   ========================================================================== */
 html, body {
-  background-color: var(--bg-deep);
+  min-height: 100vh;
+  background-color: var(--bg-core);
   color: var(--text-main);
   font-family: "Chakra Petch", "Nunito", -apple-system, BlinkMacSystemFont, sans-serif;
   letter-spacing: 0.02em;
-  overscroll-behavior-y: contain;
-  -webkit-user-select: none;
-  user-select: none;
+  overflow-x: hidden;
+  position: relative;
 }
 
-.cockpit-bg {
-  background: radial-gradient(circle at 10% 15%, #192440 0%, #090d16 55%, #05080e 100%) !important;
-  background-attachment: fixed !important;
+/* Capa de iluminación ambiental de fondo */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 12% 18%, rgba(255, 83, 136, 0.15) 0%, transparent 45%),
+    radial-gradient(circle at 88% 25%, rgba(0, 242, 254, 0.14) 0%, transparent 45%),
+    radial-gradient(circle at 50% 85%, rgba(168, 85, 247, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, #080c16 0%, #04060b 100%);
+  z-index: -2;
+  pointer-events: none;
 }
 
-/* Tipografía de Alto Contraste */
+/* Aura sutil animada */
+.ambient-aura {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 50% 30%, rgba(255, 83, 136, 0.08), transparent 60%);
+  animation: auraFloat 12s ease-in-out infinite alternate;
+  z-index: -1;
+  pointer-events: none;
+}
+
+@keyframes auraFloat {
+  0% { transform: scale(1) translateY(0); opacity: 0.7; }
+  50% { transform: scale(1.12) translateY(-20px); opacity: 0.95; }
+  100% { transform: scale(1.05) translateY(15px); opacity: 0.8; }
+}
+
+/* ==========================================================================
+   TIPOGRAFÍAS Y UTILIDADES
+   ========================================================================== */
 .text-pink-accent { color: var(--accent-pink) !important; }
 .text-cyan-accent { color: var(--accent-cyan) !important; }
 .text-lilac-accent { color: var(--accent-lilac) !important; }
 .text-warning-pastel { color: var(--color-warning) !important; }
 .text-success-pastel { color: var(--color-online) !important; }
 .text-danger-pastel { color: var(--color-stop) !important; }
-.text-soft-lilac { color: var(--text-muted) !important; }
+.text-soft-muted { color: var(--text-muted) !important; }
 .fw-extrabold { font-weight: 800 !important; }
 
 /* ==========================================================================
-   CABECERA & INDICADORES SUPERIORES
+   BARRA SUPERIOR DE NAVEGACIÓN & ROLES RBAC
    ========================================================================== */
-.cockpit-header {
-  background: rgba(13, 19, 34, 0.85);
-  backdrop-filter: blur(14px);
+.platform-navbar {
+  background: rgba(11, 17, 31, 0.82);
+  backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-glass);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  position: sticky;
+  top: 0;
+  z-index: 1030;
 }
 
-.cockpit-logo-frame {
-  padding: 3px;
+.logo-glow-box {
+  padding: 4px;
   background: linear-gradient(135deg, var(--accent-pink), var(--accent-cyan));
   border-radius: 10px;
-  box-shadow: 0 0 12px var(--accent-pink-glow);
+  box-shadow: 0 0 16px var(--accent-pink-glow);
 }
 
-.cockpit-title {
+.brand-title {
+  font-size: 1.15rem;
   letter-spacing: 0.06em;
-  background: linear-gradient(90deg, #ffffff 20%, var(--accent-pink) 70%, var(--accent-cyan) 100%);
+  background: linear-gradient(90deg, #ffffff 15%, var(--accent-pink) 65%, var(--accent-cyan) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.badge-tech-edition {
-  font-size: 0.65rem;
-  padding: 2px 7px;
+.badge-platform-ver {
+  font-size: 0.68rem;
+  padding: 3px 8px;
   border-radius: 6px;
-  background: rgba(56, 189, 248, 0.15);
+  background: rgba(0, 242, 254, 0.15);
   border: 1px solid var(--accent-cyan);
   color: var(--accent-cyan);
+  font-weight: 800;
+}
+
+/* Pestañas Principales: CONTROL | MONITOREO | ADMINISTRACIÓN */
+.nav-views-cluster {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border-glass);
+}
+
+.nav-tab-pill {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-soft);
   font-weight: 700;
-  vertical-align: middle;
-}
-
-.cockpit-subtitle {
-  font-size: 0.74rem;
-  color: var(--text-muted);
-}
-
-.btn-cockpit-sync {
-  background: rgba(255, 112, 166, 0.12);
-  border: 1px solid var(--border-accent);
-  color: var(--text-main);
-  border-radius: 8px;
-  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 7px 16px;
+  border-radius: 9px;
   transition: all 0.2s ease;
+  cursor: pointer;
 }
 
-.btn-cockpit-sync:hover {
-  background: var(--accent-pink);
+.nav-tab-pill:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-tab-pill.active {
+  background: linear-gradient(135deg, rgba(255, 83, 136, 0.35), rgba(168, 85, 247, 0.35));
+  border-color: var(--accent-pink);
   color: #ffffff;
   box-shadow: 0 0 14px var(--accent-pink-glow);
 }
 
-.btn-cockpit-sync:active {
-  transform: scale(0.95);
+/* Selector de Rol RBAC */
+.rbac-role-selector {
+  background: rgba(16, 23, 41, 0.9);
+  border: 1px solid var(--border-glow-cyan);
+  color: var(--accent-cyan);
+  font-weight: 700;
+  font-size: 0.82rem;
+  border-radius: 9px;
+  padding: 5px 12px;
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.15);
 }
 
-/* Barra de 3 Indicadores de Infraestructura */
-.cockpit-status-bar {
-  background: transparent;
+.rbac-role-selector:focus {
+  background: #11192e;
+  color: #ffffff;
+  border-color: var(--accent-pink);
+  box-shadow: 0 0 16px var(--accent-pink-glow);
 }
 
-.cockpit-indicator-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border-glass);
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+/* Botón Sincronizar */
+.btn-sync-pulse {
+  background: rgba(255, 83, 136, 0.15);
+  border: 1px solid var(--border-glow-pink);
+  color: #ffffff;
+  border-radius: 9px;
+  font-weight: 700;
   transition: all 0.2s ease;
 }
 
-.cockpit-indicator-card:hover {
-  border-color: rgba(255, 255, 255, 0.2);
+.btn-sync-pulse:hover {
+  background: var(--accent-pink);
+  box-shadow: 0 0 18px var(--accent-pink-glow);
   transform: translateY(-1px);
 }
 
-/* Puntos de estado LED */
+.btn-sync-pulse:active {
+  transform: scale(0.95);
+}
+
+/* ==========================================================================
+   BARRA DE 3 INDICADORES DE INFRAESTRUCTURA REAL
+   ========================================================================== */
+.status-bar-indicators {
+  background: transparent;
+}
+
+.indicator-glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border-glass);
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  transition: all 0.25s ease;
+}
+
+.indicator-glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-premium);
+}
+
+/* LED Indicator Dots */
 .status-dot {
   display: inline-block;
   width: 9px;
@@ -155,166 +236,163 @@ html, body {
 
 .dot-online {
   background: var(--color-online);
-  box-shadow: 0 0 8px var(--color-online);
-  animation: pulseLed 2s infinite ease-in-out;
+  box-shadow: 0 0 10px var(--color-online);
+  animation: pulseGreen 2s infinite ease-in-out;
 }
 
 .dot-warning {
   background: var(--color-warning);
-  box-shadow: 0 0 8px var(--color-warning);
+  box-shadow: 0 0 10px var(--color-warning);
 }
 
 .dot-offline {
   background: var(--color-stop);
-  box-shadow: 0 0 8px var(--color-stop);
+  box-shadow: 0 0 10px var(--color-stop);
 }
 
 .dot-neutral {
   background: var(--text-muted);
 }
 
-@keyframes pulseLed {
+@keyframes pulseGreen {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.55; transform: scale(0.9); }
+  50% { opacity: 0.55; transform: scale(0.85); }
 }
 
-/* Badges de Estado */
-.badge-pastel-online {
+/* Badges de Conectividad */
+.badge-state-online {
   background: rgba(16, 185, 129, 0.18);
   color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  border: 1px solid rgba(16, 185, 129, 0.45);
   font-weight: 700;
 }
 
-.badge-pastel-warning {
+.badge-state-warning {
   background: rgba(245, 158, 11, 0.18);
   color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  border: 1px solid rgba(245, 158, 11, 0.45);
   font-weight: 700;
 }
 
-.badge-pastel-offline {
+.badge-state-offline {
   background: rgba(239, 68, 68, 0.18);
   color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  border: 1px solid rgba(239, 68, 68, 0.45);
   font-weight: 700;
 }
 
-.badge-pastel-neutral {
+.badge-state-neutral {
   background: rgba(148, 163, 184, 0.15);
   color: #cbd5e1;
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  border: 1px solid rgba(148, 163, 184, 0.35);
   font-weight: 600;
 }
 
-/* Barra de Comando Activo + Pestañas */
-.cockpit-banner-bar {
-  background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border-glass);
-  box-shadow: var(--shadow-cockpit);
+/* ==========================================================================
+   ALERTA DE SESIÓN TEMPORAL DE INVITADO
+   ========================================================================== */
+.guest-session-alert {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.2), rgba(239, 68, 68, 0.15));
+  border: 1px solid var(--color-warning);
+  border-radius: 12px;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.25);
 }
 
-.badge-tech-status {
-  background: linear-gradient(135deg, var(--accent-pink), var(--accent-lilac));
+.guest-countdown-timer {
+  font-size: 1.1rem;
+  font-weight: 900;
   color: #ffffff;
-  font-weight: 800;
-  font-size: 0.72rem;
-  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 3px 10px;
   border-radius: 6px;
-  letter-spacing: 0.05em;
-}
-
-.command-display-label {
-  font-size: 1.15rem;
-  letter-spacing: 0.06em;
-  color: #ffffff;
-  text-shadow: 0 0 10px var(--accent-pink-glow);
-}
-
-.btn-tab-cockpit {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid transparent;
-  color: var(--text-soft);
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: 0.85rem;
-  padding: 6px 14px;
-  transition: all 0.2s ease;
-}
-
-.btn-tab-cockpit:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.btn-tab-cockpit.active {
-  background: linear-gradient(135deg, rgba(255, 112, 166, 0.25), rgba(56, 189, 248, 0.25));
-  border-color: var(--accent-pink);
-  color: #ffffff;
-  box-shadow: 0 0 12px var(--accent-pink-glow);
+  border: 1px solid var(--color-warning);
 }
 
 /* ==========================================================================
-   LAYOUT GRID PRINCIPAL (COMPACTO Y ULTRA EFICIENTE)
+   ESTRUCTURA DE CONTENEDORES Y TARJETAS GLASS
    ========================================================================== */
-.cockpit-grid-container {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}
-
-@media (min-width: 992px) {
-  .cockpit-grid-container {
-    grid-template-columns: 1.15fr 1fr;
-    gap: 1.25rem;
-    align-items: stretch;
-  }
-  
-  /* En pantallas de escritorio se muestran ambas secciones lado a lado */
-  .view-hidden-mobile {
-    display: block !important;
-  }
-}
-
-@media (max-width: 991px) {
-  .view-hidden-mobile {
-    display: none !important;
-  }
-}
-
-/* Tarjetas Cockpit */
-.cockpit-card {
+.glass-panel {
   background: var(--bg-card);
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(16px);
   border: 1px solid var(--border-glass);
-  border-radius: 16px;
-  box-shadow: var(--shadow-cockpit);
-  overflow: hidden;
-  transition: border-color 0.2s ease;
+  border-radius: 18px;
+  box-shadow: var(--shadow-premium);
+  transition: all 0.25s ease;
 }
 
-.cockpit-card-header {
-  background: rgba(10, 15, 28, 0.7);
+.glass-panel:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.glass-panel-header {
+  background: rgba(10, 15, 28, 0.65);
   border-bottom: 1px solid var(--border-glass);
-  padding: 10px 16px;
-  font-size: 0.88rem;
+  padding: 12px 18px;
+  font-weight: 700;
   letter-spacing: 0.04em;
 }
 
-.badge-cockpit-tag {
-  background: rgba(56, 189, 248, 0.15);
-  border: 1px solid var(--accent-cyan);
-  color: var(--accent-cyan);
-  font-size: 0.75rem;
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-weight: 700;
+/* ==========================================================================
+   VISTA 1: CONTROL (JOYSTICK + DETENER + MANDOS)
+   ========================================================================== */
+.joystick-zone {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #18233f 0%, #0d1426 75%);
+  border: 2px dashed rgba(255, 83, 136, 0.45);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(255, 83, 136, 0.15);
+  touch-action: none;
 }
 
-/* ==========================================================================
-   SECCIÓN 1: CONTROLES - D-PAD / JOYSTICK GRID COMPACTO
-   ========================================================================== */
+.joystick-thumb {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 68px;
+  height: 68px;
+  margin-top: -34px;
+  margin-left: -34px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ff5388 10%, #d946ef 80%);
+  box-shadow: 0 0 18px var(--accent-pink-glow), inset 0 2px 4px rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  transition: box-shadow 0.2s ease;
+}
+
+.joystick-thumb:active, .joystick-thumb.dragging {
+  cursor: grabbing;
+  box-shadow: 0 0 26px var(--accent-pink);
+}
+
+.joystick-center-mark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.joy-label {
+  position: absolute;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+.joy-up { top: 8px; left: 50%; transform: translateX(-50%); }
+.joy-down { bottom: 8px; left: 50%; transform: translateX(-50%); }
+.joy-left { left: 8px; top: 50%; transform: translateY(-50%); }
+.joy-right { right: 8px; top: 50%; transform: translateY(-50%); }
+
+/* D-pad Direccional Compacto */
 .dpad-container {
   width: 100%;
   max-width: 320px;
@@ -322,11 +400,9 @@ html, body {
 
 .dpad-grid {
   display: grid;
-  grid-template-columns: 1fr 1.1fr 1fr;
-  grid-template-rows: 72px 76px 72px;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  grid-template-rows: 68px 74px 68px;
   gap: 8px;
-  align-items: center;
-  justify-items: center;
 }
 
 .dpad-btn {
@@ -340,23 +416,8 @@ html, body {
   background: linear-gradient(145deg, #18233d, #111a2f);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
   transition: all 0.2s ease;
-  padding: 4px;
-}
-
-.dpad-icon {
-  font-size: 1.4rem;
-  line-height: 1;
-  color: var(--accent-pink);
-  transition: transform 0.2s ease;
-}
-
-.dpad-text {
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  margin-top: 2px;
 }
 
 .dpad-btn:hover {
@@ -369,31 +430,19 @@ html, body {
 .dpad-btn:active {
   transform: scale(0.94);
   background: #111a2f;
-  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--shadow-inset);
 }
 
-/* Botón STOP central rojo */
+/* STOP Arcade Central */
 .joy-btn-stop {
   background: radial-gradient(circle, #f43f5e 0%, #be123c 70%, #881337 100%) !important;
   border: 2px solid #fda4af !important;
-  box-shadow: 0 0 18px var(--color-stop-glow), inset 0 1px 2px rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 0 20px var(--color-stop-glow) !important;
   animation: pulseStop 2.8s infinite ease-in-out;
 }
 
-.dpad-stop-icon {
-  font-size: 1.45rem;
-  color: #ffffff;
-}
-
-.dpad-stop-text {
-  font-size: 0.85rem;
-  font-weight: 900;
-  color: #ffffff;
-  letter-spacing: 0.08em;
-}
-
 .joy-btn-stop:hover {
-  box-shadow: 0 0 25px var(--color-stop-glow) !important;
+  box-shadow: 0 0 28px var(--color-stop-glow), 0 0 10px #ffffff !important;
   transform: scale(1.04);
 }
 
@@ -402,87 +451,46 @@ html, body {
 }
 
 @keyframes pulseStop {
-  0%, 100% { box-shadow: 0 0 16px var(--color-stop-glow); }
-  50% { box-shadow: 0 0 26px var(--color-stop-glow), 0 0 8px #ffffff; }
+  0%, 100% { box-shadow: 0 0 18px var(--color-stop-glow); }
+  50% { box-shadow: 0 0 30px var(--color-stop-glow), 0 0 8px #ffffff; }
 }
 
 /* Botón Prioritario DETENER Completo */
-.btn-danger-priority {
-  background: linear-gradient(90deg, #dc2626, #b91c1c);
+.btn-priority-stop {
+  background: linear-gradient(90deg, #dc2626, #991b1b);
   border: 1px solid #f87171;
   color: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
-  letter-spacing: 0.05em;
+  font-weight: 800;
+  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.45);
   transition: all 0.2s ease;
 }
 
-.btn-danger-priority:hover {
+.btn-priority-stop:hover {
   background: linear-gradient(90deg, #ef4444, #dc2626);
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 24px rgba(239, 68, 68, 0.65);
   color: #ffffff;
-  transform: translateY(-1px);
 }
 
-.btn-danger-priority:active {
+.btn-priority-stop:active {
   transform: scale(0.96);
 }
 
-/* FEEDBACK VISUAL DE DEMO / MOVIMIENTO (CRÍTICO) */
+/* Feedback Visual (Flash en botones) */
 .cmd-flash-active {
   background: var(--accent-pink) !important;
   border-color: #ffffff !important;
   color: #ffffff !important;
-  box-shadow: 0 0 24px var(--accent-pink), 0 0 10px #ffffff !important;
+  box-shadow: 0 0 26px var(--accent-pink), 0 0 10px #ffffff !important;
   transform: scale(1.06) !important;
   transition: all 0.15s ease-out;
 }
 
-.cmd-flash-active .dpad-icon,
-.cmd-flash-active .icon-pastel,
-.cmd-flash-active i {
+.cmd-flash-active i, .cmd-flash-active span {
   color: #ffffff !important;
 }
 
-/* Caja de Hardware (Claxon, Volumen, Velocidad) */
-.hardware-box {
-  background: var(--bg-inner);
-  border: 1px solid var(--border-glass);
-}
-
-.btn-claxon-cockpit {
-  background: linear-gradient(135deg, #0ea5e9, #0284c7);
-  border: 1px solid #7dd3fc;
-  color: #ffffff;
-  border-radius: 10px;
-  font-weight: 800;
-  font-size: 0.82rem;
-  padding: 6px 14px;
-  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);
-  transition: all 0.2s ease;
-}
-
-.btn-claxon-cockpit:hover {
-  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
-  box-shadow: 0 0 18px var(--accent-cyan-glow);
-  color: #ffffff;
-  transform: translateY(-1px);
-}
-
-.btn-claxon-cockpit:active {
-  transform: scale(0.94);
-}
-
-.badge-slider-val {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--border-glass);
-  color: #ffffff;
-  font-size: 0.74rem;
-  padding: 3px 7px;
-  border-radius: 6px;
-}
-
-/* Custom Range Sliders */
+/* Sliders de Hardware */
 .custom-cockpit-range {
   height: 8px;
   border-radius: 4px;
@@ -501,7 +509,7 @@ html, body {
 }
 
 .custom-cockpit-range::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
+  transform: scale(1.18);
   box-shadow: 0 0 16px var(--accent-pink);
 }
 
@@ -510,122 +518,45 @@ html, body {
   box-shadow: 0 0 10px var(--accent-cyan-glow) !important;
 }
 
-/* Botones Secundarios de Maniobras (90°, 360°) */
-.cmd-sec-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-glass);
-  color: var(--text-main);
-  border-radius: 12px;
-  transition: all 0.2s ease;
-}
-
-.cmd-sec-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: var(--accent-pink);
-  color: #ffffff;
-  box-shadow: 0 0 12px var(--accent-pink-glow);
-  transform: translateY(-1px);
-}
-
-.cmd-sec-btn:active {
-  transform: scale(0.95);
-}
-
-/* Caja de Secuencias DEMO */
-.demo-cockpit-box {
-  background: var(--bg-inner);
-  border: 1px solid var(--border-glass);
-}
-
-.cockpit-select {
-  background: rgba(19, 27, 46, 0.9);
-  border: 1px solid var(--border-glass);
-  color: #ffffff;
-  border-radius: 10px;
-  font-size: 0.85rem;
-}
-
-.cockpit-select:focus {
-  background: #141e33;
-  border-color: var(--accent-pink);
-  box-shadow: 0 0 12px var(--accent-pink-glow);
-  color: #ffffff;
-}
-
-.btn-cockpit-primary {
-  background: linear-gradient(135deg, var(--accent-pink), #ec4899);
-  border: 1px solid #fbcfe8;
-  color: #ffffff;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.btn-cockpit-primary:hover {
-  box-shadow: 0 0 16px var(--accent-pink-glow);
-  color: #ffffff;
-}
-
-.btn-cockpit-cancel {
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid var(--color-stop);
-  color: #fca5a5;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.btn-cockpit-cancel:not(:disabled):hover {
-  background: var(--color-stop);
-  color: #ffffff;
-}
-
 /* ==========================================================================
-   SECCIÓN 2: MONITOREO - LISTA COMPACTA DE SOLO LECTURA
+   VISTA 2: MONITOREO (TELEMETRÍA + HISTORIAL 10 REGISTROS RDS)
    ========================================================================== */
-.telemetry-read-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.telemetry-read-item {
+.telemetry-row-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-radius: 12px;
-  background: var(--bg-inner);
+  background: var(--bg-glass-inset);
   border: 1px solid var(--border-glass);
-  box-shadow: var(--shadow-inner);
+  box-shadow: var(--shadow-inset);
   transition: all 0.2s ease;
 }
 
-.telemetry-read-item:hover {
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(14, 21, 38, 0.8);
+.telemetry-row-card:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(14, 21, 38, 0.85);
 }
 
-.telemetry-label {
-  font-size: 0.84rem;
+.telemetry-tag {
+  font-size: 0.86rem;
   font-weight: 700;
   color: var(--text-soft);
 }
 
-.telemetry-value {
-  font-size: 0.95rem;
+.telemetry-data {
+  font-size: 1rem;
   font-family: "Chakra Petch", monospace;
+  font-weight: 700;
   letter-spacing: 0.04em;
 }
 
-/* Tabla de Historial (10 registros) */
-.history-table-container {
-  display: flex;
-  flex-direction: column;
-}
-
+/* Tabla de Historial RDS */
 .cockpit-table-scroll {
-  max-height: 240px;
+  max-height: 260px;
   overflow-y: auto;
   border: 1px solid var(--border-glass);
+  border-radius: 10px;
 }
 
 .cockpit-history-table {
@@ -635,97 +566,114 @@ html, body {
 }
 
 .cockpit-history-table th {
-  background: rgba(10, 15, 28, 0.9) !important;
+  background: rgba(10, 15, 28, 0.95) !important;
   color: var(--accent-cyan) !important;
-  font-weight: 700;
+  font-weight: 800;
   border-bottom: 1px solid var(--border-glass) !important;
-  padding: 8px 10px;
+  padding: 9px 12px;
 }
 
 .cockpit-history-table td {
   background: transparent !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  padding: 9px 12px;
 }
 
 .mon-table-row:hover td {
-  background: rgba(255, 112, 166, 0.08) !important;
+  background: rgba(255, 83, 136, 0.1) !important;
 }
 
-.mon-row-icon-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  background: rgba(56, 189, 248, 0.15);
-  color: var(--accent-cyan);
-}
-
-/* Joystick Circular Drawer (Opcional/Complementario) */
-.touch-joystick-drawer summary {
-  list-style: none;
-}
-
-.touch-joystick-drawer summary::-webkit-details-marker {
-  display: none;
-}
-
-.joystick-zone {
+/* ==========================================================================
+   VISTA 3: ADMINISTRACIÓN (DASHBOARD + CRUD + EDITOR DEMOS + AUDITORÍA)
+   ========================================================================== */
+.admin-metric-card {
+  background: linear-gradient(135deg, rgba(16, 23, 41, 0.85), rgba(24, 34, 62, 0.75));
+  border: 1px solid var(--border-glass);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: var(--shadow-premium);
   position: relative;
-  width: 170px;
-  height: 170px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #1a2542 0%, #0d1424 75%);
-  border: 2px dashed rgba(255, 112, 166, 0.35);
-  touch-action: none;
+  overflow: hidden;
+  transition: all 0.25s ease;
 }
 
-.joystick-thumb {
+.admin-metric-card::before {
+  content: "";
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 60px;
-  height: 60px;
-  margin-top: -30px;
-  margin-left: -30px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #ff70a6, #d946ef);
-  box-shadow: 0 0 14px var(--accent-pink-glow);
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent-pink);
+}
+
+.admin-metric-card.card-cyan::before { background: var(--accent-cyan); }
+.admin-metric-card.card-lilac::before { background: var(--accent-lilac); }
+.admin-metric-card.card-green::before { background: var(--color-online); }
+
+.admin-metric-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.metric-number {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  font-family: "Chakra Petch", monospace;
+}
+
+/* Editor Visual de Coreografías DEMO */
+.demo-editor-canvas {
+  background: var(--bg-glass-inset);
+  border: 1px dashed var(--border-glass);
+  border-radius: 14px;
+  padding: 16px;
+  min-height: 180px;
+}
+
+.step-card-item {
+  background: rgba(22, 32, 57, 0.9);
+  border: 1px solid var(--border-glass);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+.step-card-item:hover {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.2);
+}
+
+.step-badge-order {
+  background: var(--accent-pink);
+  color: #ffffff;
+  font-weight: 800;
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: grab;
-}
-
-.joystick-center-mark {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 12px;
-  height: 12px;
-  margin-top: -6px;
-  margin-left: -6px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.25);
+  font-size: 0.8rem;
 }
 
-.joy-label {
-  position: absolute;
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: var(--text-muted);
+/* Tablas Administrativas y Auditoría */
+.admin-table-container {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
 }
-.joy-up { top: 6px; left: 50%; transform: translateX(-50%); }
-.joy-down { bottom: 6px; left: 50%; transform: translateX(-50%); }
-.joy-left { left: 6px; top: 50%; transform: translateY(-50%); }
-.joy-right { right: 6px; top: 50%; transform: translateY(-50%); }
 
-/* ==========================================================================
-   FOOTER
-   ========================================================================== */
-.cockpit-footer {
-  background: rgba(9, 13, 22, 0.95);
+/* Pie de página */
+.platform-footer {
+  background: rgba(7, 10, 19, 0.95);
   border-top: 1px solid var(--border-glass);
 }

@@ -1,10 +1,7 @@
 /**
  * Gestor de Conexión WebSocket Seguro WSS hacia AWS EC2 (ES6 Module)
- * - Conecta a CONFIG.WS_URL ("wss://52.4.170.82:8000/ws/1").
- * - En socket.onmessage intercepta los eventos de movimiento y DEMO e invoca inmediatamente
- *   las funciones de js/monitoreo.js (actualizarUltimoMovimiento y recargarTablaHistorial).
- * - Aplica un destello visual temporal (clase CSS .cmd-flash-active) en el botón o dirección
- *   del control correspondiente (Avanzar, Izquierda, Derecha, Retroceder, Giros, Detener, etc.).
+ * - Conexión estricta a wss://52.4.170.82:8000/ws/1 con fallback inteligente a wss://52.4.170.82:8000/ws
+ * - Reconexión automática indestructible y feedback visual inmediato.
  */
 
 import { CONFIG } from "./config.js";
@@ -14,8 +11,8 @@ import {
 } from "./monitoreo.js";
 
 /**
- * Aplica un destello visual temporal en el botón o etiqueta direccional correspondiente
- * para confirmar en pantalla que el movimiento se ejecutó (tanto manual como en DEMO).
+ * Aplica un destello visual temporal en el botón o elemento direccional
+ * correspondiente para confirmar en pantalla que la acción se ejecutó.
  */
 export function destelloVisualControl(rawCommandName) {
   if (!rawCommandName) return;
@@ -27,7 +24,7 @@ export function destelloVisualControl(rawCommandName) {
 
   const elementsToFlash = [];
 
-  // 1. Botones del D-pad compacto / Joystick Grid y etiquetas cardinales
+  // D-Pad y mandos direccionales
   if (cmd.includes("AVANZAR")) {
     document.querySelectorAll(".joy-up, .joy-btn-up, #btn-joy-up, [data-dir='AVANZAR']").forEach((el) => {
       elementsToFlash.push(el);
@@ -46,22 +43,17 @@ export function destelloVisualControl(rawCommandName) {
     });
   }
 
-  // 2. Botón prioritario DETENER / STOP central rojo
+  // STOP prioritario
   if (cmd.includes("DETENER") || cmd.includes("STOP")) {
     document.querySelectorAll("#btn-stop-priority, .joy-btn-stop, #btn-joy-stop, [data-dir='DETENER']").forEach((el) => {
       elementsToFlash.push(el);
     });
   }
 
-  // 3. Botones secundarios de maniobras y catálogo dinámico
+  // Maniobras secundarias
   document.querySelectorAll(".cmd-sec-btn").forEach((btn) => {
-    const attrName = String(btn.getAttribute("data-cmd-name") || "")
-      .trim()
-      .toUpperCase();
-    const textName = String(btn.textContent || "")
-      .trim()
-      .toUpperCase()
-      .replace(/\s+/g, "_");
+    const attrName = String(btn.getAttribute("data-cmd-name") || "").toUpperCase();
+    const textName = String(btn.textContent || "").trim().toUpperCase().replace(/\s+/g, "_");
 
     if (
       attrName === cmd ||
@@ -73,15 +65,15 @@ export function destelloVisualControl(rawCommandName) {
     }
   });
 
-  // 4. Palanca central del joystick
+  // Palanca analógica
   const thumb = document.getElementById("joystick-thumb");
   if (thumb && !cmd.includes("DETENER")) {
     elementsToFlash.push(thumb);
   }
 
   elementsToFlash.forEach((el) => {
+    if (!el) return;
     el.classList.remove("cmd-flash-active");
-    // Forzar reflow para reiniciar la animación
     void el.offsetWidth;
     el.classList.add("cmd-flash-active");
 
@@ -90,7 +82,7 @@ export function destelloVisualControl(rawCommandName) {
     }
     el._flashTimer = setTimeout(() => {
       el.classList.remove("cmd-flash-active");
-    }, 700);
+    }, 650);
   });
 }
 
@@ -101,7 +93,12 @@ export class IoTWebSocketClient {
     this.socket = null;
     this.reconnectTimer = null;
     this.hasConnectedOnce = false;
+    this.useFallbackUrl = false;
     this.manualClose = false;
+  }
+
+  getCurrentUrl() {
+    return this.useFallbackUrl ? CONFIG.WS_FALLBACK_URL : CONFIG.WS_URL;
   }
 
   connect() {
@@ -118,8 +115,9 @@ export class IoTWebSocketClient {
 
     this.onStatusChange(this.hasConnectedOnce ? "reconnecting" : "connecting");
 
+    const targetUrl = this.getCurrentUrl();
     try {
-      this.socket = new WebSocket(CONFIG.WS_URL);
+      this.socket = new WebSocket(targetUrl);
     } catch {
       this.onStatusChange("disconnected");
       this.scheduleReconnect(CONFIG.WS_RECONNECT_DELAY_MS);
@@ -131,11 +129,6 @@ export class IoTWebSocketClient {
       this.onStatusChange("online");
     };
 
-    /**
-     * Reactividad UI por WebSocket:
-     * Intercepta el mensaje entrante, actualiza la sección de Monitoreo
-     * en js/monitoreo.js y activa el destello visual en el control correspondiente.
-     */
     this.socket.onmessage = async (event) => {
       try {
         const parsed = JSON.parse(event.data);
@@ -159,15 +152,12 @@ export class IoTWebSocketClient {
           Boolean(nombreComando);
 
         if (esEventoMovimiento) {
-          // 1. Destello visual en el botón / dirección del control (Feedback Visual DEMO / Manual)
           if (nombreComando && evento !== "CONEXION_ESTABLECIDA") {
             destelloVisualControl(nombreComando);
           }
 
-          // 2. Actualizar inmediatamente los datos de monitoreo
           await actualizarUltimoMovimiento(estadoObj || parsed);
 
-          // 3. Recargar tabla de historial si es movimiento persistido en Amazon RDS
           const guardaHistorial =
             evento === "MOVIMIENTO_INDIVIDUAL" ||
             evento === "ESTADO_ACTUALIZADO" ||
@@ -178,16 +168,21 @@ export class IoTWebSocketClient {
           }
         }
       } catch {
-        const fallbackPayload = { raw: event.data };
-        this.onMessage(fallbackPayload);
+        this.onMessage({ raw: event.data });
       }
     };
 
-    this.socket.onerror = () => {};
+    this.socket.onerror = () => {
+      // onerror precede inmediatamente a onclose
+    };
 
     this.socket.onclose = () => {
       this.onStatusChange("disconnected");
       if (!this.manualClose) {
+        // Si nunca conectó a /ws/1, intenta alternar a /ws
+        if (!this.hasConnectedOnce) {
+          this.useFallbackUrl = !this.useFallbackUrl;
+        }
         this.scheduleReconnect(CONFIG.WS_RECONNECT_DELAY_MS);
       }
     };

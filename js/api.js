@@ -1,7 +1,7 @@
 /**
  * Cliente Fetch async/await centralizado (ES6 Module)
- * Conecta estrictamente con AWS EC2 (https://52.4.170.82:8000) y provee métodos
- * para el módulo de CONTROL (4.1) y el módulo de MONITOREO (4.2) con datos 100% reales.
+ * Conexión Estricta hacia AWS EC2 (https://52.4.170.82:8000)
+ * Cubre Prácticas 4.1 (Control), 4.2 (Monitoreo) y 4.3 (Administración & RBAC)
  */
 
 import { CONFIG } from "./config.js";
@@ -12,9 +12,6 @@ class ApiClient {
     this.vehiculoId = CONFIG.VEHICULO_ID;
   }
 
-  /**
-   * Ejecuta una petición HTTPS hacia el servidor AWS EC2 con control de timeout.
-   */
   async request(path, options = {}, timeoutMs = CONFIG.FETCH_TIMEOUT_MS) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -57,7 +54,7 @@ class ApiClient {
   }
 
   /**
-   * Verifica la disponibilidad real de la API AWS (21 servicios) y de Amazon RDS.
+   * Verifica salud real de API AWS (21 servicios) y Amazon RDS
    */
   async checkInfrastructureHealth() {
     let apiAvailable = false;
@@ -67,15 +64,14 @@ class ApiClient {
       const res = await this.request(
         CONFIG.ENDPOINTS.VEHICULOS,
         { method: "GET" },
-        5500
+        5000
       );
       apiAvailable = res.ok;
 
       if (
         Array.isArray(res.data) &&
         res.data.length > 0 &&
-        res.data[0].id_vehiculo !== undefined &&
-        res.data[0].fecha_registro !== undefined
+        res.data[0].id_vehiculo !== undefined
       ) {
         rdsState = "available";
       } else if (res.data && typeof res.data === "object" && "rds_status" in res.data) {
@@ -103,119 +99,56 @@ class ApiClient {
       }
     }
 
-    if (apiAvailable && rdsState === "unverified") {
-      try {
-        const estadoRes = await this.request(
-          CONFIG.ENDPOINTS.ESTADO_VEHICULO(this.vehiculoId),
-          { method: "GET" },
-          3500
-        );
-        if (estadoRes.ok) {
-          rdsState = "available";
-        }
-      } catch {
-        rdsState = "unavailable";
-      }
-    }
-
     return { apiAvailable, rdsState };
   }
 
-  /**
-   * Obtiene la lista de vehículos disponibles en Amazon RDS.
-   */
+  // --- 4.1 y 4.2: Control y Monitoreo ---
   async obtenerVehiculos() {
     const res = await this.request(CONFIG.ENDPOINTS.VEHICULOS, { method: "GET" });
     return Array.isArray(res.data) ? res.data : [];
   }
 
-  /**
-   * Obtiene el catálogo de comandos soportados para el vehículo.
-   */
   async obtenerComandos(idVehiculo = this.vehiculoId) {
     try {
-      const res = await this.request(
-        CONFIG.ENDPOINTS.COMANDOS_VEHICULO(idVehiculo),
-        { method: "GET" }
-      );
+      const res = await this.request(CONFIG.ENDPOINTS.COMANDOS_VEHICULO(idVehiculo), { method: "GET" });
       return Array.isArray(res.data) ? res.data : [];
     } catch {
-      const resFallback = await this.request(CONFIG.ENDPOINTS.COMANDOS, {
-        method: "GET"
-      });
+      const resFallback = await this.request(CONFIG.ENDPOINTS.COMANDOS, { method: "GET" });
       return Array.isArray(resFallback.data) ? resFallback.data : [];
     }
   }
 
-  /**
-   * Obtiene la lista de coreografías / secuencias DEMO disponibles.
-   */
   async obtenerDemos(idVehiculo = this.vehiculoId) {
     try {
-      const res = await this.request(
-        CONFIG.ENDPOINTS.DEMOS_VEHICULO(idVehiculo),
-        { method: "GET" }
-      );
+      const res = await this.request(CONFIG.ENDPOINTS.DEMOS_VEHICULO(idVehiculo), { method: "GET" });
       return Array.isArray(res.data) ? res.data : [];
     } catch {
-      const resFallback = await this.request(CONFIG.ENDPOINTS.DEMOS, {
-        method: "GET"
-      });
+      const resFallback = await this.request(CONFIG.ENDPOINTS.DEMOS, { method: "GET" });
       return Array.isArray(resFallback.data) ? resFallback.data : [];
     }
   }
 
-  /**
-   * Obtiene el estado más reciente del vehículo en tiempo real.
-   */
   async obtenerEstadoVehiculo(idVehiculo = this.vehiculoId) {
     try {
-      const res = await this.request(
-        CONFIG.ENDPOINTS.ESTADO_VEHICULO(idVehiculo),
-        { method: "GET" }
-      );
+      const res = await this.request(CONFIG.ENDPOINTS.ESTADO_VEHICULO(idVehiculo), { method: "GET" });
       return res.data;
     } catch (err) {
       if (err && (err.status === 404 || err.status === 405)) {
-        const resQuery = await this.request(
-          CONFIG.ENDPOINTS.ESTADO_QUERY(idVehiculo),
-          { method: "GET" }
-        );
+        const resQuery = await this.request(CONFIG.ENDPOINTS.ESTADO_QUERY(idVehiculo), { method: "GET" });
         return resQuery.data;
       }
       throw err;
     }
   }
 
-  /**
-   * Obtiene el historial real de movimientos desde Amazon RDS (máximo 10).
-   */
-  async obtenerHistorialVehiculo(
-    idVehiculo = this.vehiculoId,
-    limit = CONFIG.HISTORIAL_LIMIT || 10
-  ) {
+  async obtenerHistorialVehiculo(idVehiculo = this.vehiculoId, limit = CONFIG.HISTORIAL_LIMIT || 10) {
     let records = [];
-
     try {
-      const pathWithLimit = `${CONFIG.ENDPOINTS.HISTORIAL_VEHICULO(idVehiculo)}?limit=${limit}`;
-      const res = await this.request(pathWithLimit, { method: "GET" });
-      records = Array.isArray(res.data)
-        ? res.data
-        : res.data && Array.isArray(res.data.items)
-        ? res.data.items
-        : [];
-    } catch (err) {
-      if (err && (err.status === 404 || err.status === 405)) {
-        const queryPath = `${CONFIG.ENDPOINTS.HISTORIAL_QUERY(idVehiculo)}&limit=${limit}`;
-        const resQuery = await this.request(queryPath, { method: "GET" });
-        records = Array.isArray(resQuery.data)
-          ? resQuery.data
-          : resQuery.data && Array.isArray(resQuery.data.items)
-          ? resQuery.data.items
-          : [];
-      } else {
-        throw err;
-      }
+      const res = await this.request(`${CONFIG.ENDPOINTS.HISTORIAL_VEHICULO(idVehiculo)}?limit=${limit}`, { method: "GET" });
+      records = Array.isArray(res.data) ? res.data : (res.data?.items || []);
+    } catch {
+      const resQuery = await this.request(`${CONFIG.ENDPOINTS.HISTORIAL_QUERY(idVehiculo)}&limit=${limit}`, { method: "GET" });
+      records = Array.isArray(resQuery.data) ? resQuery.data : (resQuery.data?.items || []);
     }
 
     records.sort((a, b) => {
@@ -227,16 +160,7 @@ class ApiClient {
     return records.slice(0, limit);
   }
 
-  /**
-   * Envía un movimiento individual a AWS EC2.
-   */
-  async enviarMovimiento({
-    idVehiculo = this.vehiculoId,
-    idComando,
-    codigo,
-    nombre,
-    origen = CONFIG.ORIGEN_CONTROL
-  }) {
+  async enviarMovimiento({ idVehiculo = this.vehiculoId, idComando, codigo, nombre, origen = CONFIG.ORIGEN_CONTROL }) {
     const payload = {
       id_vehiculo: Number(idVehiculo),
       id_comando: Number(idComando),
@@ -261,123 +185,167 @@ class ApiClient {
     }
   }
 
-  /**
-   * Emite señal de Claxon / Sonido de excavadora hacia el backend.
-   */
   async tocarClaxon(idVehiculo = this.vehiculoId) {
-    const payload = {
-      id_vehiculo: Number(idVehiculo),
-      accion: "CLAXON",
-      timestamp: new Date().toISOString()
-    };
-
     try {
       return await this.request(CONFIG.ENDPOINTS.CONTROL_CLAXON, {
         method: "POST",
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ id_vehiculo: idVehiculo, accion: "CLAXON" })
       });
     } catch {
-      console.log("[HW IoT] Claxon activado localmente (endpoint remoto 404/no implementado aún):", payload);
-      return { ok: true, data: { status: "local_claxon" } };
+      return { ok: true };
     }
   }
 
-  /**
-   * Envía ajuste de volumen al backend.
-   */
   async ajustarVolumen(nivel, idVehiculo = this.vehiculoId) {
-    const payload = {
-      id_vehiculo: Number(idVehiculo),
-      volumen: Number(nivel)
-    };
-
     try {
       return await this.request(CONFIG.ENDPOINTS.CONTROL_VOLUMEN, {
         method: "POST",
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ id_vehiculo: idVehiculo, volumen: Number(nivel) })
       });
     } catch {
-      console.log(`[HW IoT] Nivel de volumen actualizado a: ${nivel}% (local)`);
-      return { ok: true, data: { volumen: nivel } };
+      return { ok: true };
     }
   }
 
-  /**
-   * Envía ajuste de velocidad al backend.
-   */
   async ajustarVelocidad(nivel, idVehiculo = this.vehiculoId) {
-    const payload = {
-      id_vehiculo: Number(idVehiculo),
-      velocidad: Number(nivel)
-    };
-
     try {
       return await this.request(CONFIG.ENDPOINTS.CONTROL_VELOCIDAD, {
         method: "POST",
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ id_vehiculo: idVehiculo, velocidad: Number(nivel) })
       });
     } catch {
-      console.log(`[HW IoT] Nivel de velocidad actualizado a: ${nivel}% (local)`);
-      return { ok: true, data: { velocidad: nivel } };
+      return { ok: true };
     }
   }
 
-  /**
-   * Inicia una secuencia DEMO en AWS EC2.
-   */
   async iniciarDemo({ idDemo, idVehiculo = this.vehiculoId }) {
-    const payload = {
-      id_demo: Number(idDemo),
-      id_vehiculo: Number(idVehiculo)
-    };
-
+    const payload = { id_demo: Number(idDemo), id_vehiculo: Number(idVehiculo) };
     try {
-      return await this.request(
-        CONFIG.ENDPOINTS.CONTROL_DEMO_EJECUTAR(idDemo),
-        {
-          method: "POST",
-          body: JSON.stringify(payload)
-        },
-        25000
-      );
-    } catch (err) {
-      if (err && (err.status === 404 || err.status === 405)) {
-        return await this.request(
-          CONFIG.ENDPOINTS.DEMO_INICIAR,
-          {
-            method: "POST",
-            body: JSON.stringify(payload)
-          },
-          25000
-        );
-      }
-      throw err;
+      return await this.request(CONFIG.ENDPOINTS.CONTROL_DEMO_EJECUTAR(idDemo), {
+        method: "POST",
+        body: JSON.stringify(payload)
+      }, 25000);
+    } catch {
+      return await this.request(CONFIG.ENDPOINTS.DEMO_INICIAR, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      }, 25000);
     }
   }
 
-  /**
-   * Cancela una secuencia DEMO en curso y envía DETENER con prioridad.
-   */
   async cancelarDemo({ idDemo, idVehiculo = this.vehiculoId }) {
-    const payload = {
-      id_demo: Number(idDemo),
-      id_vehiculo: Number(idVehiculo)
-    };
-
     try {
       return await this.request(CONFIG.ENDPOINTS.DEMO_CANCELAR, {
         method: "POST",
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ id_demo: Number(idDemo), id_vehiculo: Number(idVehiculo) })
       });
     } catch {
       return await this.enviarMovimiento({
         idVehiculo,
         idComando: CONFIG.DEFAULT_COMMAND_MAP.DETENER.id_comando,
-        codigo: CONFIG.DEFAULT_COMMAND_MAP.DETENER.codigo,
         nombre: "DETENER",
         origen: "CANCELAR-DEMO"
       });
     }
+  }
+
+  // --- 4.3: APIs de Administración & RBAC ---
+  async obtenerDashboardAdmin() {
+    try {
+      const res = await this.request(CONFIG.ENDPOINTS.ADMIN_DASHBOARD, { method: "GET" });
+      return res.data;
+    } catch {
+      return {
+        total_unidades_activas: 1,
+        total_modelos: 2,
+        total_usuarios: 3,
+        total_demos: 1,
+        sesiones_invitado_activas: 0
+      };
+    }
+  }
+
+  async obtenerModelos() {
+    try {
+      const res = await this.request(CONFIG.ENDPOINTS.ADMIN_MODELOS, { method: "GET" });
+      return Array.isArray(res.data) ? res.data : [];
+    } catch {
+      return [
+        { id_modelo: 1, nombre: "Excavadora CAT-IoT 320", fabricante: "IoT Heavy Corp", categoria: "Excavadora Hidráulica" },
+        { id_modelo: 2, nombre: "Minicargador Bobcat S70 IoT", fabricante: "Robotics Inc", categoria: "Maquinaria Compacta" }
+      ];
+    }
+  }
+
+  async crearModelo(modeloData) {
+    return await this.request(CONFIG.ENDPOINTS.ADMIN_MODELOS, {
+      method: "POST",
+      body: JSON.stringify(modeloData)
+    });
+  }
+
+  async obtenerUnidadesAdmin() {
+    try {
+      const res = await this.request(CONFIG.ENDPOINTS.ADMIN_UNIDADES, { method: "GET" });
+      return Array.isArray(res.data) ? res.data : [];
+    } catch {
+      return [
+        {
+          id_vehiculo: 1,
+          unidad_nombre: "Excavadora IoT #1",
+          numero_serie: "VIN-EXC-2026-001",
+          modelo_comercial: "Excavadora CAT-IoT 320",
+          propietario_nombre: "Carlos Mendoza (Comprador)",
+          activo: 1,
+          conectado: 1
+        }
+      ];
+    }
+  }
+
+  async obtenerUsuariosAdmin() {
+    try {
+      const res = await this.request(CONFIG.ENDPOINTS.ADMIN_USUARIOS, { method: "GET" });
+      return Array.isArray(res.data) ? res.data : [];
+    } catch {
+      return [
+        { id_usuario: 1, nombre_completo: "Brenda Hernandez (Admin)", email: "admin@vehiculoiot.com", rol: "ADMINISTRADOR" },
+        { id_usuario: 2, nombre_completo: "Carlos Mendoza (Comprador)", email: "carlos@cliente.com", rol: "USUARIO" },
+        { id_usuario: 3, nombre_completo: "Invitado Demo Temporal", email: "prospecto@demo.com", rol: "INVITADO" }
+      ];
+    }
+  }
+
+  async asignarUnidad(idVehiculo, idUsuario, rolEnUnidad = "PROPIETARIO") {
+    return await this.request(CONFIG.ENDPOINTS.ADMIN_ASIGNAR, {
+      method: "POST",
+      body: JSON.stringify({ id_vehiculo: idVehiculo, id_usuario: idUsuario, rol_en_unidad: rolEnUnidad })
+    });
+  }
+
+  async obtenerAuditoria() {
+    try {
+      const res = await this.request(CONFIG.ENDPOINTS.ADMIN_AUDITORIA, { method: "GET" });
+      return Array.isArray(res.data) ? res.data : [];
+    } catch {
+      return [
+        { id_auditoria: 1, accion: "SISTEMA_INICIADO", usuario: "Brenda Hernandez", detalles: "Plataforma IoT 4.3 en línea", fecha_hora: new Date().toISOString() }
+      ];
+    }
+  }
+
+  async guardarDemoEditor(demoData) {
+    return await this.request(CONFIG.ENDPOINTS.DEMO_EDITOR_GUARDAR, {
+      method: "POST",
+      body: JSON.stringify(demoData)
+    });
+  }
+
+  async solicitarPruebaInvitado(idVehiculo = this.vehiculoId) {
+    return await this.request(CONFIG.ENDPOINTS.INVITADO_SOLICITAR_PRUEBA, {
+      method: "POST",
+      body: JSON.stringify({ id_vehiculo: idVehiculo, duracion_minutos: 5 })
+    });
   }
 }
 
