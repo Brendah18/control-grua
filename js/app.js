@@ -479,15 +479,19 @@ class PlatformApp {
     ];
     dpadList.forEach(({ el, cmd }) => {
       el?.addEventListener("click", async () => {
-        if (!this.canExecuteCommand(cmd)) return;
-        await this.dispatchCommand(cmd, false);
+        const codigo = el.getAttribute("data-codigo") || cmd;
+        if (!this.canExecuteCommand(codigo)) return;
+        await this.dispatchCommand(codigo, false);
       });
     });
 
-    // Catálogo de los 8 Comandos Físicos Restantes (05 al 12)
+    // Catálogo de los 8 Comandos Físicos Restantes (05 al 12) usando data-codigo exacto
     this.ui.secondaryButtons.forEach((btn) => {
       btn.addEventListener("click", async () => {
-        const cmdName = btn.getAttribute("data-cmd-name") || btn.getAttribute("data-comando");
+        const cmdName =
+          btn.getAttribute("data-codigo") ||
+          btn.getAttribute("data-cmd-name") ||
+          btn.getAttribute("data-comando");
         if (!cmdName) return;
         if (!this.canExecuteCommand(cmdName)) return;
 

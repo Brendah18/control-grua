@@ -675,26 +675,26 @@
             <!-- Cruceta D-Pad (01 ADELANTE, 02 ATRÁS, 03 GIRAR_IZQUIERDA, 04 GIRAR_DERECHA + DETENER) -->
             <div class="dpad-cross-wrap flex-shrink-0" aria-label="Cruceta Direccional 01 a 04">
               <div class="d-flex justify-content-center">
-                <button id="btn-joy-up" type="button" class="btn-dpad-pastel joy-up" data-dir="ADELANTE" data-cmd-name="ADELANTE" title="01. ADELANTE">
+                <button id="btn-joy-up" type="button" class="btn-dpad-pastel joy-up" data-dir="ADELANTE" data-cmd-name="ADELANTE" data-codigo="ADELANTE" title="01. ADELANTE">
                   <span class="dpad-num">01</span>
                   <i class="bi bi-caret-up-fill"></i>
                 </button>
               </div>
               <div class="dpad-row-mid">
-                <button id="btn-joy-left" type="button" class="btn-dpad-pastel joy-left" data-dir="GIRAR_IZQUIERDA" data-cmd-name="GIRAR_IZQUIERDA" title="03. GIRAR IZQUIERDA">
+                <button id="btn-joy-left" type="button" class="btn-dpad-pastel joy-left" data-dir="GIRAR_IZQUIERDA" data-cmd-name="GIRAR_IZQUIERDA" data-codigo="GIRAR_IZQUIERDA" title="03. GIRAR IZQUIERDA">
                   <span class="dpad-num">03</span>
                   <i class="bi bi-caret-left-fill"></i>
                 </button>
-                <button id="btn-joy-stop" type="button" class="btn-dpad-pastel joy-stop" data-dir="DETENER" title="13. DETENER">
+                <button id="btn-joy-stop" type="button" class="btn-dpad-pastel joy-stop" data-dir="DETENER" data-codigo="DETENER" title="13. DETENER">
                   <i class="bi bi-stop-circle-fill"></i>
                 </button>
-                <button id="btn-joy-right" type="button" class="btn-dpad-pastel joy-right" data-dir="GIRAR_DERECHA" data-cmd-name="GIRAR_DERECHA" title="04. GIRAR DERECHA">
+                <button id="btn-joy-right" type="button" class="btn-dpad-pastel joy-right" data-dir="GIRAR_DERECHA" data-cmd-name="GIRAR_DERECHA" data-codigo="GIRAR_DERECHA" title="04. GIRAR DERECHA">
                   <span class="dpad-num">04</span>
                   <i class="bi bi-caret-right-fill"></i>
                 </button>
               </div>
               <div class="d-flex justify-content-center">
-                <button id="btn-joy-down" type="button" class="btn-dpad-pastel joy-down" data-dir="ATRAS" data-cmd-name="ATRAS" title="02. ATRÁS">
+                <button id="btn-joy-down" type="button" class="btn-dpad-pastel joy-down" data-dir="ATRAS" data-cmd-name="ATRAS" data-codigo="ATRAS" title="02. ATRÁS">
                   <i class="bi bi-caret-down-fill"></i>
                   <span class="dpad-num">02</span>
                 </button>
@@ -723,7 +723,7 @@
                 <div id="lbl-joy-dir" class="telemetry-val-highlight text-cyan text-truncate">En espera</div>
               </div>
 
-              <button id="btn-stop-priority" type="button" class="btn-stop-huge" data-dir="DETENER">
+              <button id="btn-stop-priority" type="button" class="btn-stop-huge" data-dir="DETENER" data-codigo="DETENER">
                 <i class="bi bi-octagon-fill me-1"></i>
                 <span>DETENER</span>
               </button>
@@ -745,7 +745,7 @@
 
           <div class="functions-grid-4x2">
             <!-- Fila 1 (05 a 08): MOVER_IZQUIERDA, MOVER_DERECHA, SUBIR_BRAZO, BAJAR_BRAZO -->
-            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-cmd-name="MOVER_IZQUIERDA" data-comando="MOVER_IZQUIERDA">
+            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-codigo="MOVER_IZQUIERDA" data-cmd-name="MOVER_IZQUIERDA" data-comando="MOVER_IZQUIERDA">
               <div class="tile-top-row">
                 <span class="cmd-code-tag">05</span>
                 <i class="bi bi-arrow-bar-left tile-icon text-purple"></i>
@@ -753,7 +753,7 @@
               <span class="tile-label">Mover Izq.</span>
             </button>
 
-            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-cmd-name="MOVER_DERECHA" data-comando="MOVER_DERECHA">
+            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-codigo="MOVER_DERECHA" data-cmd-name="MOVER_DERECHA" data-comando="MOVER_DERECHA">
               <div class="tile-top-row">
                 <span class="cmd-code-tag">06</span>
                 <i class="bi bi-arrow-bar-right tile-icon text-purple"></i>
@@ -761,7 +761,7 @@
               <span class="tile-label">Mover Der.</span>
             </button>
 
-            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-cmd-name="SUBIR_BRAZO" data-comando="SUBIR_BRAZO">
+            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-codigo="SUBIR_BRAZO" data-cmd-name="SUBIR_BRAZO" data-comando="SUBIR_BRAZO">
               <div class="tile-top-row">
                 <span class="cmd-code-tag">07</span>
                 <i class="bi bi-box-arrow-in-up tile-icon text-amber"></i>
@@ -769,7 +769,7 @@
               <span class="tile-label">Subir Brazo</span>
             </button>
 
-            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-cmd-name="BAJAR_BRAZO" data-comando="BAJAR_BRAZO">
+            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-codigo="BAJAR_BRAZO" data-cmd-name="BAJAR_BRAZO" data-comando="BAJAR_BRAZO">
               <div class="tile-top-row">
                 <span class="cmd-code-tag">08</span>
                 <i class="bi bi-box-arrow-in-down tile-icon text-amber"></i>
@@ -778,7 +778,7 @@
             </button>
 
             <!-- Fila 2 (09 a 12): LUZ_LED, ACTIVAR_SONIDO, DESACTIVAR_SONIDO, CONTROL_REMOTO -->
-            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-cmd-name="LUZ_LED" data-comando="LUZ_LED">
+            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-codigo="LUZ_LED" data-cmd-name="LUZ_LED" data-comando="LUZ_LED">
               <div class="tile-top-row">
                 <span class="cmd-code-tag">09</span>
                 <i class="bi bi-lightbulb-fill tile-icon text-emerald"></i>
@@ -786,7 +786,7 @@
               <span class="tile-label">Luz / LED</span>
             </button>
 
-            <button id="btn-claxon" type="button" class="btn-cmd-tile cmd-sec-btn" data-cmd-name="ACTIVAR_SONIDO" data-comando="ACTIVAR_SONIDO">
+            <button id="btn-claxon" type="button" class="btn-cmd-tile cmd-sec-btn" data-codigo="ACTIVAR_SONIDO" data-cmd-name="ACTIVAR_SONIDO" data-comando="ACTIVAR_SONIDO">
               <div class="tile-top-row">
                 <span class="cmd-code-tag">10</span>
                 <i class="bi bi-volume-up-fill tile-icon text-purple"></i>
@@ -794,7 +794,7 @@
               <span class="tile-label">Act. Sonido</span>
             </button>
 
-            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-cmd-name="DESACTIVAR_SONIDO" data-comando="DESACTIVAR_SONIDO">
+            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-codigo="DESACTIVAR_SONIDO" data-cmd-name="DESACTIVAR_SONIDO" data-comando="DESACTIVAR_SONIDO">
               <div class="tile-top-row">
                 <span class="cmd-code-tag">11</span>
                 <i class="bi bi-volume-mute-fill tile-icon text-pink"></i>
@@ -802,7 +802,7 @@
               <span class="tile-label">Des. Sonido</span>
             </button>
 
-            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-cmd-name="CONTROL_REMOTO" data-comando="CONTROL_REMOTO">
+            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-codigo="CONTROL_REMOTO" data-cmd-name="CONTROL_REMOTO" data-comando="CONTROL_REMOTO">
               <div class="tile-top-row">
                 <span class="cmd-code-tag">12</span>
                 <i class="bi bi-broadcast-pin tile-icon text-cyan"></i>
