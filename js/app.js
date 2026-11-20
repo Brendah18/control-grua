@@ -193,27 +193,34 @@ class PlatformApp {
       });
     });
 
-    // Maniobras de giro secundarias
+    // Funciones Operativas del Vehículo (CABINA_IZQ, CABINA_DER, EXCAVAR, LUZ, SONIDO, VELOCIDAD)
+    this.speedLevels = ["Normal", "Turbo", "Lento"];
+    this.speedLevelIdx = 0;
+
     this.ui.secondaryButtons.forEach((btn) => {
       btn.addEventListener("click", async () => {
         if (this.isDemoRunning) return;
-        if (this.currentRole === "INVITADO") {
-          alert("Los giros automáticos están restringidos para el Rol Invitado.");
+        const cmdName = btn.getAttribute("data-cmd-name");
+        if (!cmdName) return;
+
+        if (this.currentRole === "INVITADO" && !["AVANZAR", "RETROCEDER", "DETENER"].includes(cmdName)) {
+          alert("Acción restringida: El Rol Invitado solo tiene autorización para AVANZAR, RETROCEDER y DETENER.");
           return;
         }
-        const cmdName = btn.getAttribute("data-cmd-name");
-        if (cmdName) await this.dispatchCommand(cmdName, false);
+
+        if (cmdName === "SONIDO") {
+          this.emitClaxonSound();
+        } else if (cmdName === "VELOCIDAD") {
+          this.speedLevelIdx = (this.speedLevelIdx + 1) % this.speedLevels.length;
+          const nextLabel = this.speedLevels[this.speedLevelIdx];
+          if (this.ui.lblSpeedVal) this.ui.lblSpeedVal.textContent = nextLabel;
+        }
+
+        await this.dispatchCommand(cmdName, false);
       });
     });
 
-    // Hardware: Claxon con Audio Sintetizado
-    this.ui.btnClaxon?.addEventListener("click", async () => {
-      this.emitClaxonSound();
-      destelloVisualControl("DETENER");
-      await api.tocarClaxon(CONFIG.VEHICULO_ID);
-    });
-
-    // Hardware: Sliders
+    // Hardware: Sliders de respaldo
     this.ui.sliderVolume?.addEventListener("input", (e) => {
       const val = e.target.value;
       if (this.ui.lblVolumeVal) this.ui.lblVolumeVal.textContent = `${val}%`;
@@ -221,18 +228,6 @@ class PlatformApp {
     });
     this.ui.sliderVolume?.addEventListener("change", async (e) => {
       await api.ajustarVolumen(e.target.value, CONFIG.VEHICULO_ID);
-    });
-
-    this.ui.sliderSpeed?.addEventListener("input", (e) => {
-      const val = Number(e.target.value);
-      let label = "Normal (70%)";
-      if (val <= 35) label = "Lento (30%)";
-      else if (val >= 85) label = "Turbo (100%)";
-      if (this.ui.lblSpeedVal) this.ui.lblSpeedVal.textContent = label;
-      this.monitoreo.setVelocidadTelemetry(val);
-    });
-    this.ui.sliderSpeed?.addEventListener("change", async (e) => {
-      await api.ajustarVelocidad(e.target.value, CONFIG.VEHICULO_ID);
     });
 
     // Secuencias DEMO (Botones Iniciar y Cancelar)
@@ -654,10 +649,44 @@ class PlatformApp {
             nombre: String(cmd.nombre)
           });
         });
+        this.refreshDemoEditorSelects();
       }
     } catch {
       // Catálogo base preservado
     }
+  }
+
+  buildDemoSelectOptionsHtml(selectedId = 1) {
+    const lista = CONFIG.CATALOGO_11_COMANDOS || [
+      { nombre: "AVANZAR", id_comando: 1 },
+      { nombre: "RETROCEDER", id_comando: 2 },
+      { nombre: "IZQUIERDA", id_comando: 10 },
+      { nombre: "DERECHA", id_comando: 11 },
+      { nombre: "DETENER", id_comando: 9 },
+      { nombre: "CABINA_IZQ", id_comando: 12 },
+      { nombre: "CABINA_DER", id_comando: 13 },
+      { nombre: "EXCAVAR", id_comando: 14 },
+      { nombre: "LUZ", id_comando: 15 },
+      { nombre: "SONIDO", id_comando: 16 },
+      { nombre: "VELOCIDAD", id_comando: 17 }
+    ];
+
+    return lista
+      .map((item) => {
+        const synced = this.commandCatalog.get(item.nombre) || item;
+        const idCmd = Number(synced.id_comando);
+        const isSel = idCmd === Number(selectedId) ? "selected" : "";
+        return `<option value="${idCmd}" ${isSel}>${item.nombre}</option>`;
+      })
+      .join("");
+  }
+
+  refreshDemoEditorSelects() {
+    const selects = this.ui.demoEditorStepsList?.querySelectorAll(".step-cmd-select") || [];
+    selects.forEach((sel) => {
+      const currentVal = Number(sel.value || 1);
+      sel.innerHTML = this.buildDemoSelectOptionsHtml(currentVal);
+    });
   }
 
   async loadDemos() {
@@ -730,14 +759,10 @@ class PlatformApp {
     div.dataset.orden = String(newOrder);
     div.innerHTML = `
       <span class="step-badge-order">${newOrder}</span>
-      <select class="form-select form-select-sm step-cmd-select bg-white border" style="max-width: 130px;">
-        <option value="1">AVANZAR</option>
-        <option value="3">GIRAR IZQ</option>
-        <option value="4">GIRAR DER</option>
-        <option value="2">RETROCEDER</option>
-        <option value="9">DETENER</option>
+      <select class="form-select form-select-sm step-cmd-select bg-white border" style="max-width: 145px;">
+        ${this.buildDemoSelectOptionsHtml(1)}
       </select>
-      <input type="number" class="form-control form-control-sm step-dur-input bg-white border" value="1500" style="width: 75px;" placeholder="ms" />
+      <input type="number" class="form-control form-control-sm step-dur-input bg-white border" value="2500" style="width: 75px;" placeholder="ms" />
       <button type="button" class="btn btn-sm text-danger btn-remove-step p-0"><i class="bi bi-trash"></i></button>
     `;
 

@@ -508,6 +508,62 @@ body.viewport-app {
   transform: scale(1.1);
 }
 
+/* D-Pad Compacto Glassmorphism Pastel (AVANZAR, RETROCEDER, IZQUIERDA, DERECHA, DETENER) */
+.dpad-compact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 33px);
+  grid-template-rows: repeat(3, 33px);
+  gap: 3px;
+  align-items: center;
+  justify-items: center;
+}
+
+.btn-dpad-key {
+  width: 33px;
+  height: 33px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1.5px solid rgba(168, 85, 247, 0.35);
+  color: #7e22ce;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.12);
+  transition: all 0.15s ease;
+  padding: 0;
+}
+.btn-dpad-key:hover,
+.btn-dpad-key:active {
+  background: linear-gradient(135deg, #fce7f3, #e9d5ff);
+  border-color: #ec4899;
+  color: #be185d;
+  transform: scale(0.95);
+}
+.btn-dpad-key.joy-up    { grid-column: 2; grid-row: 1; }
+.btn-dpad-key.joy-left  { grid-column: 1; grid-row: 2; }
+.btn-dpad-key.joy-stop  {
+  grid-column: 2;
+  grid-row: 2;
+  background: linear-gradient(135deg, #ffe4e6, #fce7f3);
+  border-color: #f43f5e;
+  color: #e11d48;
+}
+.btn-dpad-key.joy-right { grid-column: 3; grid-row: 2; }
+.btn-dpad-key.joy-down  { grid-column: 2; grid-row: 3; }
+
+@media (max-width: 375px) {
+  .dpad-compact-grid {
+    grid-template-columns: repeat(3, 28px);
+    grid-template-rows: repeat(3, 28px);
+  }
+  .btn-dpad-key {
+    width: 28px;
+    height: 28px;
+    font-size: 0.82rem;
+  }
+}
+
 .telemetry-box {
   background: rgba(255, 255, 255, 0.92);
   border: 1.5px solid rgba(168, 85, 247, 0.3);

@@ -147,19 +147,19 @@
     <div id="view-control" class="app-view active">
       <div class="control-grid-layout">
         
-        <!-- Tarjeta 1: Control de Dirección -->
+        <!-- Tarjeta 1: Control de Dirección (5 comandos: AVANZAR, RETROCEDER, IZQUIERDA, DERECHA, DETENER) -->
         <div class="glass-card card-direction">
           <div class="card-header-clean d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-2">
               <div class="header-icon-box bg-cyan-soft text-cyan">
                 <i class="bi bi-compass"></i>
               </div>
-              <span class="header-title">Control de Dirección</span>
+              <span class="header-title">Control de Dirección (Tracción &amp; Orugas)</span>
             </div>
             <span id="badge-direccion-joystick" class="badge-soft badge-neutral">En espera</span>
           </div>
 
-          <div class="card-body-clean d-flex align-items-center justify-content-between gap-3">
+          <div class="card-body-clean d-flex align-items-center justify-content-between gap-2">
             <!-- Joystick Circular Táctil -->
             <div class="joystick-wrapper flex-shrink-0">
               <div id="joystick-zone" class="joystick-zone">
@@ -171,10 +171,29 @@
               </div>
             </div>
 
+            <!-- D-Pad Compacto de Tracción Rápida (AVANZAR, RETROCEDER, IZQUIERDA, DERECHA, DETENER) -->
+            <div class="dpad-compact-grid flex-shrink-0" aria-label="D-Pad Direccional">
+              <button id="btn-joy-up" type="button" class="btn-dpad-key joy-up" data-dir="AVANZAR" title="AVANZAR (Forward)">
+                <i class="bi bi-caret-up-fill"></i>
+              </button>
+              <button id="btn-joy-left" type="button" class="btn-dpad-key joy-left" data-dir="IZQUIERDA" title="IZQUIERDA (Turn track left)">
+                <i class="bi bi-caret-left-fill"></i>
+              </button>
+              <button id="btn-joy-stop" type="button" class="btn-dpad-key joy-stop" data-dir="DETENER" title="DETENER">
+                <i class="bi bi-stop-circle-fill"></i>
+              </button>
+              <button id="btn-joy-right" type="button" class="btn-dpad-key joy-right" data-dir="DERECHA" title="DERECHA (Turn track right)">
+                <i class="bi bi-caret-right-fill"></i>
+              </button>
+              <button id="btn-joy-down" type="button" class="btn-dpad-key joy-down" data-dir="RETROCEDER" title="RETROCEDER (Backward)">
+                <i class="bi bi-caret-down-fill"></i>
+              </button>
+            </div>
+
             <!-- Cuadrícula de Telemetría + Botón STOP -->
             <div class="telemetry-stop-column flex-grow-1 d-flex flex-column justify-content-between">
               <!-- ÁNGULO y POTENCIA -->
-              <div class="row g-2 mb-1">
+              <div class="row g-1 mb-1">
                 <div class="col-6">
                   <div class="telemetry-box text-center">
                     <span class="telemetry-label">ÁNGULO</span>
@@ -190,104 +209,95 @@
               </div>
 
               <!-- DIRECCIÓN -->
-              <div class="telemetry-box direction-box text-center mb-2">
-                <span class="telemetry-label">DIRECCIÓN</span>
+              <div class="telemetry-box direction-box text-center mb-1">
+                <span class="telemetry-label">COMANDO ACTIVO</span>
                 <div id="lbl-joy-dir" class="telemetry-val-highlight text-cyan">En espera</div>
               </div>
 
               <!-- Botón Rojo Grande: DETENER VEHÍCULO -->
-              <button id="btn-stop-priority" type="button" class="btn-stop-huge">
-                <i class="bi bi-octagon-fill me-2"></i>
-                <span>DETENER VEHÍCULO</span>
+              <button id="btn-stop-priority" type="button" class="btn-stop-huge" data-dir="DETENER">
+                <i class="bi bi-octagon-fill me-1"></i>
+                <span>DETENER</span>
               </button>
             </div>
           </div>
         </div>
 
-        <!-- Tarjeta 2: Funciones del Vehículo -->
+        <!-- Tarjeta 2: Funciones del Vehículo (6 Funciones Operativas NO.555-104 = 11 Comandos Totales) -->
         <div class="glass-card card-functions">
           <div class="card-header-clean d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-2">
               <div class="header-icon-box bg-purple-soft text-purple">
                 <i class="bi bi-grid-fill"></i>
               </div>
-              <span class="header-title">Funciones del Vehículo</span>
+              <span class="header-title">Funciones del Vehículo (NO.555-104)</span>
             </div>
-            <span class="badge-soft badge-cyan">7 Funciones</span>
+            <span class="badge-soft badge-cyan">11 Comandos RDS</span>
           </div>
 
           <div class="card-body-clean d-flex flex-column gap-2">
-            <!-- Grid 2x2 Botones de Maniobra -->
+            <!-- Fila Superior (3 Botones): CABINA_IZQ, CABINA_DER, EXCAVAR -->
             <div class="row g-2">
-              <div class="col-6">
-                <button type="button" class="btn-vehicle-action cmd-sec-btn" data-cmd-name="GIRAR_IZQUIERDA">
+              <div class="col-4">
+                <button type="button" class="btn-vehicle-action cmd-sec-btn" data-cmd-name="CABINA_IZQ">
                   <div class="action-icon text-cyan"><i class="bi bi-arrow-counterclockwise"></i></div>
                   <div class="action-text text-start">
-                    <span class="action-title">Cabina Izquierda</span>
-                    <span class="action-sub">Giro de torreta</span>
+                    <span class="action-title">Cabina Izq.</span>
+                    <span class="action-sub">Torreta Izq.</span>
                   </div>
                 </button>
               </div>
-              <div class="col-6">
-                <button type="button" class="btn-vehicle-action cmd-sec-btn" data-cmd-name="GIRAR_DERECHA">
+              <div class="col-4">
+                <button type="button" class="btn-vehicle-action cmd-sec-btn" data-cmd-name="CABINA_DER">
                   <div class="action-icon text-cyan"><i class="bi bi-arrow-clockwise"></i></div>
                   <div class="action-text text-start">
-                    <span class="action-title">Cabina Derecha</span>
-                    <span class="action-sub">Giro de torreta</span>
+                    <span class="action-title">Cabina Der.</span>
+                    <span class="action-sub">Torreta Der.</span>
                   </div>
                 </button>
               </div>
-              <div class="col-6">
-                <button type="button" class="btn-vehicle-action cmd-sec-btn" data-cmd-name="BAJAR_BRAZO">
-                  <div class="action-icon text-amber"><i class="bi bi-box-arrow-in-down"></i></div>
+              <div class="col-4">
+                <button type="button" class="btn-vehicle-action cmd-sec-btn" data-cmd-name="EXCAVAR">
+                  <div class="action-icon text-amber"><i class="bi bi-hammer"></i></div>
                   <div class="action-text text-start">
-                    <span class="action-title">Bajar Garra</span>
-                    <span class="action-sub">Brazo hidráulico</span>
-                  </div>
-                </button>
-              </div>
-              <div class="col-6">
-                <button type="button" class="btn-vehicle-action cmd-sec-btn" data-cmd-name="SUBIR_BRAZO">
-                  <div class="action-icon text-amber"><i class="bi bi-box-arrow-in-up"></i></div>
-                  <div class="action-text text-start">
-                    <span class="action-title">Subir Garra</span>
-                    <span class="action-sub">Brazo hidráulico</span>
+                    <span class="action-title">Excavar</span>
+                    <span class="action-sub">Brazo / Pala</span>
                   </div>
                 </button>
               </div>
             </div>
 
-            <!-- Fila Inferior 3 Controles: Luz, Sonido y Velocidad -->
+            <!-- Fila Inferior (3 Botones): LUZ, SONIDO, VELOCIDAD -->
             <div class="row g-2">
               <div class="col-4">
-                <button type="button" class="btn-vehicle-mini cmd-sec-btn" data-cmd-name="ABRIR_PALA">
+                <button type="button" class="btn-vehicle-mini cmd-sec-btn" data-cmd-name="LUZ">
                   <div class="mini-icon text-emerald"><i class="bi bi-lightbulb-fill"></i></div>
                   <div class="mini-text text-start">
                     <span class="mini-title">Luz</span>
-                    <span class="mini-sub">Sistema ópt...</span>
+                    <span class="mini-sub">Light ON/OFF</span>
                   </div>
                 </button>
               </div>
               <div class="col-4">
-                <button id="btn-claxon" type="button" class="btn-vehicle-mini">
-                  <div class="mini-icon text-purple"><i class="bi bi-volume-up-fill"></i></div>
+                <button id="btn-claxon" type="button" class="btn-vehicle-mini cmd-sec-btn" data-cmd-name="SONIDO">
+                  <div class="mini-icon text-purple"><i class="bi bi-music-note-beamed"></i></div>
                   <div class="mini-text text-start">
                     <span class="mini-title">Sonido</span>
-                    <span class="mini-sub">Alerta acús...</span>
+                    <span class="mini-sub">Music ON/OFF</span>
                   </div>
                 </button>
               </div>
               <div class="col-4">
-                <div class="btn-vehicle-mini speed-mini-box">
+                <button id="btn-speed-cmd" type="button" class="btn-vehicle-mini cmd-sec-btn" data-cmd-name="VELOCIDAD">
                   <div class="mini-icon text-cyan"><i class="bi bi-speedometer2"></i></div>
                   <div class="mini-text text-start flex-grow-1">
                     <div class="d-flex justify-content-between align-items-center">
                       <span class="mini-title">Velocidad</span>
-                      <span id="lbl-speed-val" class="speed-val-badge">70%</span>
+                      <span id="lbl-speed-val" class="speed-val-badge">Normal</span>
                     </div>
-                    <input id="slider-speed" type="range" class="form-range slider-micro" min="20" max="100" value="70" />
+                    <span class="mini-sub">Cambiar nivel</span>
                   </div>
-                </div>
+                </button>
               </div>
             </div>
           </div>
@@ -606,15 +616,21 @@
               </div>
             </div>
             <div id="demo-editor-steps-list" class="demo-steps-container d-flex flex-wrap gap-2">
-              <!-- Paso 1 por defecto -->
+              <!-- Paso 1 por defecto (11 Comandos Operativos) -->
               <div class="step-card-item" data-orden="1">
                 <span class="step-badge-order">1</span>
-                <select class="form-select form-select-sm step-cmd-select" style="max-width: 120px;">
+                <select class="form-select form-select-sm step-cmd-select" style="max-width: 145px;">
                   <option value="1" selected>AVANZAR</option>
-                  <option value="3">GIRAR IZQ</option>
-                  <option value="4">GIRAR DER</option>
                   <option value="2">RETROCEDER</option>
+                  <option value="10">IZQUIERDA</option>
+                  <option value="11">DERECHA</option>
                   <option value="9">DETENER</option>
+                  <option value="12">CABINA_IZQ</option>
+                  <option value="13">CABINA_DER</option>
+                  <option value="14">EXCAVAR</option>
+                  <option value="15">LUZ</option>
+                  <option value="16">SONIDO</option>
+                  <option value="17">VELOCIDAD</option>
                 </select>
                 <input type="number" class="form-control form-control-sm step-dur-input" value="2500" style="width: 75px;" placeholder="ms" />
                 <button type="button" class="btn btn-sm text-danger btn-remove-step p-0"><i class="bi bi-trash"></i></button>
@@ -666,13 +682,9 @@
     <span id="lbl-vehiculo-id">1</span>
     <span id="lbl-unidad-serie">VIN-EXC-2026-001</span>
     <span id="lbl-comando-actual">DETENER</span>
-    <button id="btn-joy-up" data-dir="AVANZAR"></button>
-    <button id="btn-joy-down" data-dir="RETROCEDER"></button>
-    <button id="btn-joy-left" data-dir="IZQUIERDA"></button>
-    <button id="btn-joy-right" data-dir="DERECHA"></button>
-    <button id="btn-joy-stop" data-dir="DETENER"></button>
     <input id="slider-volume" type="range" value="80" />
     <span id="lbl-volume-val">80%</span>
+    <input id="slider-speed" type="range" value="70" />
     <span id="mon-wss-dot"></span>
     <span id="mon-wss-text"></span>
     <span id="mon-speed-val">70%</span>

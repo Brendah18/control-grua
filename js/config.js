@@ -59,22 +59,40 @@ export const CONFIG = Object.freeze({
     INVITADO_SOLICITAR_PRUEBA: "/api/invitado/solicitar-prueba"
   },
 
-  // Mapeo por defecto de comandos
+  // Catálogo oficial de 11 comandos operativos (Excavadora NO.555-104)
+  CATALOGO_11_COMANDOS: [
+    { id_comando: 1, codigo: 1, nombre: "AVANZAR", etiqueta: "AVANZAR (Forward)" },
+    { id_comando: 2, codigo: 2, nombre: "RETROCEDER", etiqueta: "RETROCEDER (Backward)" },
+    { id_comando: 10, codigo: 10, nombre: "IZQUIERDA", etiqueta: "IZQUIERDA (Oruga Izq.)" },
+    { id_comando: 11, codigo: 11, nombre: "DERECHA", etiqueta: "DERECHA (Oruga Der.)" },
+    { id_comando: 9, codigo: 9, nombre: "DETENER", etiqueta: "DETENER (Paro Total)" },
+    { id_comando: 12, codigo: 12, nombre: "CABINA_IZQ", etiqueta: "CABINA_IZQ (Torreta Izq.)" },
+    { id_comando: 13, codigo: 13, nombre: "CABINA_DER", etiqueta: "CABINA_DER (Torreta Der.)" },
+    { id_comando: 14, codigo: 14, nombre: "EXCAVAR", etiqueta: "EXCAVAR (Brazo/Pala)" },
+    { id_comando: 15, codigo: 15, nombre: "LUZ", etiqueta: "LUZ (Light ON/OFF)" },
+    { id_comando: 16, codigo: 16, nombre: "SONIDO", etiqueta: "SONIDO (Music ON/OFF)" },
+    { id_comando: 17, codigo: 17, nombre: "VELOCIDAD", etiqueta: "VELOCIDAD (Speed)" }
+  ],
+
+  // Mapeo por defecto de comandos (11 operativos + alias históricos 3..8 intactos)
   DEFAULT_COMMAND_MAP: {
     AVANZAR: { id_comando: 1, codigo: 1, nombre: "AVANZAR" },
     RETROCEDER: { id_comando: 2, codigo: 2, nombre: "RETROCEDER" },
-    IZQUIERDA: { id_comando: 3, codigo: 3, nombre: "GIRAR_IZQUIERDA" },
+    IZQUIERDA: { id_comando: 10, codigo: 10, nombre: "IZQUIERDA" },
+    DERECHA: { id_comando: 11, codigo: 11, nombre: "DERECHA" },
+    DETENER: { id_comando: 9, codigo: 9, nombre: "DETENER" },
+    CABINA_IZQ: { id_comando: 12, codigo: 12, nombre: "CABINA_IZQ" },
+    CABINA_DER: { id_comando: 13, codigo: 13, nombre: "CABINA_DER" },
+    EXCAVAR: { id_comando: 14, codigo: 14, nombre: "EXCAVAR" },
+    LUZ: { id_comando: 15, codigo: 15, nombre: "LUZ" },
+    SONIDO: { id_comando: 16, codigo: 16, nombre: "SONIDO" },
+    VELOCIDAD: { id_comando: 17, codigo: 17, nombre: "VELOCIDAD" },
+    // Alias históricos (IDs 3..8 preservados)
     GIRAR_IZQUIERDA: { id_comando: 3, codigo: 3, nombre: "GIRAR_IZQUIERDA" },
-    DERECHA: { id_comando: 4, codigo: 4, nombre: "GIRAR_DERECHA" },
     GIRAR_DERECHA: { id_comando: 4, codigo: 4, nombre: "GIRAR_DERECHA" },
     SUBIR_BRAZO: { id_comando: 5, codigo: 5, nombre: "SUBIR_BRAZO" },
     BAJAR_BRAZO: { id_comando: 6, codigo: 6, nombre: "BAJAR_BRAZO" },
     ABRIR_PALA: { id_comando: 7, codigo: 7, nombre: "ABRIR_PALA" },
-    CERRAR_PALA: { id_comando: 8, codigo: 8, nombre: "CERRAR_PALA" },
-    DETENER: { id_comando: 9, codigo: 9, nombre: "DETENER" },
-    GIRO_90_IZQ: { id_comando: 3, codigo: 3, nombre: "GIRO_90_IZQ" },
-    GIRO_90_DER: { id_comando: 4, codigo: 4, nombre: "GIRO_90_DER" },
-    GIRO_360_IZQ: { id_comando: 3, codigo: 3, nombre: "GIRO_360_IZQ" },
-    GIRO_360_DER: { id_comando: 4, codigo: 4, nombre: "GIRO_360_DER" }
+    CERRAR_PALA: { id_comando: 8, codigo: 8, nombre: "CERRAR_PALA" }
   }
 });

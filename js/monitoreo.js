@@ -318,10 +318,14 @@ export class MonitoreoController {
 
     if (key.includes("AVANZAR")) return "bi-arrow-up-circle-fill";
     if (key.includes("RETROCEDER")) return "bi-arrow-down-circle-fill";
-    if (key.includes("360") && key.includes("IZQ")) return "bi-arrow-repeat";
-    if (key.includes("360") && key.includes("DER")) return "bi-bootstrap-reboot";
-    if (key.includes("IZQ")) return "bi-arrow-counterclockwise";
-    if (key.includes("DER")) return "bi-arrow-clockwise";
+    if (key === "CABINA_IZQ") return "bi-arrow-counterclockwise";
+    if (key === "CABINA_DER") return "bi-arrow-clockwise";
+    if (key.includes("IZQ")) return "bi-caret-left-square-fill";
+    if (key.includes("DER")) return "bi-caret-right-square-fill";
+    if (key.includes("EXCAVAR")) return "bi-hammer";
+    if (key.includes("LUZ")) return "bi-lightbulb-fill";
+    if (key.includes("SONIDO") || key.includes("CLAXON")) return "bi-music-note-beamed";
+    if (key.includes("VELOCIDAD")) return "bi-speedometer2";
     if (key.includes("SUBIR_BRAZO")) return "bi-box-arrow-in-up";
     if (key.includes("BAJAR_BRAZO")) return "bi-box-arrow-in-down";
     if (key.includes("ABRIR_PALA")) return "bi-arrows-angle-expand";
