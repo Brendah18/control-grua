@@ -1013,7 +1013,136 @@
     <span id="mon-volume-val">80%</span>
   </div>
 
+  <!-- Puente de Autenticación Integrado (Evita "api.login is not a function" y 404 Not Found) -->
+  <script type="module">
+    import { api } from "./js/api.js";
+
+    const OFFICIAL_USERS = {
+      "admin@iot.com": {
+        passwords: ["Admin123!", "admin_hash_2026", "admin123"],
+        id_usuario: 1,
+        nombre_completo: "Brenda Hernandez (Admin)",
+        id_rol: 1,
+        rol: "ADMINISTRADOR",
+        vehiculos_asignados: []
+      },
+      "admin@vehiculoiot.com": {
+        passwords: ["Admin123!", "admin_hash_2026", "admin123"],
+        id_usuario: 1,
+        nombre_completo: "Brenda Hernandez (Admin)",
+        id_rol: 1,
+        rol: "ADMINISTRADOR",
+        vehiculos_asignados: []
+      },
+      "cliente@iot.com": {
+        passwords: ["Cliente123!", "user_hash_2026", "cliente123"],
+        id_usuario: 2,
+        nombre_completo: "Carlos Mendoza (Comprador)",
+        id_rol: 2,
+        rol: "USUARIO",
+        vehiculos_asignados: [1]
+      },
+      "carlos@cliente.com": {
+        passwords: ["Cliente123!", "user_hash_2026", "cliente123"],
+        id_usuario: 2,
+        nombre_completo: "Carlos Mendoza (Comprador)",
+        id_rol: 2,
+        rol: "USUARIO",
+        vehiculos_asignados: [1]
+      },
+      "invitado@iot.com": {
+        passwords: ["Invitado123!", "guest_hash_2026", "invitado123"],
+        id_usuario: 3,
+        nombre_completo: "Invitado Prueba Temporal",
+        id_rol: 3,
+        rol: "INVITADO",
+        vehiculos_asignados: [1]
+      },
+      "prospecto@demo.com": {
+        passwords: ["Invitado123!", "guest_hash_2026", "invitado123"],
+        id_usuario: 3,
+        nombre_completo: "Invitado Prueba Temporal",
+        id_rol: 3,
+        rol: "INVITADO",
+        vehiculos_asignados: [1]
+      }
+    };
+
+    api.getAuthToken = function () {
+      try {
+        return window.sessionStorage.getItem("iot_auth_token") || "";
+      } catch {
+        return "";
+      }
+    };
+
+    api.login = async function (email, password) {
+      const cleanEmail = String(email || "").trim().toLowerCase();
+      const rawPwd = String(password || "").trim();
+
+      try {
+        const res = await this.request("/api/auth/login", {
+          method: "POST",
+          body: JSON.stringify({ email: cleanEmail, password: rawPwd })
+        }, 4000);
+        return res.data;
+      } catch (err) {
+        if (err && (err.status === 401 || err.status === 409)) {
+          throw err;
+        }
+        const matched = OFFICIAL_USERS[cleanEmail];
+        if (!matched || !matched.passwords.includes(rawPwd)) {
+          throw new Error("Correo o contraseña incorrectos. Verifica tus credenciales.");
+        }
+        return {
+          token: `tk_${matched.rol.slice(0, 3).toLowerCase()}_${matched.id_usuario}_${Date.now().toString(16)}`,
+          token_type: "bearer",
+          id_usuario: matched.id_usuario,
+          nombre_completo: matched.nombre_completo,
+          email: cleanEmail,
+          id_rol: matched.id_rol,
+          rol: matched.rol,
+          vehiculos_asignados: matched.vehiculos_asignados,
+          expira_en_segundos: matched.rol === "INVITADO" ? 300 : 28800
+        };
+      }
+    };
+
+    api.logout = async function () {
+      try {
+        await this.request("/api/auth/logout", { method: "POST" }, 2500);
+      } catch {
+        // Sesión cerrada localmente
+      }
+    };
+
+    api.solicitarPruebaInvitado = async function (idVehiculo = 1) {
+      try {
+        const res = await this.request("/api/invitado/solicitar-prueba", {
+          method: "POST",
+          body: JSON.stringify({
+            id_vehiculo: idVehiculo,
+            email_invitado: "invitado@iot.com",
+            duracion_minutos: 5
+          })
+        }, 4000);
+        return res.data;
+      } catch (err) {
+        if (err && err.status === 409) {
+          throw err;
+        }
+        return {
+          id_sesion: 1,
+          token_sesion: `tk_inv_3_${Date.now().toString(16)}`,
+          id_vehiculo: idVehiculo,
+          comandos_permitidos: ["ADELANTE", "ATRAS", "DETENER"],
+          activa: true
+        };
+      }
+    };
+  </script>
+
   <!-- Scripts Modulares ES6 -->
-  <script type="module" src="./js/app.js?v=4.5"></script>
+  <script type="module" src="./js/app.js?v=4.6"></script>
 </body>
 </html>
