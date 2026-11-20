@@ -32,11 +32,21 @@
   />
 
   <!-- Hojas de Estilos -->
-  <link rel="stylesheet" href="./css/styles.css?v=4.5" />
-  <link rel="stylesheet" href="./css/style.css?v=4.5" />
+  <link rel="stylesheet" href="./css/styles.css?v=4.9" />
+  <link rel="stylesheet" href="./css/style.css?v=4.9" />
 
-  <!-- Estilos Críticos Embebidos: Modal Login Pastel, Cruceta D-Pad y Grid 12 Movimientos -->
+  <!-- Estilos Críticos Embebidos: Layout Mobile-First 100dvh Sin Cortes, Modal Login, Cruceta D-Pad y Grid 4x2 -->
   <style>
+    html, body.viewport-app {
+      height: 100dvh !important;
+      max-height: 100dvh !important;
+      overflow: hidden !important;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
     /* Modal de Inicio de Sesión Real (Glassmorphism Pastel) */
     .login-overlay {
       position: fixed;
@@ -48,27 +58,27 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
+      padding: 0.75rem;
     }
     .login-card-pastel {
       width: 100%;
-      max-width: 410px;
-      background: rgba(255, 255, 255, 0.93);
+      max-width: 400px;
+      background: rgba(255, 255, 255, 0.94);
       border: 2px solid rgba(236, 72, 153, 0.35);
-      border-radius: 22px;
-      padding: 1.35rem 1.4rem;
+      border-radius: 20px;
+      padding: 1.15rem 1.25rem;
       box-shadow: 0 16px 40px rgba(147, 51, 234, 0.22);
     }
     .login-brand-circle {
-      width: 48px;
-      height: 48px;
-      border-radius: 15px;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
       background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
       color: #fff;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.45rem;
+      font-size: 1.35rem;
       box-shadow: 0 6px 16px rgba(236, 72, 153, 0.4);
     }
     .btn-login-primary {
@@ -76,23 +86,22 @@
       color: #fff;
       font-weight: 900;
       border: none;
-      border-radius: 12px;
-      padding: 0.52rem 1rem;
+      border-radius: 11px;
+      padding: 0.48rem 1rem;
       box-shadow: 0 4px 14px rgba(236, 72, 153, 0.4);
       transition: all 0.2s ease;
     }
     .btn-login-primary:hover {
       color: #fff;
       filter: brightness(1.06);
-      transform: translateY(-1px);
     }
     .btn-login-guest {
       background: linear-gradient(135deg, #fdf2f8 0%, #f3e8ff 100%);
       color: #7e22ce;
       font-weight: 800;
       border: 1.5px solid rgba(168, 85, 247, 0.45);
-      border-radius: 12px;
-      padding: 0.45rem 0.9rem;
+      border-radius: 11px;
+      padding: 0.42rem 0.9rem;
       transition: all 0.2s ease;
     }
     .btn-login-guest:hover {
@@ -101,15 +110,14 @@
       color: #be185d;
     }
     .quick-cred-pill {
-      font-size: 0.68rem;
+      font-size: 0.66rem;
       font-weight: 800;
-      padding: 0.2rem 0.55rem;
+      padding: 0.18rem 0.5rem;
       border-radius: 999px;
       border: 1px solid rgba(168, 85, 247, 0.35);
       background: #fdf4ff;
       color: #7e22ce;
       cursor: pointer;
-      transition: all 0.15s ease;
     }
     .quick-cred-pill:hover {
       background: #fce7f3;
@@ -120,23 +128,23 @@
       background: linear-gradient(135deg, #fdf2f8, #f3e8ff);
       border: 1.5px solid rgba(168, 85, 247, 0.4);
       color: #6b21a8;
-      font-size: 0.74rem;
+      font-size: 0.72rem;
       font-weight: 800;
-      padding: 0.22rem 0.65rem;
+      padding: 0.18rem 0.55rem;
       border-radius: 999px;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
+      max-width: 210px;
     }
     .btn-logout-pastel {
       background: #ffe4e6;
       color: #e11d48;
       border: 1.5px solid #fecdd3;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 800;
-      padding: 0.2rem 0.55rem;
-      border-radius: 9px;
-      transition: all 0.15s ease;
+      padding: 0.18rem 0.5rem;
+      border-radius: 8px;
     }
     .btn-logout-pastel:hover {
       background: #f43f5e;
@@ -144,75 +152,304 @@
       border-color: #f43f5e;
     }
 
-    /* Cruceta D-Pad Ordenada en Cruz (+) */
+    /* Cruceta D-Pad Ordenada en Cruz (+) con Etiquetas 01..04 */
     .dpad-cross-wrap {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      background: rgba(255, 255, 255, 0.75);
+      gap: 3px;
+      background: rgba(255, 255, 255, 0.78);
       border: 1.5px solid rgba(168, 85, 247, 0.3);
-      border-radius: 14px;
-      padding: 6px;
+      border-radius: 13px;
+      padding: 4px;
       box-shadow: inset 0 1px 6px rgba(168, 85, 247, 0.1);
     }
     .dpad-row-mid {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
+      gap: 3px;
     }
     .btn-dpad-pastel {
       width: 34px;
-      height: 34px;
-      border-radius: 10px;
+      height: 32px;
+      border-radius: 9px;
       background: linear-gradient(145deg, #ffffff 0%, #fdf2f8 60%, #f3e8ff 100%);
       border: 1.5px solid rgba(168, 85, 247, 0.4);
       color: #7e22ce;
       display: inline-flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-size: 0.95rem;
-      box-shadow: 0 2px 6px rgba(168, 85, 247, 0.15);
+      font-size: 0.85rem;
+      line-height: 1;
+      box-shadow: 0 2px 5px rgba(168, 85, 247, 0.14);
       transition: all 0.15s ease;
       padding: 0;
       cursor: pointer;
+    }
+    .btn-dpad-pastel .dpad-num {
+      font-size: 0.52rem;
+      font-weight: 900;
+      color: #ec4899;
+      line-height: 1;
     }
     .btn-dpad-pastel:hover,
     .btn-dpad-pastel:active {
       background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
       color: #ffffff;
       border-color: #ec4899;
-      box-shadow: 0 3px 10px rgba(236, 72, 153, 0.45);
       transform: scale(0.95);
+    }
+    .btn-dpad-pastel:hover .dpad-num,
+    .btn-dpad-pastel:active .dpad-num {
+      color: #ffffff;
     }
     .btn-dpad-pastel.joy-stop {
       background: linear-gradient(135deg, #ffe4e6 0%, #fce7f3 100%);
       border-color: #f43f5e;
       color: #e11d48;
     }
-    .btn-dpad-pastel.joy-stop:hover,
-    .btn-dpad-pastel.joy-stop:active {
-      background: linear-gradient(135deg, #f43f5e 0%, #be185d 100%);
-      color: #ffffff;
-    }
 
-    /* Botones numerados 01..12 del Catálogo del Profesor */
+    /* Cuadrícula Uniforme 4 Columnas x 2 Filas para los 8 Comandos (05 al 12) */
+    .functions-grid-4x2 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-rows: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      width: 100%;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .btn-cmd-tile {
+      width: 100%;
+      height: 100%;
+      min-height: 44px;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1.5px solid rgba(168, 85, 247, 0.32);
+      border-radius: 11px;
+      padding: 4px 5px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      text-align: center;
+      transition: all 0.18s ease;
+      box-shadow: 0 2px 6px rgba(168, 85, 247, 0.08);
+    }
+    .btn-cmd-tile:hover,
+    .btn-cmd-tile:active {
+      background: linear-gradient(135deg, #fdf2f8, #f3e8ff);
+      border-color: #ec4899;
+      transform: translateY(-1px);
+    }
+    .tile-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      line-height: 1;
+    }
     .cmd-code-tag {
-      font-size: 0.6rem;
+      font-size: 0.58rem;
       font-weight: 900;
       background: linear-gradient(135deg, #fce7f3, #f3e8ff);
       color: #9333ea;
       border: 1px solid rgba(168, 85, 247, 0.3);
       border-radius: 5px;
-      padding: 0.05rem 0.28rem;
+      padding: 1px 4px;
       line-height: 1.1;
     }
+    .tile-icon {
+      font-size: 0.98rem;
+      line-height: 1;
+    }
+    .tile-label {
+      font-size: 0.68rem;
+      font-weight: 900;
+      color: #3b0764;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
     .cmd-btn-disabled-rbac {
-      opacity: 0.45;
+      opacity: 0.42;
       cursor: not-allowed !important;
       filter: grayscale(0.35);
+    }
+
+    /* Barra Horizontal Compacta para DEMO (Bloque 3) */
+    .demo-horizontal-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+    }
+    .demo-select-compact {
+      flex: 1 1 auto;
+      min-width: 110px;
+      font-size: 0.74rem !important;
+      padding: 0.25rem 1.5rem 0.25rem 0.5rem !important;
+      height: 31px;
+    }
+    .btn-demo-compact {
+      height: 31px;
+      padding: 0 0.65rem !important;
+      font-size: 0.74rem !important;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      border-radius: 9px !important;
+    }
+
+    /* OPTIMIZACIÓN MOBILE-FIRST (@media max-width: 768px) PARA CERO RECORTES EN 100dvh */
+    @media (max-width: 768px) {
+      .platform-header {
+        min-height: 34px !important;
+        padding: 2px 10px !important;
+      }
+      .logo-box {
+        width: 26px !important;
+        height: 26px !important;
+        border-radius: 8px !important;
+      }
+      .brand-title {
+        font-size: 0.88rem !important;
+      }
+      .user-session-pill {
+        font-size: 0.65rem !important;
+        padding: 2px 7px !important;
+        max-width: 145px;
+      }
+      #lbl-user-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 78px;
+      }
+      .nav-tabs-bar {
+        padding: 2px 10px !important;
+      }
+      .tab-item {
+        font-size: 0.7rem !important;
+        padding: 0.24rem 0.35rem !important;
+      }
+      .status-indicator-strip {
+        padding: 2px 10px !important;
+      }
+      .strip-card {
+        min-height: 26px !important;
+        padding: 2px 6px !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        border-radius: 9px !important;
+      }
+      .strip-label {
+        font-size: 0.6rem !important;
+      }
+      .badge-pill, .badge.rounded-pill {
+        font-size: 0.58rem !important;
+        padding: 1px 6px !important;
+      }
+      #app-main-viewport {
+        padding: 3px 10px !important;
+      }
+      .control-grid-layout {
+        gap: 5px !important;
+        justify-content: space-between;
+      }
+      .glass-card {
+        padding: 6px 8px !important;
+        border-radius: 12px !important;
+      }
+      .card-header-clean {
+        margin-bottom: 4px !important;
+        padding-bottom: 3px !important;
+      }
+      .header-icon-box {
+        width: 19px !important;
+        height: 19px !important;
+        font-size: 0.7rem !important;
+      }
+      .header-title {
+        font-size: 0.74rem !important;
+      }
+      .joystick-zone {
+        width: 88px !important;
+        height: 88px !important;
+      }
+      .joy-ring-guide {
+        inset: 13px !important;
+      }
+      .joystick-thumb {
+        width: 34px !important;
+        height: 34px !important;
+        left: calc(50% - 17px) !important;
+        top: calc(50% - 17px) !important;
+        font-size: 0.9rem !important;
+      }
+      .dpad-cross-wrap {
+        padding: 3px !important;
+        gap: 2px !important;
+      }
+      .dpad-row-mid {
+        gap: 2px !important;
+      }
+      .btn-dpad-pastel {
+        width: 30px !important;
+        height: 27px !important;
+        font-size: 0.78rem !important;
+        border-radius: 7px !important;
+      }
+      .telemetry-box {
+        padding: 2px 4px !important;
+      }
+      .telemetry-label {
+        font-size: 0.54rem !important;
+      }
+      .telemetry-val {
+        font-size: 0.74rem !important;
+      }
+      .telemetry-val-highlight {
+        font-size: 0.72rem !important;
+      }
+      .btn-stop-huge {
+        padding: 0.3rem 0.45rem !important;
+        font-size: 0.74rem !important;
+        border-radius: 9px !important;
+      }
+      .card-functions {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      .functions-grid-4x2 {
+        gap: 4px !important;
+      }
+      .btn-cmd-tile {
+        min-height: 38px !important;
+        padding: 3px 3px !important;
+        border-radius: 9px !important;
+      }
+      .tile-icon {
+        font-size: 0.88rem !important;
+      }
+      .tile-label {
+        font-size: 0.62rem !important;
+      }
+      .platform-footer {
+        min-height: 18px !important;
+        padding: 1px 8px !important;
+      }
+      .footer-credit-text {
+        font-size: 0.62rem !important;
+      }
     }
   </style>
 </head>
@@ -280,7 +517,6 @@
         <i class="bi bi-hourglass-split me-1"></i>Acceso Invitado (Prueba 5 min)
       </button>
 
-      <!-- Acceso rápido para evaluación del docente -->
       <div class="text-center pt-1 border-top">
         <div class="small text-soft-muted mb-1" style="font-size: 0.65rem; font-weight: 700;">Perfiles de prueba rápidos (clic para rellenar):</div>
         <div class="d-flex justify-content-center gap-1 flex-wrap">
@@ -299,41 +535,39 @@
   </div>
 
   <!-- =====================================================================
-       1. ENCABEZADO SUPERIOR CON SESIÓN AUTENTICADA Y CERRAR SESIÓN
+       1. ENCABEZADO SUPERIOR COMPACTO CON SESIÓN Y CERRAR SESIÓN
        ===================================================================== -->
-  <header class="platform-header px-3 py-1 d-flex align-items-center justify-content-between">
-    <!-- Ícono + Título -->
+  <header class="platform-header px-3 py-1 d-flex align-items-center justify-content-between flex-shrink-0">
     <div class="d-flex align-items-center gap-2">
       <div class="logo-box">
-        <i class="bi bi-ev-front-fill text-white fs-5"></i>
+        <i class="bi bi-ev-front-fill text-white"></i>
       </div>
-      <h1 class="brand-title mb-0">EXCAVADORA IOT ✨💜</h1>
+      <h1 class="brand-title mb-0">EXCAVADORA IOT ✨</h1>
     </div>
 
-    <!-- Usuario Autenticado + Botón Sincronizar + Botón Cerrar Sesión -->
-    <div class="d-flex align-items-center gap-2">
-      <div id="badge-logged-user" class="user-session-pill" title="Usuario autenticado en sesión">
+    <div class="d-flex align-items-center gap-1">
+      <div id="badge-logged-user" class="user-session-pill" title="Usuario autenticado">
         <i class="bi bi-person-check-fill text-pink"></i>
         <span id="lbl-user-name">No autenticado</span>
-        <span class="badge bg-white text-purple border" id="lbl-user-role" style="font-size: 0.62rem;">---</span>
+        <span class="badge bg-white text-purple border" id="lbl-user-role" style="font-size: 0.58rem;">---</span>
       </div>
 
-      <button id="btn-refresh-health" type="button" class="btn btn-sm btn-sync" title="Sincronizar conexión con AWS EC2">
-        <i class="bi bi-arrow-repeat me-1"></i>
-        <span class="d-none d-md-inline">Sincronizar</span>
+      <button id="btn-refresh-health" type="button" class="btn btn-sm btn-sync py-0 px-2" title="Sincronizar con AWS EC2">
+        <i class="bi bi-arrow-repeat"></i>
+        <span class="d-none d-md-inline ms-1">Sincronizar</span>
       </button>
 
-      <button id="btn-logout" type="button" class="btn-logout-pastel" title="Cerrar sesión y desconectar WebSocket">
-        <i class="bi bi-box-arrow-right me-1"></i>
-        <span class="d-none d-sm-inline">Salir</span>
+      <button id="btn-logout" type="button" class="btn-logout-pastel" title="Cerrar sesión">
+        <i class="bi bi-box-arrow-right"></i>
+        <span class="d-none d-sm-inline ms-1">Salir</span>
       </button>
     </div>
   </header>
 
   <!-- =====================================================================
-       2. NAVEGACIÓN PRINCIPAL EN PESTAÑAS (SEGMENTED TABS)
+       2. NAVEGACIÓN PRINCIPAL EN PESTAÑAS (CONTROL | MONITOREO | ADMIN)
        ===================================================================== -->
-  <nav class="nav-tabs-bar px-3 py-1">
+  <nav class="nav-tabs-bar px-3 py-1 flex-shrink-0">
     <div class="nav-segmented-pill">
       <button id="nav-btn-control" type="button" class="tab-item active" data-view="control">
         <i class="bi bi-controller me-1"></i>CONTROL
@@ -348,20 +582,18 @@
   </nav>
 
   <!-- =====================================================================
-       3. BARRA DE INDICADORES DE RED (3 TARJETAS COMPACTAS EN 1 FILA)
+       3. BARRA DE INDICADORES DE RED (WSS | API AWS | AMAZON RDS)
        ===================================================================== -->
-  <section class="status-indicator-strip px-3 py-1">
-    <div class="row g-2">
-      <!-- Indicador 1: WebSocket WSS -->
+  <section class="status-indicator-strip px-3 py-1 flex-shrink-0">
+    <div class="row g-1">
       <div class="col-4">
         <div class="strip-card">
-          <div class="strip-label">WebSocket WSS</div>
+          <div class="strip-label">WSS</div>
           <div id="badge-ws" class="badge-pill badge-warning-pastel">
             <span class="dot-pulse"></span>Conectando
           </div>
         </div>
       </div>
-      <!-- Indicador 2: API AWS -->
       <div class="col-4">
         <div class="strip-card">
           <div class="strip-label">API AWS</div>
@@ -370,12 +602,11 @@
           </div>
         </div>
       </div>
-      <!-- Indicador 3: Amazon RDS -->
       <div class="col-4">
         <div class="strip-card">
-          <div class="strip-label">Amazon RDS</div>
+          <div class="strip-label">RDS</div>
           <div id="badge-rds" class="badge-pill badge-neutral-pastel">
-            <span class="dot-neutral"></span>Sin verificar
+            <span class="dot-neutral"></span>Verificando
           </div>
         </div>
       </div>
@@ -383,49 +614,48 @@
   </section>
 
   <!-- BANNER COMPACTO SESIÓN INVITADO (5 MINUTOS) -->
-  <div id="alert-guest-session" class="px-3 pt-1 d-none">
-    <div class="guest-banner d-flex align-items-center justify-content-between px-3 py-1">
-      <div class="d-flex align-items-center gap-2">
-        <i class="bi bi-clock-history text-amber fs-6"></i>
-        <span class="small fw-bold text-headline">Sesión Exclusiva Invitado (Solo 01-ADELANTE, 02-ATRÁS y DETENER)</span>
+  <div id="alert-guest-session" class="px-3 d-none flex-shrink-0">
+    <div class="guest-banner d-flex align-items-center justify-content-between px-2 py-1">
+      <div class="d-flex align-items-center gap-1">
+        <i class="bi bi-clock-history text-amber"></i>
+        <span class="small fw-bold text-headline" style="font-size: 0.68rem;">Invitado (01-ADELANTE, 02-ATRÁS, DETENER)</span>
       </div>
-      <div class="d-flex align-items-center gap-2">
-        <span class="small text-soft-muted">Restante:</span>
-        <span id="guest-timer-display" class="guest-timer-text">05:00</span>
-        <button id="btn-request-guest-trial" type="button" class="btn btn-xs btn-amber">Renovar 5m</button>
+      <div class="d-flex align-items-center gap-1">
+        <span id="guest-timer-display" class="guest-timer-text" style="font-size: 0.74rem;">05:00</span>
+        <button id="btn-request-guest-trial" type="button" class="btn btn-xs btn-amber py-0 px-2">5m</button>
       </div>
     </div>
   </div>
 
   <!-- BANNER COMPACTO REGLA BOLA/IDOR PARA ADMINISTRADOR -->
-  <div id="alert-admin-bola" class="px-3 pt-1 d-none">
-    <div class="guest-banner d-flex align-items-center justify-content-between px-3 py-1" style="background: linear-gradient(90deg, #fef3c7, #fce7f3);">
-      <div class="d-flex align-items-center gap-2">
-        <i class="bi bi-shield-exclamation text-danger fs-6"></i>
-        <span class="small fw-bold text-headline">Regla BOLA/IDOR Activa: El Administrador gestiona la flota pero no puede mover unidades vendidas (#1 asignada a Carlos Mendoza).</span>
+  <div id="alert-admin-bola" class="px-3 d-none flex-shrink-0">
+    <div class="guest-banner d-flex align-items-center justify-content-between px-2 py-1" style="background: linear-gradient(90deg, #fef3c7, #fce7f3);">
+      <div class="d-flex align-items-center gap-1">
+        <i class="bi bi-shield-exclamation text-danger"></i>
+        <span class="small fw-bold text-headline" style="font-size: 0.66rem;">BOLA/IDOR: Admin gestiona flota, sin mover unidades vendidas (#1 Carlos Mendoza).</span>
       </div>
     </div>
   </div>
 
   <!-- =====================================================================
-       4. CONTENIDO PRINCIPAL: VISTAS (CERO SCROLL GENERAL - 100dvh)
+       4. CONTENIDO PRINCIPAL: VISTAS (AJUSTE EXACTO A 100dvh SIN SCROLL)
        ===================================================================== -->
-  <main id="app-main-viewport" class="flex-grow-1 px-3 py-1 overflow-hidden d-flex flex-column">
+  <main id="app-main-viewport" class="flex-grow-1 px-3 py-1 overflow-hidden d-flex flex-column min-h-0">
 
     <!-- -------------------------------------------------------------------
-         VISTA 1: CONTROL (JOYSTICK + CRUCETA + 12 MOVIMIENTOS DEL PROFESOR)
+         VISTA 1: CONTROL (3 BLOQUES COMPACTOS VISIBLES AL 100% EN CELULAR)
          ------------------------------------------------------------------- -->
     <div id="view-control" class="app-view active">
       <div class="control-grid-layout">
         
-        <!-- Tarjeta 1: Control de Dirección y Paro Prioritario -->
+        <!-- BLOQUE 1: Dirección (01..04) y Paro Prioritario (DETENER) -->
         <div class="glass-card card-direction">
           <div class="card-header-clean d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-1">
               <div class="header-icon-box bg-cyan-soft text-cyan">
                 <i class="bi bi-compass"></i>
               </div>
-              <span class="header-title">Control de Dirección &amp; Paro Seguro</span>
+              <span class="header-title">Dirección (01–04) &amp; Paro</span>
             </div>
             <span id="badge-direccion-joystick" class="badge-soft badge-neutral">En espera</span>
           </div>
@@ -442,33 +672,37 @@
               </div>
             </div>
 
-            <!-- Cruceta D-Pad Ordenada en Cruz (+) -->
-            <div class="dpad-cross-wrap flex-shrink-0" aria-label="Cruceta Direccional">
+            <!-- Cruceta D-Pad (01 ADELANTE, 02 ATRÁS, 03 GIRAR_IZQUIERDA, 04 GIRAR_DERECHA + DETENER) -->
+            <div class="dpad-cross-wrap flex-shrink-0" aria-label="Cruceta Direccional 01 a 04">
               <div class="d-flex justify-content-center">
-                <button id="btn-joy-up" type="button" class="btn-dpad-pastel joy-up" data-dir="ADELANTE" title="01. ADELANTE">
+                <button id="btn-joy-up" type="button" class="btn-dpad-pastel joy-up" data-dir="ADELANTE" data-cmd-name="ADELANTE" title="01. ADELANTE">
+                  <span class="dpad-num">01</span>
                   <i class="bi bi-caret-up-fill"></i>
                 </button>
               </div>
               <div class="dpad-row-mid">
-                <button id="btn-joy-left" type="button" class="btn-dpad-pastel joy-left" data-dir="GIRAR_IZQUIERDA" title="03. GIRAR IZQUIERDA">
+                <button id="btn-joy-left" type="button" class="btn-dpad-pastel joy-left" data-dir="GIRAR_IZQUIERDA" data-cmd-name="GIRAR_IZQUIERDA" title="03. GIRAR IZQUIERDA">
+                  <span class="dpad-num">03</span>
                   <i class="bi bi-caret-left-fill"></i>
                 </button>
                 <button id="btn-joy-stop" type="button" class="btn-dpad-pastel joy-stop" data-dir="DETENER" title="13. DETENER">
                   <i class="bi bi-stop-circle-fill"></i>
                 </button>
-                <button id="btn-joy-right" type="button" class="btn-dpad-pastel joy-right" data-dir="GIRAR_DERECHA" title="04. GIRAR DERECHA">
+                <button id="btn-joy-right" type="button" class="btn-dpad-pastel joy-right" data-dir="GIRAR_DERECHA" data-cmd-name="GIRAR_DERECHA" title="04. GIRAR DERECHA">
+                  <span class="dpad-num">04</span>
                   <i class="bi bi-caret-right-fill"></i>
                 </button>
               </div>
               <div class="d-flex justify-content-center">
-                <button id="btn-joy-down" type="button" class="btn-dpad-pastel joy-down" data-dir="ATRAS" title="02. ATRÁS">
+                <button id="btn-joy-down" type="button" class="btn-dpad-pastel joy-down" data-dir="ATRAS" data-cmd-name="ATRAS" title="02. ATRÁS">
                   <i class="bi bi-caret-down-fill"></i>
+                  <span class="dpad-num">02</span>
                 </button>
               </div>
             </div>
 
-            <!-- Cuadrícula de Telemetría + Botón Rojo Prioritario DETENER -->
-            <div class="telemetry-stop-column flex-grow-1 d-flex flex-column justify-content-between">
+            <!-- Indicadores Mini + Botón Rojo DETENER -->
+            <div class="telemetry-stop-column flex-grow-1 d-flex flex-column justify-content-between min-w-0">
               <div class="row g-1 mb-1">
                 <div class="col-6">
                   <div class="telemetry-box text-center">
@@ -486,10 +720,9 @@
 
               <div class="telemetry-box direction-box text-center mb-1">
                 <span class="telemetry-label">COMANDO ACTIVO</span>
-                <div id="lbl-joy-dir" class="telemetry-val-highlight text-cyan">En espera</div>
+                <div id="lbl-joy-dir" class="telemetry-val-highlight text-cyan text-truncate">En espera</div>
               </div>
 
-              <!-- Botón Rojo Grande Prioritario: DETENER (Siempre activo) -->
               <button id="btn-stop-priority" type="button" class="btn-stop-huge" data-dir="DETENER">
                 <i class="bi bi-octagon-fill me-1"></i>
                 <span>DETENER</span>
@@ -498,175 +731,117 @@
           </div>
         </div>
 
-        <!-- Tarjeta 2: Catálogo Oficial de 12 Movimientos del Profesor (01 al 12) -->
-        <div class="glass-card card-functions">
-          <div class="card-header-clean d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-2">
+        <!-- BLOQUE 2: Cuadrícula Uniforme 4 Columnas x 2 Filas (8 Comandos Restantes: 05 al 12) -->
+        <div class="glass-card card-functions d-flex flex-column">
+          <div class="card-header-clean d-flex align-items-center justify-content-between flex-shrink-0">
+            <div class="d-flex align-items-center gap-1">
               <div class="header-icon-box bg-purple-soft text-purple">
                 <i class="bi bi-grid-3x3-gap-fill"></i>
               </div>
-              <span class="header-title">Catálogo Oficial de Funciones Físicas (01 – 12)</span>
+              <span class="header-title">Funciones Físicas (05 – 12)</span>
             </div>
-            <span class="badge-soft badge-cyan">12 Movimientos + STOP</span>
+            <span class="badge-soft badge-cyan">12 Comandos + STOP</span>
           </div>
 
-          <div class="card-body-clean d-flex flex-column gap-1">
-            <!-- Fila 1 (01 a 04): ADELANTE, ATRÁS, GIRAR IZQUIERDA, GIRAR DERECHA -->
-            <div class="row g-1">
-              <div class="col-3">
-                <button type="button" class="btn-vehicle-mini cmd-sec-btn" data-cmd-name="ADELANTE">
-                  <div class="mini-icon text-emerald"><i class="bi bi-arrow-up-circle-fill"></i></div>
-                  <div class="mini-text text-start overflow-hidden">
-                    <span class="cmd-code-tag">01</span>
-                    <span class="mini-title text-truncate">Adelante</span>
-                  </div>
-                </button>
+          <div class="functions-grid-4x2">
+            <!-- Fila 1 (05 a 08): MOVER_IZQUIERDA, MOVER_DERECHA, SUBIR_BRAZO, BAJAR_BRAZO -->
+            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-cmd-name="MOVER_IZQUIERDA" data-comando="MOVER_IZQUIERDA">
+              <div class="tile-top-row">
+                <span class="cmd-code-tag">05</span>
+                <i class="bi bi-arrow-bar-left tile-icon text-purple"></i>
               </div>
-              <div class="col-3">
-                <button type="button" class="btn-vehicle-mini cmd-sec-btn" data-cmd-name="ATRAS">
-                  <div class="mini-icon text-pink"><i class="bi bi-arrow-down-circle-fill"></i></div>
-                  <div class="mini-text text-start overflow-hidden">
-                    <span class="cmd-code-tag">02</span>
-                    <span class="mini-title text-truncate">Atrás</span>
-                  </div>
-                </button>
-              </div>
-              <div class="col-3">
-                <button type="button" class="btn-vehicle-mini cmd-sec-btn" data-cmd-name="GIRAR_IZQUIERDA">
-                  <div class="mini-icon text-cyan"><i class="bi bi-arrow-counterclockwise"></i></div>
-                  <div class="mini-text text-start overflow-hidden">
-                    <span class="cmd-code-tag">03</span>
-                    <span class="mini-title text-truncate">Girar Izq.</span>
-                  </div>
-                </button>
-              </div>
-              <div class="col-3">
-                <button type="button" class="btn-vehicle-mini cmd-sec-btn" data-cmd-name="GIRAR_DERECHA">
-                  <div class="mini-icon text-cyan"><i class="bi bi-arrow-clockwise"></i></div>
-                  <div class="mini-text text-start overflow-hidden">
-                    <span class="cmd-code-tag">04</span>
-                    <span class="mini-title text-truncate">Girar Der.</span>
-                  </div>
-                </button>
-              </div>
-            </div>
+              <span class="tile-label">Mover Izq.</span>
+            </button>
 
-            <!-- Fila 2 (05 a 08): MOVER IZQUIERDA, MOVER DERECHA, SUBIR BRAZO, BAJAR BRAZO -->
-            <div class="row g-1">
-              <div class="col-3">
-                <button type="button" class="btn-vehicle-mini cmd-sec-btn" data-cmd-name="MOVER_IZQUIERDA">
-                  <div class="mini-icon text-purple"><i class="bi bi-arrow-bar-left"></i></div>
-                  <div class="mini-text text-start overflow-hidden">
-                    <span class="cmd-code-tag">05</span>
-                    <span class="mini-title text-truncate">Mover Izq.</span>
-                  </div>
-                </button>
+            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-cmd-name="MOVER_DERECHA" data-comando="MOVER_DERECHA">
+              <div class="tile-top-row">
+                <span class="cmd-code-tag">06</span>
+                <i class="bi bi-arrow-bar-right tile-icon text-purple"></i>
               </div>
-              <div class="col-3">
-                <button type="button" class="btn-vehicle-mini cmd-sec-btn" data-cmd-name="MOVER_DERECHA">
-                  <div class="mini-icon text-purple"><i class="bi bi-arrow-bar-right"></i></div>
-                  <div class="mini-text text-start overflow-hidden">
-                    <span class="cmd-code-tag">06</span>
-                    <span class="mini-title text-truncate">Mover Der.</span>
-                  </div>
-                </button>
-              </div>
-              <div class="col-3">
-                <button type="button" class="btn-vehicle-mini cmd-sec-btn" data-cmd-name="SUBIR_BRAZO">
-                  <div class="mini-icon text-amber"><i class="bi bi-box-arrow-in-up"></i></div>
-                  <div class="mini-text text-start overflow-hidden">
-                    <span class="cmd-code-tag">07</span>
-                    <span class="mini-title text-truncate">Subir Brazo</span>
-                  </div>
-                </button>
-              </div>
-              <div class="col-3">
-                <button type="button" class="btn-vehicle-mini cmd-sec-btn" data-cmd-name="BAJAR_BRAZO">
-                  <div class="mini-icon text-amber"><i class="bi bi-box-arrow-in-down"></i></div>
-                  <div class="mini-text text-start overflow-hidden">
-                    <span class="cmd-code-tag">08</span>
-                    <span class="mini-title text-truncate">Bajar Brazo</span>
-                  </div>
-                </button>
-              </div>
-            </div>
+              <span class="tile-label">Mover Der.</span>
+            </button>
 
-            <!-- Fila 3 (09 a 12): LUZ / LED, ACTIVAR SONIDO, DESACTIVAR SONIDO, CONTROL REMOTO -->
-            <div class="row g-1">
-              <div class="col-3">
-                <button type="button" class="btn-vehicle-mini cmd-sec-btn" data-cmd-name="LUZ_LED">
-                  <div class="mini-icon text-emerald"><i class="bi bi-lightbulb-fill"></i></div>
-                  <div class="mini-text text-start overflow-hidden">
-                    <span class="cmd-code-tag">09</span>
-                    <span class="mini-title text-truncate">Luz / LED</span>
-                  </div>
-                </button>
+            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-cmd-name="SUBIR_BRAZO" data-comando="SUBIR_BRAZO">
+              <div class="tile-top-row">
+                <span class="cmd-code-tag">07</span>
+                <i class="bi bi-box-arrow-in-up tile-icon text-amber"></i>
               </div>
-              <div class="col-3">
-                <button id="btn-claxon" type="button" class="btn-vehicle-mini cmd-sec-btn" data-cmd-name="ACTIVAR_SONIDO">
-                  <div class="mini-icon text-purple"><i class="bi bi-volume-up-fill"></i></div>
-                  <div class="mini-text text-start overflow-hidden">
-                    <span class="cmd-code-tag">10</span>
-                    <span class="mini-title text-truncate">Act. Sonido</span>
-                  </div>
-                </button>
+              <span class="tile-label">Subir Brazo</span>
+            </button>
+
+            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-cmd-name="BAJAR_BRAZO" data-comando="BAJAR_BRAZO">
+              <div class="tile-top-row">
+                <span class="cmd-code-tag">08</span>
+                <i class="bi bi-box-arrow-in-down tile-icon text-amber"></i>
               </div>
-              <div class="col-3">
-                <button type="button" class="btn-vehicle-mini cmd-sec-btn" data-cmd-name="DESACTIVAR_SONIDO">
-                  <div class="mini-icon text-pink"><i class="bi bi-volume-mute-fill"></i></div>
-                  <div class="mini-text text-start overflow-hidden">
-                    <span class="cmd-code-tag">11</span>
-                    <span class="mini-title text-truncate">Des. Sonido</span>
-                  </div>
-                </button>
+              <span class="tile-label">Bajar Brazo</span>
+            </button>
+
+            <!-- Fila 2 (09 a 12): LUZ_LED, ACTIVAR_SONIDO, DESACTIVAR_SONIDO, CONTROL_REMOTO -->
+            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-cmd-name="LUZ_LED" data-comando="LUZ_LED">
+              <div class="tile-top-row">
+                <span class="cmd-code-tag">09</span>
+                <i class="bi bi-lightbulb-fill tile-icon text-emerald"></i>
               </div>
-              <div class="col-3">
-                <button type="button" class="btn-vehicle-mini cmd-sec-btn" data-cmd-name="CONTROL_REMOTO">
-                  <div class="mini-icon text-cyan"><i class="bi bi-broadcast-pin"></i></div>
-                  <div class="mini-text text-start overflow-hidden">
-                    <span class="cmd-code-tag">12</span>
-                    <span class="mini-title text-truncate">Ctrl. Remoto</span>
-                  </div>
-                </button>
+              <span class="tile-label">Luz / LED</span>
+            </button>
+
+            <button id="btn-claxon" type="button" class="btn-cmd-tile cmd-sec-btn" data-cmd-name="ACTIVAR_SONIDO" data-comando="ACTIVAR_SONIDO">
+              <div class="tile-top-row">
+                <span class="cmd-code-tag">10</span>
+                <i class="bi bi-volume-up-fill tile-icon text-purple"></i>
               </div>
-            </div>
+              <span class="tile-label">Act. Sonido</span>
+            </button>
+
+            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-cmd-name="DESACTIVAR_SONIDO" data-comando="DESACTIVAR_SONIDO">
+              <div class="tile-top-row">
+                <span class="cmd-code-tag">11</span>
+                <i class="bi bi-volume-mute-fill tile-icon text-pink"></i>
+              </div>
+              <span class="tile-label">Des. Sonido</span>
+            </button>
+
+            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-cmd-name="CONTROL_REMOTO" data-comando="CONTROL_REMOTO">
+              <div class="tile-top-row">
+                <span class="cmd-code-tag">12</span>
+                <i class="bi bi-broadcast-pin tile-icon text-cyan"></i>
+              </div>
+              <span class="tile-label">Ctrl. Remoto</span>
+            </button>
           </div>
         </div>
 
-        <!-- Tarjeta 3: Modo Automático (DEMO) con Parada Instantánea -->
+        <!-- BLOQUE 3: Modo Automático (DEMO) en una Sola Barra Horizontal Compacta Inferior -->
         <div class="glass-card card-demo">
           <div class="card-header-clean d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-1">
               <div class="header-icon-box bg-emerald-soft text-emerald">
                 <i class="bi bi-play-circle-fill"></i>
               </div>
-              <span class="header-title">Modo Automático (DEMO Temporizada)</span>
+              <span class="header-title">Modo Automático (DEMO)</span>
             </div>
-            <span id="badge-demo-status" class="badge-soft badge-neutral">Inactivo</span>
+            <div class="d-flex align-items-center gap-1">
+              <span class="demo-step-badge py-0 px-2" style="font-size: 0.64rem;">
+                <i class="bi bi-cpu text-cyan me-1"></i>
+                <span id="lbl-demo-current-step">En espera</span>
+                <span id="lbl-demo-step-details" class="d-none"></span>
+              </span>
+              <span id="badge-demo-status" class="badge-soft badge-neutral">Inactivo</span>
+            </div>
           </div>
 
-          <div class="card-body-clean d-flex flex-column gap-2">
-            <div class="d-flex align-items-center gap-2">
-              <div class="flex-grow-1">
-                <select id="select-demo" class="form-select form-select-sm select-clean">
-                  <option value="1">Demo principal</option>
-                </select>
-              </div>
-              <div class="demo-step-badge flex-shrink-0">
-                <i class="bi bi-cpu text-cyan me-1"></i>
-                <span id="lbl-demo-current-step">Secuencia en espera</span>
-                <span id="lbl-demo-step-details" class="d-none"></span>
-              </div>
-            </div>
-
-            <div class="d-flex align-items-center gap-2">
-              <button id="btn-demo-start" type="button" class="btn btn-sm btn-demo-run flex-grow-1">
-                <i class="bi bi-play-fill me-1"></i>Iniciar DEMO
-              </button>
-              <button id="btn-demo-cancel" type="button" class="btn btn-sm btn-demo-stop flex-grow-1" disabled>
-                <i class="bi bi-square-fill me-1"></i>Cancelar DEMO
-              </button>
-            </div>
+          <!-- Barra Horizontal Única: Selector + Iniciar + Cancelar -->
+          <div class="demo-horizontal-bar">
+            <select id="select-demo" class="form-select form-select-sm select-clean demo-select-compact">
+              <option value="1">Demo principal</option>
+            </select>
+            <button id="btn-demo-start" type="button" class="btn btn-sm btn-demo-run btn-demo-compact">
+              <i class="bi bi-play-fill me-1"></i>Iniciar
+            </button>
+            <button id="btn-demo-cancel" type="button" class="btn btn-sm btn-demo-stop btn-demo-compact" disabled>
+              <i class="bi bi-square-fill me-1"></i>Cancelar
+            </button>
           </div>
         </div>
 
@@ -674,12 +849,12 @@
     </div>
 
     <!-- -------------------------------------------------------------------
-         VISTA 2: MONITOREO (TELEMETRÍA + HISTORIAL CON SCROLL FLEXIBLE)
+         VISTA 2: MONITOREO (TARJETA SUPERIOR FIJA + TABLA CON SCROLL INTERNO)
          ------------------------------------------------------------------- -->
     <div id="view-monitoreo" class="app-view d-none">
       <div class="monitoreo-flex-layout">
 
-        <!-- Tarjeta 1: Último Movimiento Reportado -->
+        <!-- Tarjeta 1: Último Movimiento Reportado (FIJA) -->
         <div class="glass-card card-last-move flex-shrink-0">
           <div class="card-header-clean d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-2">
@@ -692,55 +867,54 @@
           </div>
 
           <div class="card-body-clean">
-            <div class="mon-hero-box d-flex align-items-center gap-3 mb-2">
+            <div class="mon-hero-box d-flex align-items-center gap-2 mb-2">
               <div class="mon-hero-circle flex-shrink-0">
                 <i id="mon-last-icon" class="bi bi-activity text-cyan"></i>
               </div>
-              <div class="flex-grow-1">
+              <div class="flex-grow-1 min-w-0">
                 <div class="mon-hero-category">ESTADO / COMANDO REPORTADO</div>
-                <h3 id="mon-last-command" class="mon-hero-title mb-1">Sin datos actualizados</h3>
-                <div class="mon-hero-tags d-flex align-items-center gap-2">
+                <h3 id="mon-last-command" class="mon-hero-title mb-1 text-truncate">Sin datos actualizados</h3>
+                <div class="mon-hero-tags d-flex align-items-center gap-2 flex-wrap">
                   <span class="badge-code">Código #<span id="mon-last-code">--</span></span>
                   <span id="mon-last-timestamp" class="small text-soft-muted">Consultando API...</span>
                 </div>
               </div>
             </div>
 
-            <div class="row g-2">
+            <div class="row g-1">
               <div class="col-4">
                 <div class="mon-subcard text-center">
-                  <div class="mon-subcard-label"><i class="bi bi-calendar3 me-1"></i>FECHA VERIFICADA</div>
+                  <div class="mon-subcard-label"><i class="bi bi-calendar3 me-1"></i>FECHA</div>
                   <strong id="mon-last-date" class="mon-subcard-val">--/--/----</strong>
                 </div>
               </div>
               <div class="col-4">
                 <div class="mon-subcard text-center">
-                  <div class="mon-subcard-label"><i class="bi bi-clock me-1"></i>HORA EXACTA</div>
+                  <div class="mon-subcard-label"><i class="bi bi-clock me-1"></i>HORA</div>
                   <strong id="mon-last-time" class="mon-subcard-val">--:--:--</strong>
                 </div>
               </div>
               <div class="col-4">
                 <div class="mon-subcard text-center">
-                  <div class="mon-subcard-label"><i class="bi bi-truck me-1"></i>VEHÍCULO MONITOREADO</div>
-                  <strong id="mon-monitored-vehicle" class="mon-subcard-val">Excavadora IoT (ID #1)</strong>
+                  <div class="mon-subcard-label"><i class="bi bi-truck me-1"></i>UNIDAD</div>
+                  <strong id="mon-monitored-vehicle" class="mon-subcard-val">Excavadora #1</strong>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Tarjeta 2: Últimos 10 Movimientos Individuales (Amazon RDS) -->
+        <!-- Tarjeta 2: Últimos 10 Movimientos Individuales (Amazon RDS) (SCROLL INTERNO EXCLUSIVO) -->
         <div class="glass-card card-history-table flex-grow-1 d-flex flex-column min-h-0">
           <div class="card-header-clean d-flex align-items-center justify-content-between flex-shrink-0">
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-1">
               <div class="header-icon-box bg-purple-soft text-purple">
                 <i class="bi bi-list-columns-reverse"></i>
               </div>
-              <span class="header-title">Últimos 10 Movimientos Individuales (Amazon RDS)</span>
+              <span class="header-title">Últimos 10 Movimientos (Amazon RDS)</span>
             </div>
-            <div class="d-flex align-items-center gap-2">
-              <span class="badge-soft badge-cyan"><span class="dot-pulse"></span>Sincronizando RDS...</span>
-              <span id="mon-history-count" class="badge-soft badge-purple">0 / 10 recientes</span>
+            <div class="d-flex align-items-center gap-1">
+              <span id="mon-history-count" class="badge-soft badge-purple">0 / 10</span>
               <button id="btn-refresh-monitoreo" type="button" class="btn btn-xs btn-outline-clean" title="Recargar historial">
                 <i class="bi bi-arrow-repeat"></i>
               </button>
@@ -751,7 +925,7 @@
             <table class="table table-clean mb-0">
               <thead>
                 <tr>
-                  <th class="text-center" style="width: 45px;">#</th>
+                  <th class="text-center" style="width: 40px;">#</th>
                   <th>MOVIMIENTO</th>
                   <th>FECHA</th>
                   <th>HORA</th>
@@ -773,10 +947,10 @@
     </div>
 
     <!-- -------------------------------------------------------------------
-         VISTA 3: ADMINISTRACIÓN (DASHBOARD, INVENTARIO, ASIGNACIÓN, DEMOS)
+         VISTA 3: ADMINISTRACIÓN (SCROLL INTERNO DENTRO DEL MARCO 100dvh)
          ------------------------------------------------------------------- -->
     <div id="view-admin" class="app-view d-none">
-      <div class="admin-scroll-layout flex-grow-1 overflow-y-auto d-flex flex-column gap-2 pe-1">
+      <div class="admin-scroll-layout flex-grow-1 overflow-y-auto d-flex flex-column gap-2 pe-1 min-h-0">
         
         <div class="row g-2 flex-shrink-0">
           <div class="col-6 col-md-3">
@@ -1013,9 +1187,9 @@
     <span id="mon-volume-val">80%</span>
   </div>
 
-  <!-- Puente de Autenticación Integrado (Evita "api.login is not a function" y 404 Not Found) -->
+  <!-- Puente de Autenticación Integrado -->
   <script type="module">
-    import { api } from "./js/api.js?v=4.7";
+    import { api } from "./js/api.js?v=4.9";
 
     const OFFICIAL_USERS = {
       "admin@iot.com": {
@@ -1143,6 +1317,6 @@
   </script>
 
   <!-- Scripts Modulares ES6 -->
-  <script type="module" src="./js/app.js?v=4.8"></script>
+  <script type="module" src="./js/app.js?v=4.9"></script>
 </body>
 </html>

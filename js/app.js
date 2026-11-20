@@ -6,11 +6,11 @@
  * - 3. Control de DEMO con Cancelación Instantánea y Prevención de Concurrencia
  */
 
-import { CONFIG } from "./config.js?v=4.7";
-import { api } from "./api.js?v=4.7";
-import { IoTWebSocketClient, destelloVisualControl, limpiarDestellosVisuales } from "./websocket.js?v=4.7";
-import { VirtualJoystick } from "./joystick.js?v=4.7";
-import { monitoreoInstance } from "./monitoreo.js?v=4.7";
+import { CONFIG } from "./config.js?v=4.9";
+import { api } from "./api.js?v=4.9";
+import { IoTWebSocketClient, destelloVisualControl, limpiarDestellosVisuales } from "./websocket.js?v=4.9";
+import { VirtualJoystick } from "./joystick.js?v=4.9";
+import { monitoreoInstance } from "./monitoreo.js?v=4.9";
 
 class PlatformApp {
   constructor() {
@@ -484,10 +484,10 @@ class PlatformApp {
       });
     });
 
-    // Catálogo de los 12 Movimientos del Profesor (Botones 01 al 12)
+    // Catálogo de los 8 Comandos Físicos Restantes (05 al 12)
     this.ui.secondaryButtons.forEach((btn) => {
       btn.addEventListener("click", async () => {
-        const cmdName = btn.getAttribute("data-cmd-name");
+        const cmdName = btn.getAttribute("data-cmd-name") || btn.getAttribute("data-comando");
         if (!cmdName) return;
         if (!this.canExecuteCommand(cmdName)) return;
 
@@ -684,8 +684,18 @@ class PlatformApp {
   }
 
   updateControlButtonsByRole(role) {
-    this.ui.secondaryButtons.forEach((btn) => {
-      const cmd = this.normalizeCommandKey(btn.getAttribute("data-cmd-name"));
+    const allActionButtons = [
+      this.ui.btnDpadUp,
+      this.ui.btnDpadDown,
+      this.ui.btnDpadLeft,
+      this.ui.btnDpadRight,
+      ...Array.from(this.ui.secondaryButtons || [])
+    ].filter(Boolean);
+
+    allActionButtons.forEach((btn) => {
+      const cmd = this.normalizeCommandKey(
+        btn.getAttribute("data-cmd-name") || btn.getAttribute("data-comando") || btn.getAttribute("data-dir")
+      );
       if (role === "USUARIO") {
         btn.classList.remove("cmd-btn-disabled-rbac");
       } else if (role === "INVITADO") {
