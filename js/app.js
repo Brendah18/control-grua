@@ -783,10 +783,20 @@ class PlatformApp {
   async dispatchCommand(commandKey, isPriority = false) {
     if (this.isDemoRunning && !isPriority) return;
 
+    // Asegurar que la sincronización con RDS haya concluido para usar los id_comando reales de MySQL
+    if (this._catalogSyncPromise) {
+      try {
+        await this._catalogSyncPromise;
+      } catch {
+        // continuar
+      }
+    }
+
     const normalized = this.normalizeCommandKey(commandKey);
     const cmdInfo =
       this.commandCatalog.get(normalized) ||
       CONFIG.DEFAULT_COMMAND_MAP[normalized] ||
+      this.commandCatalog.get("DETENER") ||
       CONFIG.DEFAULT_COMMAND_MAP.DETENER;
 
     // Registrar comando exacto presionado por el usuario para evitar que un eco tardío ilumine otro botón
@@ -832,16 +842,30 @@ class PlatformApp {
         alert(err.message);
         return;
       }
-      const currentToken =
-        typeof api.getAuthToken === "function"
-          ? api.getAuthToken()
-          : window.sessionStorage.getItem("iot_auth_token") || "";
-      this.wsClient.sendJson({
-        id_vehiculo: CONFIG.VEHICULO_ID,
-        id_comando: cmdInfo.id_comando,
-        token: currentToken,
-        origen: isPriority ? "PRIORIDAD-DETENER" : `WSS-${this.currentRole}`
-      });
+      // Si el id_comando falló por aún no estar sincronizado, forzar sincronización y reintentar
+      this._rdsCatalogSynced = false;
+      await this.loadCommands();
+      const retryCmd = this.commandCatalog.get(normalized) || cmdInfo;
+      try {
+        await api.enviarMovimiento({
+          idVehiculo: CONFIG.VEHICULO_ID,
+          idComando: retryCmd.id_comando,
+          codigo: retryCmd.codigo,
+          nombre: retryCmd.nombre,
+          origen: origenTag
+        });
+      } catch {
+        const currentToken =
+          typeof api.getAuthToken === "function"
+            ? api.getAuthToken()
+            : window.sessionStorage.getItem("iot_auth_token") || "";
+        this.wsClient.sendJson({
+          id_vehiculo: CONFIG.VEHICULO_ID,
+          id_comando: retryCmd.id_comando,
+          token: currentToken,
+          origen: isPriority ? "PRIORIDAD-DETENER" : `WSS-${this.currentRole}`
+        });
+      }
     }
   }
 
@@ -867,11 +891,13 @@ class PlatformApp {
   }
 
   async actualizarEstadoDemoSinHistorial(cmdInfo) {
-    // Actualiza estado_vehiculo en RDS (sp_actualizar_estado) SIN insertar en historial_comandos
+    // PUT /api/estado actualiza estado_vehiculo en RDS (sp_actualizar_estado) SIN insertar en historial_comandos
+    // y hace broadcast en tiempo real por el WebSocket wss://52.4.170.82:8000/ws/1 hacia el ESP8266
     try {
-      await api.request(`/api/vehiculos/${CONFIG.VEHICULO_ID}/estado`, {
+      await api.request("/api/estado", {
         method: "PUT",
         body: JSON.stringify({
+          id_vehiculo: CONFIG.VEHICULO_ID,
           id_comando: Number(cmdInfo.id_comando),
           conectado: true
         })
@@ -901,6 +927,15 @@ class PlatformApp {
     if (this.currentRole === "INVITADO") {
       alert("Restricción RBAC: El Rol Invitado no tiene permiso para ejecutar secuencias DEMO.");
       return;
+    }
+
+    // Asegurar catálogo sincronizado con RDS antes de iniciar la DEMO
+    if (this._catalogSyncPromise) {
+      try {
+        await this._catalogSyncPromise;
+      } catch {
+        // continuar
+      }
     }
 
     const selectedDemoId = Number(this.ui.selectDemo.value || 1);
@@ -1096,8 +1131,9 @@ class PlatformApp {
     this.updateRdsIndicator(rdsState);
 
     if (apiAvailable) {
+      this._catalogSyncPromise = this.loadCommands();
       await Promise.allSettled([
-        this.loadCommands(),
+        this._catalogSyncPromise,
         this.loadDemos(),
         this.monitoreo.refreshAll(false)
       ]);
