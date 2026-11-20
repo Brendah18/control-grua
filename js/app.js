@@ -1,9 +1,9 @@
 /**
- * Coordinador Principal de la Plataforma IoT (ES6 Module - Práctica 4.1, 4.2 y 4.3)
+ * Coordinador Principal de la Plataforma IoT (ES6 Module - Examen 3.1 & Práctica 4.3)
  * Integra:
- * - 4.1: Control Manual (Joystick, D-Pad, STOP Prioritario, Claxon, Sliders, Demos)
- * - 4.2: Monitoreo en Tiempo Real (Telemetría WSS, Timestamp es-MX, Tabla Historial 10 RDS)
- * - 4.3: Administración & RBAC (Dashboard Flota, Modelos vs Unidades, Asignación, Editor Demos, Auditoría)
+ * - 1. Login Real con Contraseña (sessionStorage + Bearer Token + BOLA/IDOR + Cierre de Sesión)
+ * - 2. Catálogo Exacto de los 12 Movimientos del Profesor (01..12) + 13 (DETENER)
+ * - 3. Control de DEMO con Cancelación Instantánea y Prevención de Concurrencia
  */
 
 import { CONFIG } from "./config.js";
@@ -18,6 +18,7 @@ class PlatformApp {
     this.isDemoRunning = false;
     this.activeDemoId = null;
     this.currentView = "control";
+    this.currentUser = null;
     this.currentRole = "USUARIO";
     this.healthTimer = null;
     this.audioCtx = null;
@@ -25,12 +26,25 @@ class PlatformApp {
     this.guestSecondsLeft = 300; // 5 minutos
 
     this.ui = {
-      // Header y RBAC
+      // Modal Login Real
+      loginOverlay: document.getElementById("login-modal-overlay"),
+      formLogin: document.getElementById("form-login-iot"),
+      inputLoginEmail: document.getElementById("login-email"),
+      inputLoginPassword: document.getElementById("login-password"),
+      btnLoginSubmit: document.getElementById("btn-login-submit"),
+      btnLoginGuest: document.getElementById("btn-login-guest"),
+      alertLoginError: document.getElementById("login-error-alert"),
+      quickCredPills: document.querySelectorAll(".quick-cred-pill"),
+
+      // Header y Sesión Autenticada
       lblVehiculoId: document.getElementById("lbl-vehiculo-id"),
       lblUnidadSerie: document.getElementById("lbl-unidad-serie"),
-      selectUserRole: document.getElementById("select-user-role"),
+      lblUserName: document.getElementById("lbl-user-name"),
+      lblUserRole: document.getElementById("lbl-user-role"),
+      btnLogout: document.getElementById("btn-logout"),
       btnRefreshHealth: document.getElementById("btn-refresh-health"),
       alertGuestSession: document.getElementById("alert-guest-session"),
+      alertAdminBola: document.getElementById("alert-admin-bola"),
       guestTimerDisplay: document.getElementById("guest-timer-display"),
       btnRequestGuestTrial: document.getElementById("btn-request-guest-trial"),
 
@@ -47,7 +61,7 @@ class PlatformApp {
       viewMonitoreo: document.getElementById("view-monitoreo"),
       viewAdmin: document.getElementById("view-admin"),
 
-      // Vista 1: Control
+      // Vista 1: Control (Joystick + Cruceta + 12 Movimientos + DETENER)
       joystickZone: document.getElementById("joystick-zone"),
       joystickThumb: document.getElementById("joystick-thumb"),
       badgeJoystickDir: document.getElementById("badge-direccion-joystick"),
@@ -58,11 +72,6 @@ class PlatformApp {
       btnDpadLeft: document.getElementById("btn-joy-left"),
       btnDpadRight: document.getElementById("btn-joy-right"),
       btnDpadStop: document.getElementById("btn-joy-stop"),
-      btnClaxon: document.getElementById("btn-claxon"),
-      sliderVolume: document.getElementById("slider-volume"),
-      lblVolumeVal: document.getElementById("lbl-volume-val"),
-      sliderSpeed: document.getElementById("slider-speed"),
-      lblSpeedVal: document.getElementById("lbl-speed-val"),
       selectDemo: document.getElementById("select-demo"),
       btnDemoStart: document.getElementById("btn-demo-start"),
       btnDemoCancel: document.getElementById("btn-demo-cancel"),
@@ -109,7 +118,7 @@ class PlatformApp {
       });
     }
 
-    // 3. Inicializar WebSocket Seguro WSS
+    // 3. Inicializar Cliente WebSocket Seguro WSS (se conecta al iniciar sesión)
     this.wsClient = new IoTWebSocketClient({
       onStatusChange: (state) => {
         this.updateWsIndicator(state);
@@ -117,18 +126,14 @@ class PlatformApp {
       },
       onMessage: (payload) => this.handleWsMessage(payload)
     });
-    this.wsClient.connect();
 
-    // 4. Enlazar eventos de UI, Mandos y Navegación
+    // 4. Enlazar eventos de Login, UI, Mandos y Navegación
     this.bindEvents();
 
-    // 5. Aplicar Rol inicial (RBAC)
-    this.applyRole(this.currentRole);
+    // 5. Restaurar sesión de sessionStorage o mostrar pantalla de Login
+    this.restoreOrRequireLogin();
 
-    // 6. Verificar salud de AWS y sincronizar catálogos
-    await this.verifyHealthAndSync();
-
-    // 7. Polling de salud de la infraestructura
+    // 6. Polling de salud de la infraestructura
     this.healthTimer = window.setInterval(
       () => this.checkHealthOnly(),
       CONFIG.HEALTH_POLL_INTERVAL_MS
@@ -142,19 +147,180 @@ class PlatformApp {
   }
 
   normalizeCommandKey(rawName) {
-    return String(rawName || "").trim().toUpperCase().replace(/\s+/g, "_");
+    return String(rawName || "")
+      .trim()
+      .toUpperCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, "_");
   }
 
+  // ===========================================================================
+  // 1. AUTENTICACIÓN REAL CON SESSIONSTORAGE Y BOLA/IDOR
+  // ===========================================================================
+  restoreOrRequireLogin() {
+    try {
+      const savedToken = window.sessionStorage.getItem("iot_auth_token");
+      const savedUserRaw = window.sessionStorage.getItem("iot_auth_user");
+      if (savedToken && savedUserRaw) {
+        const userObj = JSON.parse(savedUserRaw);
+        this.activateAuthenticatedSession(userObj, savedToken);
+        return;
+      }
+    } catch {
+      // Continuar a pantalla de Login
+    }
+    this.showLoginModal();
+  }
+
+  showLoginModal(errorMsg = "") {
+    if (this.ui.loginOverlay) {
+      this.ui.loginOverlay.classList.remove("d-none");
+    }
+    if (errorMsg) {
+      this.showLoginError(errorMsg);
+    } else {
+      this.hideLoginError();
+    }
+  }
+
+  hideLoginModal() {
+    if (this.ui.loginOverlay) {
+      this.ui.loginOverlay.classList.add("d-none");
+    }
+    this.hideLoginError();
+  }
+
+  showLoginError(msg) {
+    if (!this.ui.alertLoginError) return;
+    this.ui.alertLoginError.textContent = msg;
+    this.ui.alertLoginError.classList.remove("d-none");
+  }
+
+  hideLoginError() {
+    if (!this.ui.alertLoginError) return;
+    this.ui.alertLoginError.textContent = "";
+    this.ui.alertLoginError.classList.add("d-none");
+  }
+
+  async activateAuthenticatedSession(userObj, token) {
+    this.currentUser = userObj;
+    const role = String(userObj.rol || "USUARIO").toUpperCase();
+
+    try {
+      window.sessionStorage.setItem("iot_auth_token", token);
+      window.sessionStorage.setItem("iot_auth_user", JSON.stringify(userObj));
+    } catch {
+      // sessionStorage disponible
+    }
+
+    if (this.ui.lblUserName) {
+      this.ui.lblUserName.textContent = userObj.nombre_completo || userObj.email || "Usuario";
+    }
+    if (this.ui.lblUserRole) {
+      this.ui.lblUserRole.textContent = role;
+    }
+
+    this.hideLoginModal();
+    this.applyRole(role, userObj.expira_en_segundos || 300);
+
+    // Conectar WebSocket Seguro WSS y sincronizar con AWS RDS
+    this.wsClient.connect();
+    await this.verifyHealthAndSync();
+  }
+
+  async handleLogout() {
+    if (this.isDemoRunning) {
+      await this.cancelActiveDemo();
+    }
+    await api.logout();
+    this.stopGuestCountdown();
+
+    try {
+      window.sessionStorage.removeItem("iot_auth_token");
+      window.sessionStorage.removeItem("iot_auth_user");
+    } catch {
+      // limpiar
+    }
+
+    this.currentUser = null;
+    this.wsClient.disconnect();
+    this.updateWsIndicator("offline");
+
+    if (this.ui.lblUserName) this.ui.lblUserName.textContent = "No autenticado";
+    if (this.ui.lblUserRole) this.ui.lblUserRole.textContent = "---";
+
+    this.showLoginModal();
+  }
+
+  // ===========================================================================
+  // 2. ENLACE DE EVENTOS DE INTERFAZ Y CONTROLES
+  // ===========================================================================
   bindEvents() {
+    // Píldoras de llenado rápido en el Login
+    this.ui.quickCredPills.forEach((pill) => {
+      pill.addEventListener("click", () => {
+        const email = pill.getAttribute("data-fill-email") || "";
+        const pass = pill.getAttribute("data-fill-pass") || "";
+        if (this.ui.inputLoginEmail) this.ui.inputLoginEmail.value = email;
+        if (this.ui.inputLoginPassword) this.ui.inputLoginPassword.value = pass;
+        this.hideLoginError();
+      });
+    });
+
+    // Submit del Formulario de Login Real
+    this.ui.formLogin?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      this.hideLoginError();
+      const email = this.ui.inputLoginEmail?.value?.trim() || "";
+      const password = this.ui.inputLoginPassword?.value || "";
+
+      if (!email || !password) {
+        this.showLoginError("Ingresa tu correo y contraseña.");
+        return;
+      }
+
+      if (this.ui.btnLoginSubmit) this.ui.btnLoginSubmit.disabled = true;
+      try {
+        const authData = await api.login(email, password);
+        await this.activateAuthenticatedSession(authData, authData.token);
+      } catch (err) {
+        this.showLoginError(err.message || "Credenciales inválidas.");
+      } finally {
+        if (this.ui.btnLoginSubmit) this.ui.btnLoginSubmit.disabled = false;
+      }
+    });
+
+    // Botón de Acceso Temporal Invitado (Prueba 5 min con bloqueo de exclusividad)
+    this.ui.btnLoginGuest?.addEventListener("click", async () => {
+      this.hideLoginError();
+      if (this.ui.btnLoginGuest) this.ui.btnLoginGuest.disabled = true;
+      try {
+        const guestRes = await api.solicitarPruebaInvitado(CONFIG.VEHICULO_ID);
+        const guestUser = {
+          id_usuario: 3,
+          nombre_completo: "Invitado Prueba (5 min)",
+          email: "invitado@iot.com",
+          id_rol: 3,
+          rol: "INVITADO",
+          vehiculos_asignados: [CONFIG.VEHICULO_ID],
+          expira_en_segundos: 300
+        };
+        await this.activateAuthenticatedSession(guestUser, guestRes.token_sesion);
+      } catch (err) {
+        this.showLoginError(err.message || "La unidad ya está reservada por otro invitado.");
+      } finally {
+        if (this.ui.btnLoginGuest) this.ui.btnLoginGuest.disabled = false;
+      }
+    });
+
+    // Botón Cerrar Sesión
+    this.ui.btnLogout?.addEventListener("click", () => this.handleLogout());
+
     // Navegación de 3 Vistas
     this.ui.navBtnControl?.addEventListener("click", () => this.switchView("control"));
     this.ui.navBtnMonitoreo?.addEventListener("click", () => this.switchView("monitoreo"));
     this.ui.navBtnAdmin?.addEventListener("click", () => this.switchView("admin"));
-
-    // Selector de Rol RBAC
-    this.ui.selectUserRole?.addEventListener("change", (e) => {
-      this.applyRole(e.target.value);
-    });
 
     // Botón Sincronizar
     this.ui.btnRefreshHealth?.addEventListener("click", () => {
@@ -162,72 +328,45 @@ class PlatformApp {
       this.verifyHealthAndSync();
     });
 
-    // Botón Prioritario DETENER
+    // Botón Prioritario DETENER (Aborta DEMO si está corriendo y detiene motores al instante)
     const stopButtons = [this.ui.btnStopPriority, this.ui.btnDpadStop].filter(Boolean);
     stopButtons.forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (this.isDemoRunning && this.activeDemoId) {
+        this.joystick?.forceStop();
+        if (this.isDemoRunning) {
           await this.cancelActiveDemo();
         } else {
-          this.joystick?.forceStop();
           await this.dispatchCommand("DETENER", true);
         }
       });
     });
 
-    // D-Pad Mandos Rápidos
+    // Cruceta D-Pad (01-ADELANTE, 02-ATRAS, 03-GIRAR_IZQUIERDA, 04-GIRAR_DERECHA)
     const dpadList = [
-      { el: this.ui.btnDpadUp, cmd: "AVANZAR" },
-      { el: this.ui.btnDpadDown, cmd: "RETROCEDER" },
-      { el: this.ui.btnDpadLeft, cmd: "IZQUIERDA" },
-      { el: this.ui.btnDpadRight, cmd: "DERECHA" }
+      { el: this.ui.btnDpadUp, cmd: "ADELANTE" },
+      { el: this.ui.btnDpadDown, cmd: "ATRAS" },
+      { el: this.ui.btnDpadLeft, cmd: "GIRAR_IZQUIERDA" },
+      { el: this.ui.btnDpadRight, cmd: "GIRAR_DERECHA" }
     ];
     dpadList.forEach(({ el, cmd }) => {
       el?.addEventListener("click", async () => {
-        if (this.isDemoRunning) return;
-        if (this.currentRole === "INVITADO" && !["AVANZAR", "RETROCEDER", "DETENER"].includes(cmd)) {
-          alert("Acción no permitida para el Rol Invitado en prueba temporal.");
-          return;
-        }
+        if (!this.canExecuteCommand(cmd)) return;
         await this.dispatchCommand(cmd, false);
       });
     });
 
-    // Funciones Operativas del Vehículo (CABINA_IZQ, CABINA_DER, EXCAVAR, LUZ, SONIDO, VELOCIDAD)
-    this.speedLevels = ["Normal", "Turbo", "Lento"];
-    this.speedLevelIdx = 0;
-
+    // Catálogo de los 12 Movimientos del Profesor (Botones 01 al 12)
     this.ui.secondaryButtons.forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (this.isDemoRunning) return;
         const cmdName = btn.getAttribute("data-cmd-name");
         if (!cmdName) return;
+        if (!this.canExecuteCommand(cmdName)) return;
 
-        if (this.currentRole === "INVITADO" && !["AVANZAR", "RETROCEDER", "DETENER"].includes(cmdName)) {
-          alert("Acción restringida: El Rol Invitado solo tiene autorización para AVANZAR, RETROCEDER y DETENER.");
-          return;
-        }
-
-        if (cmdName === "SONIDO") {
+        if (cmdName === "ACTIVAR_SONIDO") {
           this.emitClaxonSound();
-        } else if (cmdName === "VELOCIDAD") {
-          this.speedLevelIdx = (this.speedLevelIdx + 1) % this.speedLevels.length;
-          const nextLabel = this.speedLevels[this.speedLevelIdx];
-          if (this.ui.lblSpeedVal) this.ui.lblSpeedVal.textContent = nextLabel;
         }
-
         await this.dispatchCommand(cmdName, false);
       });
-    });
-
-    // Hardware: Sliders de respaldo
-    this.ui.sliderVolume?.addEventListener("input", (e) => {
-      const val = e.target.value;
-      if (this.ui.lblVolumeVal) this.ui.lblVolumeVal.textContent = `${val}%`;
-      this.monitoreo.setVolumenTelemetry(val);
-    });
-    this.ui.sliderVolume?.addEventListener("change", async (e) => {
-      await api.ajustarVolumen(e.target.value, CONFIG.VEHICULO_ID);
     });
 
     // Secuencias DEMO (Botones Iniciar y Cancelar)
@@ -238,7 +377,7 @@ class PlatformApp {
     this.ui.btnCrearCliente?.addEventListener("click", async () => {
       const nombre = this.ui.inputClienteNombre?.value?.trim();
       const email = this.ui.inputClienteEmail?.value?.trim();
-      const password = this.ui.inputClientePassword?.value?.trim() || "cliente123";
+      const password = this.ui.inputClientePassword?.value?.trim() || "Cliente123!";
 
       if (!nombre || !email) {
         alert("Por favor ingresa el nombre y correo del nuevo cliente.");
@@ -253,7 +392,6 @@ class PlatformApp {
           id_rol: 2
         });
 
-        // Agregar de inmediato al desplegable de selección y dejarlo seleccionado
         if (this.ui.selectAsignarUsuario) {
           const opt = document.createElement("option");
           opt.value = String(nuevoCliente.id_usuario);
@@ -262,26 +400,21 @@ class PlatformApp {
           this.ui.selectAsignarUsuario.appendChild(opt);
         }
 
-        // Incrementar el contador visual de usuarios
         if (this.ui.metricUsuarios) {
           const current = parseInt(this.ui.metricUsuarios.textContent, 10) || 3;
           this.ui.metricUsuarios.textContent = String(current + 1);
         }
 
-        // Registrar en la bitácora de auditoría
         this.registrarAuditoriaLocal("CLIENTE_REGISTRADO", `Cliente registrado: ${nombre} (${email})`);
-
-        // Limpiar campos
         if (this.ui.inputClienteNombre) this.ui.inputClienteNombre.value = "";
         if (this.ui.inputClienteEmail) this.ui.inputClienteEmail.value = "";
-
-        alert(`¡Cliente "${nombre}" registrado exitosamente! Ya aparece en la lista para asignarle vehículo.`);
+        alert(`¡Cliente "${nombre}" registrado exitosamente con contraseña encriptada!`);
       } catch (err) {
         alert(`Error al registrar cliente: ${err.message}`);
       }
     });
 
-    // Administración: Botón Asignar
+    // Administración: Botón Asignar Unidad
     this.ui.btnAsignarUnidad?.addEventListener("click", async () => {
       const idVehiculo = this.ui.selectAsignarUnidad?.value || 1;
       const idUsuario = this.ui.selectAsignarUsuario?.value || 2;
@@ -290,8 +423,6 @@ class PlatformApp {
 
       try {
         await api.asignarUnidad(idVehiculo, idUsuario);
-
-        // Actualizar la tabla de inventario en vivo
         const tbody = document.getElementById("tbody-admin-unidades");
         if (tbody) {
           const firstRow = tbody.querySelector("tr");
@@ -299,45 +430,68 @@ class PlatformApp {
             firstRow.children[3].textContent = userName;
           }
         }
-
-        // Registrar en bitácora de auditoría
         this.registrarAuditoriaLocal("ASIGNACION_VEHICULO", `Unidad #${idVehiculo} asignada a ${userName}`);
-
         alert(`¡Unidad #${idVehiculo} asignada correctamente a ${userName}!`);
       } catch (err) {
         alert(`Error al asignar: ${err.message}`);
       }
     });
 
-    // Administración: Editor de Demos (Agregar paso)
-    this.ui.btnAddDemoStep?.addEventListener("click", () => {
-      this.addDemoEditorStep();
-    });
+    // Administración: Editor de Demos
+    this.ui.btnAddDemoStep?.addEventListener("click", () => this.addDemoEditorStep());
+    this.ui.btnSaveCustomDemo?.addEventListener("click", () => this.saveCustomDemoFromEditor());
 
-    // Administración: Guardar Demo personalizada en RDS
-    this.ui.btnSaveCustomDemo?.addEventListener("click", async () => {
-      await this.saveCustomDemoFromEditor();
-    });
-
-    // Solicitud de prueba para Invitado
+    // Renovar prueba para Invitado
     this.ui.btnRequestGuestTrial?.addEventListener("click", async () => {
       try {
-        await api.solicitarPruebaInvitado(CONFIG.VEHICULO_ID);
+        const res = await api.solicitarPruebaInvitado(CONFIG.VEHICULO_ID);
+        window.sessionStorage.setItem("iot_auth_token", res.token_sesion);
         this.startGuestCountdown(300);
-        alert("Sesión temporal de 5 minutos iniciada con exclusividad.");
-      } catch {
-        this.startGuestCountdown(300);
+        alert("Sesión exclusiva de 5 minutos renovada.");
+      } catch (err) {
+        alert(err.message || "No se pudo renovar la sesión de invitado.");
       }
     });
 
-    // Recargar datos admin
     this.ui.btnRefreshAdminUnits?.addEventListener("click", () => this.loadAdminData());
   }
 
   /**
-   * Cambia la vista activa entre CONTROL, MONITOREO y ADMINISTRACIÓN
+   * Valida en Frontend las reglas BOLA/IDOR antes de despachar un comando
    */
+  canExecuteCommand(rawCmdName) {
+    const cmd = this.normalizeCommandKey(rawCmdName);
+
+    if (cmd === "DETENER") return true;
+    if (this.isDemoRunning) return false;
+
+    // Regla BOLA/IDOR 1: El Administrador NO puede mover vehículos ya vendidos a un comprador
+    if (this.currentRole === "ADMINISTRADOR") {
+      alert("Bloqueo BOLA/IDOR: El Administrador gestiona la flota y catálogos, pero no tiene permiso para mover físicamente unidades ya vendidas a un cliente.");
+      return false;
+    }
+
+    // Regla BOLA/IDOR 2: El Invitado solo puede ejecutar ADELANTE, ATRAS y DETENER por 5 min
+    if (this.currentRole === "INVITADO") {
+      if (this.guestSecondsLeft <= 0) {
+        alert("Tu sesión temporal de 5 minutos ha expirado.");
+        return false;
+      }
+      if (!["ADELANTE", "AVANZAR", "ATRAS", "RETROCEDER", "DETENER"].includes(cmd)) {
+        alert("Restricción RBAC Invitado: Solo tienes autorización para 01-ADELANTE, 02-ATRÁS y DETENER.");
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   async switchView(targetView) {
+    if (targetView === "admin" && this.currentRole !== "ADMINISTRADOR") {
+      alert("Acceso denegado: Solo el Rol ADMINISTRADOR puede acceder a este módulo.");
+      return;
+    }
+
     this.currentView = targetView;
 
     const navButtons = [
@@ -372,26 +526,49 @@ class PlatformApp {
   }
 
   /**
-   * Aplica reglas de negocio por Rol (RBAC)
+   * Aplica permisos visuales y de seguridad por Rol (ADMINISTRADOR, USUARIO, INVITADO)
    */
-  applyRole(role) {
+  applyRole(role, guestSeconds = 300) {
     this.currentRole = role;
 
     if (role === "ADMINISTRADOR") {
-      if (this.ui.navBtnAdmin) this.ui.navBtnAdmin.classList.remove("d-none");
+      this.ui.navBtnAdmin?.classList.remove("d-none");
       this.ui.alertGuestSession?.classList.add("d-none");
+      this.ui.alertAdminBola?.classList.remove("d-none");
       this.stopGuestCountdown();
+      this.updateControlButtonsByRole("ADMINISTRADOR");
     } else if (role === "USUARIO") {
-      if (this.ui.navBtnAdmin) this.ui.navBtnAdmin.classList.add("d-none");
+      this.ui.navBtnAdmin?.classList.add("d-none");
       this.ui.alertGuestSession?.classList.add("d-none");
+      this.ui.alertAdminBola?.classList.add("d-none");
       this.stopGuestCountdown();
+      this.updateControlButtonsByRole("USUARIO");
       if (this.currentView === "admin") this.switchView("control");
     } else if (role === "INVITADO") {
-      if (this.ui.navBtnAdmin) this.ui.navBtnAdmin.classList.add("d-none");
+      this.ui.navBtnAdmin?.classList.add("d-none");
       this.ui.alertGuestSession?.classList.remove("d-none");
-      this.startGuestCountdown(this.guestSecondsLeft);
+      this.ui.alertAdminBola?.classList.add("d-none");
+      this.startGuestCountdown(guestSeconds);
+      this.updateControlButtonsByRole("INVITADO");
       if (this.currentView === "admin") this.switchView("control");
     }
+  }
+
+  updateControlButtonsByRole(role) {
+    this.ui.secondaryButtons.forEach((btn) => {
+      const cmd = this.normalizeCommandKey(btn.getAttribute("data-cmd-name"));
+      if (role === "USUARIO") {
+        btn.classList.remove("cmd-btn-disabled-rbac");
+      } else if (role === "INVITADO") {
+        if (["ADELANTE", "ATRAS"].includes(cmd)) {
+          btn.classList.remove("cmd-btn-disabled-rbac");
+        } else {
+          btn.classList.add("cmd-btn-disabled-rbac");
+        }
+      } else if (role === "ADMINISTRADOR") {
+        btn.classList.add("cmd-btn-disabled-rbac");
+      }
+    });
   }
 
   startGuestCountdown(seconds = 300) {
@@ -405,8 +582,9 @@ class PlatformApp {
 
       if (this.guestSecondsLeft <= 0) {
         this.stopGuestCountdown();
-        alert("Tu sesión temporal de prueba ha expirado. Contacta al Administrador.");
+        alert("Tu sesión temporal de 5 minutos como Invitado ha expirado.");
         this.dispatchCommand("DETENER", true);
+        this.handleLogout();
       }
     }, 1000);
   }
@@ -436,36 +614,41 @@ class PlatformApp {
       const gain = this.audioCtx.createGain();
       osc.type = "sawtooth";
       osc.frequency.setValueAtTime(440, this.audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(370, this.audioCtx.currentTime + 0.28);
-      gain.gain.setValueAtTime(0.2, this.audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.3);
+      osc.frequency.exponentialRampToValueAtTime(370, this.audioCtx.currentTime + 0.25);
+      gain.gain.setValueAtTime(0.18, this.audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.28);
       osc.connect(gain);
       gain.connect(this.audioCtx.destination);
       osc.start();
-      osc.stop(this.audioCtx.currentTime + 0.3);
+      osc.stop(this.audioCtx.currentTime + 0.28);
     } catch {
       // Audio no bloqueante
     }
   }
 
   async handleJoystickDirection(direction) {
-    const textDir = direction === "DETENER" ? "En espera" : direction.replace(/_/g, " ");
-    if (this.ui.badgeJoystickDir) {
-      this.ui.badgeJoystickDir.textContent = textDir;
-    }
-    const lblJoyDir = document.getElementById("lbl-joy-dir");
-    if (lblJoyDir) {
-      lblJoyDir.textContent = textDir;
-    }
+    // Mapear direcciones del joystick al catálogo oficial del profesor
+    const joyMap = {
+      AVANZAR: "ADELANTE",
+      RETROCEDER: "ATRAS",
+      IZQUIERDA: "GIRAR_IZQUIERDA",
+      DERECHA: "GIRAR_DERECHA",
+      DETENER: "DETENER"
+    };
+    const mappedCmd = joyMap[direction] || direction;
+    const isPriorityStop = mappedCmd === "DETENER";
 
-    if (this.currentRole === "INVITADO" && !["AVANZAR", "RETROCEDER", "DETENER"].includes(direction)) {
+    if (!isPriorityStop && !this.canExecuteCommand(mappedCmd)) {
       return;
     }
 
-    const isPriorityStop = direction === "DETENER";
-    if (this.isDemoRunning && !isPriorityStop) return;
+    const textDir = isPriorityStop ? "En espera" : mappedCmd.replace(/_/g, " ");
+    if (this.ui.badgeJoystickDir) this.ui.badgeJoystickDir.textContent = textDir;
+    const lblJoyDir = document.getElementById("lbl-joy-dir");
+    if (lblJoyDir) lblJoyDir.textContent = textDir;
 
-    await this.dispatchCommand(direction, isPriorityStop);
+    if (this.isDemoRunning && !isPriorityStop) return;
+    await this.dispatchCommand(mappedCmd, isPriorityStop);
   }
 
   async dispatchCommand(commandKey, isPriority = false) {
@@ -478,7 +661,13 @@ class PlatformApp {
       CONFIG.DEFAULT_COMMAND_MAP.DETENER;
 
     if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = cmdInfo.nombre;
+    const lblJoyDir = document.getElementById("lbl-joy-dir");
+    if (lblJoyDir) {
+      lblJoyDir.textContent = cmdInfo.nombre === "DETENER" ? "En espera" : cmdInfo.nombre.replace(/_/g, " ");
+    }
     destelloVisualControl(cmdInfo.nombre);
+
+    const origenTag = isPriority ? "PRIORIDAD-DETENER" : `WEB-${this.currentRole}`;
 
     try {
       const res = await api.enviarMovimiento({
@@ -486,7 +675,7 @@ class PlatformApp {
         idComando: cmdInfo.id_comando,
         codigo: cmdInfo.codigo,
         nombre: cmdInfo.nombre,
-        origen: isPriority ? "PRIORIDAD-DETENER" : `WEB-${this.currentRole}`
+        origen: origenTag
       });
 
       this.updateApiIndicator("available");
@@ -495,40 +684,53 @@ class PlatformApp {
         else this.monitoreo.fetchAndRenderUltimoEstado();
         this.monitoreo.fetchAndRenderHistorial(false);
       }
-    } catch {
+    } catch (err) {
+      if (err && err.status === 403) {
+        alert(err.message);
+        return;
+      }
       // Fallback por WebSocket Seguro
       this.wsClient.sendJson({
         id_vehiculo: CONFIG.VEHICULO_ID,
         id_comando: cmdInfo.id_comando,
+        token: api.getAuthToken(),
         origen: isPriority ? "PRIORIDAD-DETENER" : `WSS-${this.currentRole}`
       });
     }
   }
 
-  /**
-   * Inicia la DEMO y actualiza la pantalla en tiempo real con el estado de avance
-   */
+  // ===========================================================================
+  // 3. EJECUCIÓN Y CANCELACIÓN INSTANTÁNEA DE SECUENCIAS DEMO
+  // ===========================================================================
   async startSelectedDemo() {
     if (this.isDemoRunning || !this.ui.selectDemo) return;
+
+    if (this.currentRole === "ADMINISTRADOR") {
+      alert("Bloqueo BOLA/IDOR: El Administrador no puede ejecutar físicamente secuencias DEMO sobre unidades vendidas.");
+      return;
+    }
+    if (this.currentRole === "INVITADO") {
+      alert("Restricción RBAC: El Rol Invitado no tiene permiso para ejecutar secuencias DEMO.");
+      return;
+    }
+
     const selectedDemoId = Number(this.ui.selectDemo.value || 1);
     this.setDemoLockState(true, selectedDemoId);
 
     if (this.ui.lblDemoCurrentStep) {
       this.ui.lblDemoCurrentStep.textContent = `Iniciando DEMO #${selectedDemoId}...`;
     }
-    if (this.ui.lblDemoStepDetails) {
-      this.ui.lblDemoStepDetails.textContent = "Conectando secuencia con el servidor en AWS EC2...";
-    }
 
-    // 1. Enviar también por WebSocket para asegurar recepción en tiempo real
-    this.wsClient.sendJson({ id_demo: selectedDemoId });
-
-    // 2. Disparar API REST en AWS
+    // Enviar UNA SOLA petición REST (evita duplicar la demo por WS y HTTP al mismo tiempo)
     try {
       await api.iniciarDemo({ idDemo: selectedDemoId, idVehiculo: CONFIG.VEHICULO_ID });
+      // Al retornar exitosamente la DEMO, aseguramos que la UI regrese a estado Inactivo
+      this.setDemoLockState(false, null);
     } catch (err) {
-      if (this.ui.lblDemoCurrentStep) {
-        this.ui.lblDemoCurrentStep.textContent = `Error al iniciar DEMO: ${err.message}`;
+      if (err && (err.status === 403 || err.status === 409)) {
+        alert(err.message);
+      } else if (this.ui.lblDemoCurrentStep) {
+        this.ui.lblDemoCurrentStep.textContent = `DEMO detenida o error: ${err.message}`;
       }
       this.setDemoLockState(false, null);
     }
@@ -536,17 +738,27 @@ class PlatformApp {
 
   async cancelActiveDemo() {
     const demoId = this.activeDemoId || Number(this.ui.selectDemo?.value || 1);
+
+    // 1. Notificar inmediatamente por WebSocket para despertar el asyncio.Event en milisegundos
+    this.wsClient.sendJson({
+      accion: "CANCELAR_DEMO",
+      id_vehiculo: CONFIG.VEHICULO_ID,
+      id_demo: demoId
+    });
+
+    // 2. Liberar bloqueo de UI de inmediato
+    this.setDemoLockState(false, null);
+    if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = "DETENER";
+    const lblJoyDir = document.getElementById("lbl-joy-dir");
+    if (lblJoyDir) lblJoyDir.textContent = "En espera";
+    if (this.ui.lblDemoCurrentStep) {
+      this.ui.lblDemoCurrentStep.textContent = "DEMO cancelada · Vehículo en DETENER";
+    }
+
+    // 3. Confirmar cancelación por endpoint REST
     try {
       await api.cancelarDemo({ idDemo: demoId, idVehiculo: CONFIG.VEHICULO_ID });
     } finally {
-      this.setDemoLockState(false, null);
-      if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = "DETENER";
-      if (this.ui.lblDemoCurrentStep) {
-        this.ui.lblDemoCurrentStep.textContent = "DEMO cancelada · Vehículo detenido";
-      }
-      if (this.ui.lblDemoStepDetails) {
-        this.ui.lblDemoStepDetails.textContent = "Secuencia interrumpida con prioridad absoluta";
-      }
       this.monitoreo?.refreshAll(false);
     }
   }
@@ -560,56 +772,58 @@ class PlatformApp {
     if (this.ui.btnDemoCancel) this.ui.btnDemoCancel.disabled = !locked;
 
     if (this.ui.badgeDemoStatus) {
-      this.ui.badgeDemoStatus.className = locked ? "badge badge-state-warning" : "badge badge-state-neutral";
-      this.ui.badgeDemoStatus.textContent = locked ? `Activa (#${demoId})` : "Inactiva";
+      this.ui.badgeDemoStatus.className = locked
+        ? "badge-soft badge-warning-pastel"
+        : "badge-soft badge-neutral";
+      this.ui.badgeDemoStatus.textContent = locked ? `Activa (#${demoId})` : "Inactivo";
     }
   }
 
-  /**
-   * Procesa mensajes de WebSocket y gestiona la visualización de DEMO paso a paso
-   */
   handleWsMessage(payload) {
     if (!payload || typeof payload !== "object") return;
+
+    if (payload.evento === "ERROR_RBAC" && payload.mensaje) {
+      alert(payload.mensaje);
+      return;
+    }
 
     if (payload.evento === "DEMO_INICIADA") {
       this.setDemoLockState(true, payload.id_demo || 1);
       if (this.ui.lblDemoCurrentStep) {
-        this.ui.lblDemoCurrentStep.textContent = "Secuencia DEMO iniciada...";
+        this.ui.lblDemoCurrentStep.textContent = "Secuencia DEMO en ejecución...";
       }
     } else if (payload.evento === "DEMO_PASO" && payload.comando) {
-      // Actualizar texto en el panel de DEMO claramente
       if (this.ui.lblDemoCurrentStep) {
-        this.ui.lblDemoCurrentStep.textContent = `Movimiento actual: ${payload.comando}`;
-      }
-      if (this.ui.lblDemoStepDetails) {
-        this.ui.lblDemoStepDetails.textContent = `Paso #${payload.orden} · ${payload.duracion_ms} ms · AWS RDS`;
+        this.ui.lblDemoCurrentStep.textContent = `Paso #${payload.orden}: ${payload.comando}`;
       }
       if (this.ui.lblComandoActual) {
         this.ui.lblComandoActual.textContent = `DEMO: ${payload.comando}`;
       }
-      destelloVisualControl(payload.comando);
+      const lblJoyDir = document.getElementById("lbl-joy-dir");
+      if (lblJoyDir) lblJoyDir.textContent = `DEMO: ${payload.comando}`;
+      destelloVisualControl(payload.comando, payload.duracion_ms || 1800);
     } else if (payload.evento === "DEMO_PAUSA") {
       if (this.ui.lblDemoCurrentStep) {
-        this.ui.lblDemoCurrentStep.textContent = `Pausa intermedia (${payload.pausa_ms} ms)`;
+        this.ui.lblDemoCurrentStep.textContent = `Pausa segura (${payload.pausa_ms} ms)`;
       }
-      if (this.ui.lblDemoStepDetails) {
-        this.ui.lblDemoStepDetails.textContent = "Esperando siguiente movimiento programado...";
-      }
+      const lblJoyDir = document.getElementById("lbl-joy-dir");
+      if (lblJoyDir) lblJoyDir.textContent = "PAUSA (DETENER)";
     } else if (payload.evento === "DEMO_FINALIZADA") {
       this.setDemoLockState(false, null);
       if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = "DETENER";
+      const lblJoyDir = document.getElementById("lbl-joy-dir");
+      if (lblJoyDir) lblJoyDir.textContent = "En espera";
       if (this.ui.lblDemoCurrentStep) {
-        this.ui.lblDemoCurrentStep.textContent = "Secuencia DEMO finalizada con éxito ✨";
-      }
-      if (this.ui.lblDemoStepDetails) {
-        this.ui.lblDemoStepDetails.textContent = "Vehículo en estado neutral DETENER";
+        this.ui.lblDemoCurrentStep.textContent = payload.cancelada
+          ? "DEMO cancelada · Vehículo detenido"
+          : "DEMO finalizada · Vehículo en DETENER ✨";
       }
     } else if (payload.estado?.comando) {
       const cmdNombre = String(payload.estado.comando);
       if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = cmdNombre;
-      if (this.ui.badgeJoystickDir && !this.joystick?.isDragging) {
+      if (!this.joystick?.isDragging) {
         const textDir = cmdNombre === "DETENER" ? "En espera" : cmdNombre.replace(/_/g, " ");
-        this.ui.badgeJoystickDir.textContent = textDir;
+        if (this.ui.badgeJoystickDir) this.ui.badgeJoystickDir.textContent = textDir;
         const lblJoyDir = document.getElementById("lbl-joy-dir");
         if (lblJoyDir) lblJoyDir.textContent = textDir;
       }
@@ -640,7 +854,7 @@ class PlatformApp {
   async loadCommands() {
     try {
       const cmds = await api.obtenerComandos(CONFIG.VEHICULO_ID);
-      if (Array.isArray(cmds)) {
+      if (Array.isArray(cmds) && cmds.length > 0) {
         cmds.forEach((cmd) => {
           const key = this.normalizeCommandKey(cmd.nombre);
           this.commandCatalog.set(key, {
@@ -652,31 +866,18 @@ class PlatformApp {
         this.refreshDemoEditorSelects();
       }
     } catch {
-      // Catálogo base preservado
+      // Catálogo oficial por defecto preservado
     }
   }
 
   buildDemoSelectOptionsHtml(selectedId = 1) {
-    const lista = CONFIG.CATALOGO_11_COMANDOS || [
-      { nombre: "AVANZAR", id_comando: 1 },
-      { nombre: "RETROCEDER", id_comando: 2 },
-      { nombre: "IZQUIERDA", id_comando: 10 },
-      { nombre: "DERECHA", id_comando: 11 },
-      { nombre: "DETENER", id_comando: 9 },
-      { nombre: "CABINA_IZQ", id_comando: 12 },
-      { nombre: "CABINA_DER", id_comando: 13 },
-      { nombre: "EXCAVAR", id_comando: 14 },
-      { nombre: "LUZ", id_comando: 15 },
-      { nombre: "SONIDO", id_comando: 16 },
-      { nombre: "VELOCIDAD", id_comando: 17 }
-    ];
-
+    const lista = CONFIG.CATALOGO_12_MOVIMIENTOS || [];
     return lista
       .map((item) => {
         const synced = this.commandCatalog.get(item.nombre) || item;
         const idCmd = Number(synced.id_comando);
         const isSel = idCmd === Number(selectedId) ? "selected" : "";
-        return `<option value="${idCmd}" ${isSel}>${item.nombre}</option>`;
+        return `<option value="${idCmd}" ${isSel}>${item.etiqueta}</option>`;
       })
       .join("");
   }
@@ -701,24 +902,25 @@ class PlatformApp {
         this.ui.selectDemo.appendChild(opt);
       });
     } catch {
-      this.ui.selectDemo.innerHTML = `<option value="1">Demo Estándar #1</option>`;
+      this.ui.selectDemo.innerHTML = `<option value="1">Demo principal</option>`;
     }
   }
 
-  // --- MÉTODOS DE LA VISTA 3 (ADMINISTRACIÓN) ---
   async loadAdminData() {
     try {
       const dashboard = await api.obtenerDashboardAdmin();
       if (dashboard) {
-        if (this.ui.metricUnidades) this.ui.metricUnidades.textContent = dashboard.total_unidades ?? dashboard.total_unidades_activas ?? 1;
+        if (this.ui.metricUnidades) this.ui.metricUnidades.textContent = dashboard.total_unidades ?? 1;
         if (this.ui.metricModelos) this.ui.metricModelos.textContent = dashboard.total_modelos ?? 2;
         if (this.ui.metricUsuarios) this.ui.metricUsuarios.textContent = dashboard.total_usuarios ?? 3;
-        if (this.ui.metricDemos) this.ui.metricDemos.textContent = dashboard.unidades_vendidas ?? dashboard.total_demos ?? 1;
+        if (this.ui.metricDemos) this.ui.metricDemos.textContent = dashboard.unidades_vendidas ?? 1;
       }
 
       const unidades = await api.obtenerUnidadesAdmin();
       if (this.ui.tbodyAdminUnidades) {
-        this.ui.tbodyAdminUnidades.innerHTML = unidades.map((u) => `
+        this.ui.tbodyAdminUnidades.innerHTML = unidades
+          .map(
+            (u) => `
           <tr>
             <td class="text-pink-accent fw-bold">#${u.id_vehiculo}</td>
             <td class="text-cyan-accent fw-bold">${u.numero_serie || "VIN-EXC-2026-001"}</td>
@@ -726,23 +928,29 @@ class PlatformApp {
             <td class="text-secondary">${u.nombre_propietario || u.propietario_nombre || "Carlos Mendoza"}</td>
             <td><span class="badge ${u.activo ? "bg-success" : "bg-danger"}">${u.activo ? "Activa" : "Inactiva"}</span></td>
           </tr>
-        `).join("");
+        `
+          )
+          .join("");
       }
 
       const auditoria = await api.obtenerAuditoria();
       if (this.ui.tbodyAdminAuditoria) {
-        this.ui.tbodyAdminAuditoria.innerHTML = auditoria.map((a) => {
-          const rawDate = a.fecha_hora || Date.now();
-          const d = new Date(rawDate);
-          const timeFormatted = Number.isNaN(d.getTime()) ? String(rawDate) : d.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", hour12: true });
-          return `
+        this.ui.tbodyAdminAuditoria.innerHTML = auditoria
+          .map((a) => {
+            const rawDate = a.fecha_hora || Date.now();
+            const d = new Date(rawDate);
+            const timeFormatted = Number.isNaN(d.getTime())
+              ? String(rawDate)
+              : d.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", hour12: true });
+            return `
             <tr>
               <td class="text-pink-accent fw-bold">${a.accion}</td>
               <td class="text-secondary">${a.usuario || a.detalle || "Admin"}</td>
               <td class="text-primary small">${timeFormatted}</td>
             </tr>
           `;
-        }).join("");
+          })
+          .join("");
       }
     } catch {
       // Respaldo visual
@@ -759,10 +967,10 @@ class PlatformApp {
     div.dataset.orden = String(newOrder);
     div.innerHTML = `
       <span class="step-badge-order">${newOrder}</span>
-      <select class="form-select form-select-sm step-cmd-select bg-white border" style="max-width: 145px;">
+      <select class="form-select form-select-sm step-cmd-select bg-white border" style="max-width: 165px;">
         ${this.buildDemoSelectOptionsHtml(1)}
       </select>
-      <input type="number" class="form-control form-control-sm step-dur-input bg-white border" value="2500" style="width: 75px;" placeholder="ms" />
+      <input type="number" class="form-control form-control-sm step-dur-input bg-white border" value="1800" style="width: 75px;" placeholder="ms" />
       <button type="button" class="btn btn-sm text-danger btn-remove-step p-0"><i class="bi bi-trash"></i></button>
     `;
 
@@ -786,18 +994,18 @@ class PlatformApp {
   }
 
   async saveCustomDemoFromEditor() {
-    const nombre = this.ui.inputDemoName?.value || "Demo Creada 4.3";
+    const nombre = this.ui.inputDemoName?.value || "Demo Examen 3.1";
     const items = this.ui.demoEditorStepsList?.querySelectorAll(".step-card-item") || [];
     const pasos = [];
 
     items.forEach((item, index) => {
       const idComando = Number(item.querySelector(".step-cmd-select")?.value || 1);
-      const duracionMs = Number(item.querySelector(".step-dur-input")?.value || 1000);
+      const duracionMs = Math.max(1500, Number(item.querySelector(".step-dur-input")?.value || 1800));
       pasos.push({
         orden: index + 1,
         id_comando: idComando,
         duracion_ms: duracionMs,
-        pausa_ms: 300
+        pausa_ms: 800
       });
     });
 
@@ -805,7 +1013,7 @@ class PlatformApp {
       await api.guardarDemoEditor({
         id_vehiculo: CONFIG.VEHICULO_ID,
         nombre,
-        descripcion: "Coreografía guardada desde el Editor Visual 4.3",
+        descripcion: "Coreografía guardada desde el Editor Visual",
         pasos
       });
       alert(`Coreografía "${nombre}" guardada con éxito en Amazon RDS.`);

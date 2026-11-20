@@ -47,8 +47,10 @@ export const CONFIG = Object.freeze({
     CONTROL_VOLUMEN: "/api/control/volumen",
     CONTROL_VELOCIDAD: "/api/control/velocidad",
 
-    // 4.3: Administración, RBAC y Auditoría
+    // 4.3: Autenticación Real, Administración, RBAC y Auditoría
     AUTH_LOGIN: "/api/auth/login",
+    AUTH_LOGOUT: "/api/auth/logout",
+    AUTH_ME: "/api/auth/me",
     ADMIN_DASHBOARD: "/api/admin/dashboard",
     ADMIN_MODELOS: "/api/admin/modelos",
     ADMIN_UNIDADES: "/api/admin/unidades",
@@ -59,40 +61,45 @@ export const CONFIG = Object.freeze({
     INVITADO_SOLICITAR_PRUEBA: "/api/invitado/solicitar-prueba"
   },
 
-  // Catálogo oficial de 11 comandos operativos (Excavadora NO.555-104)
-  CATALOGO_11_COMANDOS: [
-    { id_comando: 1, codigo: 1, nombre: "AVANZAR", etiqueta: "AVANZAR (Forward)" },
-    { id_comando: 2, codigo: 2, nombre: "RETROCEDER", etiqueta: "RETROCEDER (Backward)" },
-    { id_comando: 10, codigo: 10, nombre: "IZQUIERDA", etiqueta: "IZQUIERDA (Oruga Izq.)" },
-    { id_comando: 11, codigo: 11, nombre: "DERECHA", etiqueta: "DERECHA (Oruga Der.)" },
-    { id_comando: 9, codigo: 9, nombre: "DETENER", etiqueta: "DETENER (Paro Total)" },
-    { id_comando: 12, codigo: 12, nombre: "CABINA_IZQ", etiqueta: "CABINA_IZQ (Torreta Izq.)" },
-    { id_comando: 13, codigo: 13, nombre: "CABINA_DER", etiqueta: "CABINA_DER (Torreta Der.)" },
-    { id_comando: 14, codigo: 14, nombre: "EXCAVAR", etiqueta: "EXCAVAR (Brazo/Pala)" },
-    { id_comando: 15, codigo: 15, nombre: "LUZ", etiqueta: "LUZ (Light ON/OFF)" },
-    { id_comando: 16, codigo: 16, nombre: "SONIDO", etiqueta: "SONIDO (Music ON/OFF)" },
-    { id_comando: 17, codigo: 17, nombre: "VELOCIDAD", etiqueta: "VELOCIDAD (Speed)" }
+  // Catálogo oficial de los 12 Movimientos del Profesor (+ 13 DETENER)
+  CATALOGO_12_MOVIMIENTOS: [
+    { id_comando: 1,  codigo: 1,  nombre: "ADELANTE",          etiqueta: "01 · ADELANTE" },
+    { id_comando: 2,  codigo: 2,  nombre: "ATRAS",             etiqueta: "02 · ATRÁS" },
+    { id_comando: 3,  codigo: 3,  nombre: "GIRAR_IZQUIERDA",   etiqueta: "03 · GIRAR IZQUIERDA" },
+    { id_comando: 4,  codigo: 4,  nombre: "GIRAR_DERECHA",     etiqueta: "04 · GIRAR DERECHA" },
+    { id_comando: 5,  codigo: 5,  nombre: "MOVER_IZQUIERDA",   etiqueta: "05 · MOVER IZQUIERDA" },
+    { id_comando: 6,  codigo: 6,  nombre: "MOVER_DERECHA",     etiqueta: "06 · MOVER DERECHA" },
+    { id_comando: 7,  codigo: 7,  nombre: "SUBIR_BRAZO",       etiqueta: "07 · SUBIR BRAZO" },
+    { id_comando: 8,  codigo: 8,  nombre: "BAJAR_BRAZO",       etiqueta: "08 · BAJAR BRAZO" },
+    { id_comando: 9,  codigo: 9,  nombre: "LUZ_LED",           etiqueta: "09 · LUZ / LED" },
+    { id_comando: 10, codigo: 10, nombre: "ACTIVAR_SONIDO",    etiqueta: "10 · ACTIVAR SONIDO" },
+    { id_comando: 11, codigo: 11, nombre: "DESACTIVAR_SONIDO", etiqueta: "11 · DESACTIVAR SONIDO" },
+    { id_comando: 12, codigo: 12, nombre: "CONTROL_REMOTO",    etiqueta: "12 · CONTROL REMOTO" },
+    { id_comando: 13, codigo: 13, nombre: "DETENER",           etiqueta: "13 · DETENER (Paro Total)" }
   ],
 
-  // Mapeo por defecto de comandos (11 operativos + alias históricos 3..8 intactos)
+  // Mapeo por defecto de los 12 movimientos + DETENER y alias para el Joystick
   DEFAULT_COMMAND_MAP: {
-    AVANZAR: { id_comando: 1, codigo: 1, nombre: "AVANZAR" },
-    RETROCEDER: { id_comando: 2, codigo: 2, nombre: "RETROCEDER" },
-    IZQUIERDA: { id_comando: 10, codigo: 10, nombre: "IZQUIERDA" },
-    DERECHA: { id_comando: 11, codigo: 11, nombre: "DERECHA" },
-    DETENER: { id_comando: 9, codigo: 9, nombre: "DETENER" },
-    CABINA_IZQ: { id_comando: 12, codigo: 12, nombre: "CABINA_IZQ" },
-    CABINA_DER: { id_comando: 13, codigo: 13, nombre: "CABINA_DER" },
-    EXCAVAR: { id_comando: 14, codigo: 14, nombre: "EXCAVAR" },
-    LUZ: { id_comando: 15, codigo: 15, nombre: "LUZ" },
-    SONIDO: { id_comando: 16, codigo: 16, nombre: "SONIDO" },
-    VELOCIDAD: { id_comando: 17, codigo: 17, nombre: "VELOCIDAD" },
-    // Alias históricos (IDs 3..8 preservados)
-    GIRAR_IZQUIERDA: { id_comando: 3, codigo: 3, nombre: "GIRAR_IZQUIERDA" },
-    GIRAR_DERECHA: { id_comando: 4, codigo: 4, nombre: "GIRAR_DERECHA" },
-    SUBIR_BRAZO: { id_comando: 5, codigo: 5, nombre: "SUBIR_BRAZO" },
-    BAJAR_BRAZO: { id_comando: 6, codigo: 6, nombre: "BAJAR_BRAZO" },
-    ABRIR_PALA: { id_comando: 7, codigo: 7, nombre: "ABRIR_PALA" },
-    CERRAR_PALA: { id_comando: 8, codigo: 8, nombre: "CERRAR_PALA" }
+    ADELANTE:          { id_comando: 1,  codigo: 1,  nombre: "ADELANTE" },
+    ATRAS:             { id_comando: 2,  codigo: 2,  nombre: "ATRAS" },
+    GIRAR_IZQUIERDA:   { id_comando: 3,  codigo: 3,  nombre: "GIRAR_IZQUIERDA" },
+    GIRAR_DERECHA:     { id_comando: 4,  codigo: 4,  nombre: "GIRAR_DERECHA" },
+    MOVER_IZQUIERDA:   { id_comando: 5,  codigo: 5,  nombre: "MOVER_IZQUIERDA" },
+    MOVER_DERECHA:     { id_comando: 6,  codigo: 6,  nombre: "MOVER_DERECHA" },
+    SUBIR_BRAZO:       { id_comando: 7,  codigo: 7,  nombre: "SUBIR_BRAZO" },
+    BAJAR_BRAZO:       { id_comando: 8,  codigo: 8,  nombre: "BAJAR_BRAZO" },
+    LUZ_LED:           { id_comando: 9,  codigo: 9,  nombre: "LUZ_LED" },
+    ACTIVAR_SONIDO:    { id_comando: 10, codigo: 10, nombre: "ACTIVAR_SONIDO" },
+    DESACTIVAR_SONIDO: { id_comando: 11, codigo: 11, nombre: "DESACTIVAR_SONIDO" },
+    CONTROL_REMOTO:    { id_comando: 12, codigo: 12, nombre: "CONTROL_REMOTO" },
+    DETENER:           { id_comando: 13, codigo: 13, nombre: "DETENER" },
+
+    // Alias de Joystick y nombres alternativos
+    AVANZAR:           { id_comando: 1,  codigo: 1,  nombre: "ADELANTE" },
+    RETROCEDER:        { id_comando: 2,  codigo: 2,  nombre: "ATRAS" },
+    IZQUIERDA:         { id_comando: 3,  codigo: 3,  nombre: "GIRAR_IZQUIERDA" },
+    DERECHA:           { id_comando: 4,  codigo: 4,  nombre: "GIRAR_DERECHA" },
+    LUZ:               { id_comando: 9,  codigo: 9,  nombre: "LUZ_LED" },
+    SONIDO:            { id_comando: 10, codigo: 10, nombre: "ACTIVAR_SONIDO" }
   }
 });

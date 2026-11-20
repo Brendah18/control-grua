@@ -25,19 +25,19 @@ export function destelloVisualControl(rawCommandName, duracionMs = 800) {
   const elementsToFlash = [];
 
   // D-Pad y mandos direccionales
-  if (cmd.includes("AVANZAR")) {
-    document.querySelectorAll(".joy-up, .joy-btn-up, #btn-joy-up, [data-dir='AVANZAR']").forEach((el) => {
+  if (cmd.includes("ADELANTE") || cmd.includes("AVANZAR")) {
+    document.querySelectorAll(".joy-up, .joy-btn-up, #btn-joy-up, [data-dir='ADELANTE'], [data-dir='AVANZAR']").forEach((el) => {
       elementsToFlash.push(el);
     });
-  } else if (cmd.includes("RETROCEDER")) {
-    document.querySelectorAll(".joy-down, .joy-btn-down, #btn-joy-down, [data-dir='RETROCEDER']").forEach((el) => {
+  } else if (cmd.includes("ATRAS") || cmd.includes("ATRÁS") || cmd.includes("RETROCEDER")) {
+    document.querySelectorAll(".joy-down, .joy-btn-down, #btn-joy-down, [data-dir='ATRAS'], [data-dir='RETROCEDER']").forEach((el) => {
       elementsToFlash.push(el);
     });
-  } else if (cmd.includes("IZQUIERDA") || cmd === "IZQ") {
+  } else if (cmd === "GIRAR_IZQUIERDA" || cmd === "IZQUIERDA" || cmd === "IZQ") {
     document.querySelectorAll(".joy-left, .joy-btn-left, #btn-joy-left, [data-dir='IZQUIERDA'], [data-dir='GIRAR_IZQUIERDA']").forEach((el) => {
       elementsToFlash.push(el);
     });
-  } else if (cmd.includes("DERECHA") || cmd === "DER") {
+  } else if (cmd === "GIRAR_DERECHA" || cmd === "DERECHA" || cmd === "DER") {
     document.querySelectorAll(".joy-right, .joy-btn-right, #btn-joy-right, [data-dir='DERECHA'], [data-dir='GIRAR_DERECHA']").forEach((el) => {
       elementsToFlash.push(el);
     });

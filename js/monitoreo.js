@@ -316,20 +316,18 @@ export class MonitoreoController {
       .toUpperCase()
       .replace(/\s+/g, "_");
 
-    if (key.includes("AVANZAR")) return "bi-arrow-up-circle-fill";
-    if (key.includes("RETROCEDER")) return "bi-arrow-down-circle-fill";
-    if (key === "CABINA_IZQ") return "bi-arrow-counterclockwise";
-    if (key === "CABINA_DER") return "bi-arrow-clockwise";
-    if (key.includes("IZQ")) return "bi-caret-left-square-fill";
-    if (key.includes("DER")) return "bi-caret-right-square-fill";
-    if (key.includes("EXCAVAR")) return "bi-hammer";
-    if (key.includes("LUZ")) return "bi-lightbulb-fill";
-    if (key.includes("SONIDO") || key.includes("CLAXON")) return "bi-music-note-beamed";
-    if (key.includes("VELOCIDAD")) return "bi-speedometer2";
+    if (key.includes("ADELANTE") || key.includes("AVANZAR")) return "bi-arrow-up-circle-fill";
+    if (key.includes("ATRAS") || key.includes("ATRÁS") || key.includes("RETROCEDER")) return "bi-arrow-down-circle-fill";
+    if (key === "GIRAR_IZQUIERDA") return "bi-arrow-counterclockwise";
+    if (key === "GIRAR_DERECHA") return "bi-arrow-clockwise";
+    if (key === "MOVER_IZQUIERDA") return "bi-arrow-bar-left";
+    if (key === "MOVER_DERECHA") return "bi-arrow-bar-right";
     if (key.includes("SUBIR_BRAZO")) return "bi-box-arrow-in-up";
     if (key.includes("BAJAR_BRAZO")) return "bi-box-arrow-in-down";
-    if (key.includes("ABRIR_PALA")) return "bi-arrows-angle-expand";
-    if (key.includes("CERRAR_PALA")) return "bi-arrows-angle-contract";
+    if (key.includes("LUZ")) return "bi-lightbulb-fill";
+    if (key === "ACTIVAR_SONIDO") return "bi-volume-up-fill";
+    if (key === "DESACTIVAR_SONIDO") return "bi-volume-mute-fill";
+    if (key.includes("CONTROL_REMOTO")) return "bi-broadcast-pin";
     if (key.includes("DETENER")) return "bi-octagon-fill";
     return "bi-cpu-fill";
   }
