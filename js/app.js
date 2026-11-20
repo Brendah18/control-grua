@@ -6,11 +6,11 @@
  * - 3. Control de DEMO con Cancelación Instantánea y Prevención de Concurrencia
  */
 
-import { CONFIG } from "./config.js?v=4.9";
-import { api } from "./api.js?v=4.9";
-import { IoTWebSocketClient, destelloVisualControl, limpiarDestellosVisuales } from "./websocket.js?v=4.9";
-import { VirtualJoystick } from "./joystick.js?v=4.9";
-import { monitoreoInstance } from "./monitoreo.js?v=4.9";
+import { CONFIG } from "./config.js?v=5.0";
+import { api } from "./api.js?v=5.0";
+import { IoTWebSocketClient, destelloVisualControl, limpiarDestellosVisuales } from "./websocket.js?v=5.0";
+import { VirtualJoystick } from "./joystick.js?v=5.0";
+import { monitoreoInstance } from "./monitoreo.js?v=5.0";
 
 class PlatformApp {
   constructor() {
@@ -586,7 +586,7 @@ class PlatformApp {
   }
 
   /**
-   * Valida en Frontend las reglas BOLA/IDOR antes de despachar un comando
+   * Valida permisos por Rol antes de despachar un comando
    */
   canExecuteCommand(rawCmdName) {
     const cmd = this.normalizeCommandKey(rawCmdName);
@@ -594,13 +594,7 @@ class PlatformApp {
     if (cmd === "DETENER") return true;
     if (this.isDemoRunning) return false;
 
-    // Regla BOLA/IDOR 1: El Administrador NO puede mover vehículos ya vendidos a un comprador
-    if (this.currentRole === "ADMINISTRADOR") {
-      alert("Bloqueo BOLA/IDOR: El Administrador gestiona la flota y catálogos, pero no tiene permiso para mover físicamente unidades ya vendidas a un cliente.");
-      return false;
-    }
-
-    // Regla BOLA/IDOR 2: El Invitado solo puede ejecutar ADELANTE, ATRAS y DETENER por 5 min
+    // ADMINISTRADOR y USUARIO tienen permiso completo para operar los 12 comandos + DETENER
     if (this.currentRole === "INVITADO") {
       if (this.guestSecondsLeft <= 0) {
         alert("Tu sesión temporal de 5 minutos ha expirado.");
@@ -663,7 +657,7 @@ class PlatformApp {
     if (role === "ADMINISTRADOR") {
       this.ui.navBtnAdmin?.classList.remove("d-none");
       this.ui.alertGuestSession?.classList.add("d-none");
-      this.ui.alertAdminBola?.classList.remove("d-none");
+      this.ui.alertAdminBola?.classList.add("d-none");
       this.stopGuestCountdown();
       this.updateControlButtonsByRole("ADMINISTRADOR");
     } else if (role === "USUARIO") {
@@ -696,7 +690,7 @@ class PlatformApp {
       const cmd = this.normalizeCommandKey(
         btn.getAttribute("data-cmd-name") || btn.getAttribute("data-comando") || btn.getAttribute("data-dir")
       );
-      if (role === "USUARIO") {
+      if (role === "USUARIO" || role === "ADMINISTRADOR") {
         btn.classList.remove("cmd-btn-disabled-rbac");
       } else if (role === "INVITADO") {
         if (["ADELANTE", "ATRAS"].includes(cmd)) {
@@ -704,8 +698,6 @@ class PlatformApp {
         } else {
           btn.classList.add("cmd-btn-disabled-rbac");
         }
-      } else if (role === "ADMINISTRADOR") {
-        btn.classList.add("cmd-btn-disabled-rbac");
       }
     });
   }
@@ -930,10 +922,6 @@ class PlatformApp {
   async startSelectedDemo() {
     if (this.isDemoRunning || !this.ui.selectDemo) return;
 
-    if (this.currentRole === "ADMINISTRADOR") {
-      alert("Bloqueo BOLA/IDOR: El Administrador no puede ejecutar físicamente secuencias DEMO sobre unidades vendidas.");
-      return;
-    }
     if (this.currentRole === "INVITADO") {
       alert("Restricción RBAC: El Rol Invitado no tiene permiso para ejecutar secuencias DEMO.");
       return;

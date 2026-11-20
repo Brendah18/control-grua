@@ -93,7 +93,17 @@ export class IoTWebSocketClient {
   }
 
   getCurrentUrl() {
-    return this.useFallbackUrl ? CONFIG.WS_FALLBACK_URL : CONFIG.WS_URL;
+    const base = this.useFallbackUrl ? CONFIG.WS_FALLBACK_URL : CONFIG.WS_URL;
+    try {
+      const token = window.sessionStorage.getItem("iot_auth_token") || "";
+      if (token) {
+        const sep = base.includes("?") ? "&" : "?";
+        return `${base}${sep}token=${encodeURIComponent(token)}`;
+      }
+    } catch {
+      // continuar con URL base
+    }
+    return base;
   }
 
   connect() {
