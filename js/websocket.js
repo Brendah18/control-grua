@@ -1,90 +1,82 @@
 /**
  * Gestor de Conexión WebSocket Seguro WSS hacia AWS EC2 (ES6 Module)
  * - Conexión estricta a wss://52.4.170.82:8000/ws/1 con fallback inteligente a wss://52.4.170.82:8000/ws
- * - Feedback visual de la DEMO en tiempo real (Paso a paso en pantalla e iluminación de botones).
+ * - Garantiza exclusión mutua visual: NUNCA se iluminan dos movimientos distintos al mismo tiempo.
  */
 
 import { CONFIG } from "./config.js";
-import {
-  actualizarUltimoMovimiento,
-  recargarTablaHistorial
-} from "./monitoreo.js";
 
 /**
- * Aplica un destello visual temporal en el botón o elemento direccional
- * correspondiente para confirmar en pantalla que la acción se ejecutó.
+ * Apaga inmediatamente cualquier destello activo en toda la interfaz
+ * para garantizar que jamás queden dos botones encendidos simultáneamente.
  */
-export function destelloVisualControl(rawCommandName, duracionMs = 800) {
+export function limpiarDestellosVisuales() {
+  document.querySelectorAll(".cmd-flash-active").forEach((el) => {
+    if (el._flashTimer) {
+      clearTimeout(el._flashTimer);
+      el._flashTimer = null;
+    }
+    el.classList.remove("cmd-flash-active");
+  });
+}
+
+/**
+ * Aplica un destello visual exclusivo en el botón correspondiente al comando actual,
+ * limpiando primero cualquier otro botón previamente encendido.
+ */
+export function destelloVisualControl(rawCommandName, duracionMs = 900) {
+  // 1. SIEMPRE apagar todos los botones anteriores primero
+  limpiarDestellosVisuales();
+
   if (!rawCommandName) return;
 
   const cmd = String(rawCommandName)
     .trim()
     .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/\s+/g, "_");
 
   const elementsToFlash = [];
 
-  // D-Pad y mandos direccionales
-  if (cmd.includes("ADELANTE") || cmd.includes("AVANZAR")) {
-    document.querySelectorAll(".joy-up, .joy-btn-up, #btn-joy-up, [data-dir='ADELANTE'], [data-dir='AVANZAR']").forEach((el) => {
-      elementsToFlash.push(el);
-    });
-  } else if (cmd.includes("ATRAS") || cmd.includes("ATRÁS") || cmd.includes("RETROCEDER")) {
-    document.querySelectorAll(".joy-down, .joy-btn-down, #btn-joy-down, [data-dir='ATRAS'], [data-dir='RETROCEDER']").forEach((el) => {
-      elementsToFlash.push(el);
-    });
-  } else if (cmd === "GIRAR_IZQUIERDA" || cmd === "IZQUIERDA" || cmd === "IZQ") {
-    document.querySelectorAll(".joy-left, .joy-btn-left, #btn-joy-left, [data-dir='IZQUIERDA'], [data-dir='GIRAR_IZQUIERDA']").forEach((el) => {
-      elementsToFlash.push(el);
-    });
-  } else if (cmd === "GIRAR_DERECHA" || cmd === "DERECHA" || cmd === "DER") {
-    document.querySelectorAll(".joy-right, .joy-btn-right, #btn-joy-right, [data-dir='DERECHA'], [data-dir='GIRAR_DERECHA']").forEach((el) => {
-      elementsToFlash.push(el);
-    });
+  // 2. Cruceta D-Pad direccional (solo para los 4 comandos de dirección o STOP)
+  if (cmd === "ADELANTE" || cmd === "AVANZAR") {
+    document.querySelectorAll("#btn-joy-up, .joy-up").forEach((el) => elementsToFlash.push(el));
+  } else if (cmd === "ATRAS" || cmd === "RETROCEDER") {
+    document.querySelectorAll("#btn-joy-down, .joy-down").forEach((el) => elementsToFlash.push(el));
+  } else if (cmd === "GIRAR_IZQUIERDA" || cmd === "IZQUIERDA") {
+    document.querySelectorAll("#btn-joy-left, .joy-left").forEach((el) => elementsToFlash.push(el));
+  } else if (cmd === "GIRAR_DERECHA" || cmd === "DERECHA") {
+    document.querySelectorAll("#btn-joy-right, .joy-right").forEach((el) => elementsToFlash.push(el));
+  } else if (cmd === "DETENER" || cmd === "STOP") {
+    document.querySelectorAll("#btn-stop-priority, #btn-joy-stop").forEach((el) => elementsToFlash.push(el));
   }
 
-  // STOP prioritario
-  if (cmd.includes("DETENER") || cmd.includes("STOP")) {
-    document.querySelectorAll("#btn-stop-priority, .joy-btn-stop, #btn-joy-stop, [data-dir='DETENER']").forEach((el) => {
-      elementsToFlash.push(el);
-    });
-  }
-
-  // Maniobras secundarias
+  // 3. Catálogo de los 12 botones (01..12): Coincidencia EXACTA por data-cmd-name (1 solo botón)
   document.querySelectorAll(".cmd-sec-btn").forEach((btn) => {
-    const attrName = String(btn.getAttribute("data-cmd-name") || "").toUpperCase();
-    const textName = String(btn.textContent || "").trim().toUpperCase().replace(/\s+/g, "_");
+    const attrName = String(btn.getAttribute("data-cmd-name") || "")
+      .trim()
+      .toUpperCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, "_");
 
-    if (
-      attrName === cmd ||
-      textName === cmd ||
-      (cmd === "GIRAR_IZQUIERDA" && attrName === "GIRO_90_IZQ") ||
-      (cmd === "GIRAR_DERECHA" && attrName === "GIRO_90_DER")
-    ) {
+    if (attrName === cmd) {
       elementsToFlash.push(btn);
     }
   });
 
-  // Palanca analógica
-  const thumb = document.getElementById("joystick-thumb");
-  if (thumb && !cmd.includes("DETENER")) {
-    elementsToFlash.push(thumb);
-  }
-
-  // Mantener encendido durante la duración del movimiento para visibilidad perfecta
-  const tiempoEncendido = Math.max(500, duracionMs - 150);
+  // 4. Encender únicamente los elementos del comando actual durante el tiempo indicado
+  const tiempoEncendido = Math.max(450, duracionMs - 100);
 
   elementsToFlash.forEach((el) => {
     if (!el) return;
-    el.classList.remove("cmd-flash-active");
     void el.offsetWidth;
     el.classList.add("cmd-flash-active");
 
-    if (el._flashTimer) {
-      clearTimeout(el._flashTimer);
-    }
     el._flashTimer = setTimeout(() => {
       el.classList.remove("cmd-flash-active");
+      el._flashTimer = null;
     }, tiempoEncendido);
   });
 }
@@ -135,122 +127,70 @@ export class IoTWebSocketClient {
     this.socket.onmessage = async (event) => {
       try {
         const parsed = JSON.parse(event.data);
+        // Delegar todo el control visual y de estado a PlatformApp.handleWsMessage
         this.onMessage(parsed);
-
-        const evento = String(parsed.evento || "").toUpperCase();
-        const estadoObj = parsed.estado || parsed.estado_final || null;
-        const nombreComando =
-          (estadoObj && (estadoObj.comando || estadoObj.nombre)) ||
-          parsed.comando ||
-          null;
-
-        // Feedback Visual de la DEMO en tiempo real (Paso a paso)
-        if (evento === "DEMO_PASO" && nombreComando) {
-          const lblStep = document.getElementById("lbl-demo-current-step");
-          const lblDetails = document.getElementById("lbl-demo-step-details");
-          if (lblStep) {
-            lblStep.textContent = `Movimiento actual: ${nombreComando}`;
-          }
-          if (lblDetails) {
-            lblDetails.textContent = `Paso #${parsed.orden} · Duración: ${parsed.duracion_ms} ms · AWS RDS`;
-          }
-          destelloVisualControl(nombreComando, parsed.duracion_ms || 2500);
-        } else if (evento === "DEMO_PAUSA") {
-          const lblStep = document.getElementById("lbl-demo-current-step");
-          const lblDetails = document.getElementById("lbl-demo-step-details");
-          if (lblStep) {
-            lblStep.textContent = `Pausa intermedia (${parsed.pausa_ms} ms)`;
-          }
-          if (lblDetails) {
-            lblDetails.textContent = "Preparando siguiente maniobra en AWS...";
-          }
-          destelloVisualControl("DETENER", parsed.pausa_ms || 1200);
-        } else if (evento === "DEMO_FINALIZADA") {
-          const lblStep = document.getElementById("lbl-demo-current-step");
-          const lblDetails = document.getElementById("lbl-demo-step-details");
-          if (lblStep) {
-            lblStep.textContent = "Secuencia DEMO finalizada con éxito ✨";
-          }
-          if (lblDetails) {
-            lblDetails.textContent = "Vehículo en estado neutral DETENER";
-          }
-          destelloVisualControl("DETENER");
-        }
-
-        const esEventoMovimiento =
-          evento === "MOVIMIENTO_INDIVIDUAL" ||
-          evento === "ESTADO_ACTUALIZADO" ||
-          evento === "CONEXION_ESTABLECIDA" ||
-          evento === "DEMO_PASO" ||
-          evento === "DEMO_PAUSA" ||
-          evento === "DEMO_FINALIZADA" ||
-          Boolean(estadoObj) ||
-          Boolean(nombreComando);
-
-        if (esEventoMovimiento) {
-          if (nombreComando && evento !== "CONEXION_ESTABLECIDA" && evento !== "DEMO_PASO") {
-            destelloVisualControl(nombreComando);
-          }
-
-          await actualizarUltimoMovimiento(estadoObj || parsed);
-
-          const guardaHistorial =
-            evento === "MOVIMIENTO_INDIVIDUAL" ||
-            evento === "ESTADO_ACTUALIZADO" ||
-            parsed.guardado_en_historial === true;
-
-          if (guardaHistorial) {
-            await recargarTablaHistorial();
-          }
-        }
       } catch {
         this.onMessage({ raw: event.data });
       }
     };
 
     this.socket.onerror = () => {
-      // onerror precede inmediatamente a onclose
+      // onerror precede a onclose
     };
 
     this.socket.onclose = () => {
-      this.onStatusChange("disconnected");
-      if (!this.manualClose) {
-        if (!this.hasConnectedOnce) {
-          this.useFallbackUrl = !this.useFallbackUrl;
-        }
-        this.scheduleReconnect(CONFIG.WS_RECONNECT_DELAY_MS);
+      this.socket = null;
+      if (this.manualClose) {
+        this.onStatusChange("disconnected");
+        return;
       }
+
+      if (!this.hasConnectedOnce && !this.useFallbackUrl) {
+        this.useFallbackUrl = true;
+        this.scheduleReconnect(600);
+        return;
+      }
+
+      this.onStatusChange("reconnecting");
+      this.scheduleReconnect(CONFIG.WS_RECONNECT_DELAY_MS);
     };
   }
 
-  scheduleReconnect(delayMs = CONFIG.WS_RECONNECT_DELAY_MS) {
+  sendJson(payload) {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      try {
+        this.socket.send(JSON.stringify(payload));
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  }
+
+  scheduleReconnect(delayMs) {
     this.clearReconnectTimer();
     this.reconnectTimer = window.setTimeout(() => {
-      this.onStatusChange("reconnecting");
       this.connect();
     }, delayMs);
   }
 
   clearReconnectTimer() {
-    if (this.reconnectTimer !== null) {
+    if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
-  }
-
-  sendJson(payload) {
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify(payload));
-      return true;
-    }
-    return false;
   }
 
   disconnect() {
     this.manualClose = true;
     this.clearReconnectTimer();
     if (this.socket) {
-      this.socket.close();
+      try {
+        this.socket.close();
+      } catch {
+        // cierre limpio
+      }
       this.socket = null;
     }
     this.onStatusChange("disconnected");

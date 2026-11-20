@@ -6,17 +6,20 @@
  * - 3. Control de DEMO con Cancelación Instantánea y Prevención de Concurrencia
  */
 
-import { CONFIG } from "./config.js";
-import { api } from "./api.js";
-import { IoTWebSocketClient, destelloVisualControl } from "./websocket.js";
-import { VirtualJoystick } from "./joystick.js";
-import { monitoreoInstance } from "./monitoreo.js";
+import { CONFIG } from "./config.js?v=4.7";
+import { api } from "./api.js?v=4.7";
+import { IoTWebSocketClient, destelloVisualControl, limpiarDestellosVisuales } from "./websocket.js?v=4.7";
+import { VirtualJoystick } from "./joystick.js?v=4.7";
+import { monitoreoInstance } from "./monitoreo.js?v=4.7";
 
 class PlatformApp {
   constructor() {
     this.commandCatalog = new Map();
     this.isDemoRunning = false;
     this.activeDemoId = null;
+    this.demoAbortController = null;
+    this.demoIgnoreServerUntil = 0;
+    this.lastUserCommand = { name: null, codigo: null, at: 0 };
     this.currentView = "control";
     this.currentUser = null;
     this.currentRole = "USUARIO";
@@ -786,12 +789,24 @@ class PlatformApp {
       CONFIG.DEFAULT_COMMAND_MAP[normalized] ||
       CONFIG.DEFAULT_COMMAND_MAP.DETENER;
 
+    // Registrar comando exacto presionado por el usuario para evitar que un eco tardío ilumine otro botón
+    this.lastUserCommand = {
+      name: cmdInfo.nombre,
+      codigo: cmdInfo.codigo,
+      at: Date.now()
+    };
+
     if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = cmdInfo.nombre;
     const lblJoyDir = document.getElementById("lbl-joy-dir");
     if (lblJoyDir) {
       lblJoyDir.textContent = cmdInfo.nombre === "DETENER" ? "En espera" : cmdInfo.nombre.replace(/_/g, " ");
     }
-    destelloVisualControl(cmdInfo.nombre);
+    if (this.ui.badgeJoystickDir) {
+      this.ui.badgeJoystickDir.textContent = cmdInfo.nombre === "DETENER" ? "En espera" : cmdInfo.nombre.replace(/_/g, " ");
+    }
+
+    // Iluminar EXCLUSIVAMENTE el botón presionado (apagando cualquier otro previo)
+    destelloVisualControl(cmdInfo.nombre, 900);
 
     const origenTag = isPriority ? "PRIORIDAD-DETENER" : `WEB-${this.currentRole}`;
 
@@ -806,8 +821,10 @@ class PlatformApp {
 
       this.updateApiIndicator("available");
       if (this.monitoreo) {
-        if (res.data?.estado) this.monitoreo.renderEstadoCard(res.data.estado);
-        else this.monitoreo.fetchAndRenderUltimoEstado();
+        const estadoMostrar = res.data?.estado
+          ? { ...res.data.estado, comando: cmdInfo.nombre, codigo: cmdInfo.codigo }
+          : { id_vehiculo: CONFIG.VEHICULO_ID, comando: cmdInfo.nombre, codigo: cmdInfo.codigo, conectado: 1, fecha_actualizacion: new Date().toISOString() };
+        this.monitoreo.renderEstadoCard(estadoMostrar);
         this.monitoreo.fetchAndRenderHistorial(false);
       }
     } catch (err) {
@@ -815,7 +832,6 @@ class PlatformApp {
         alert(err.message);
         return;
       }
-      // Fallback por WebSocket Seguro
       const currentToken =
         typeof api.getAuthToken === "function"
           ? api.getAuthToken()
@@ -830,8 +846,51 @@ class PlatformApp {
   }
 
   // ===========================================================================
-  // 3. EJECUCIÓN Y CANCELACIÓN INSTANTÁNEA DE SECUENCIAS DEMO
+  // 3. EJECUCIÓN Y CANCELACIÓN INSTANTÁNEA DE SECUENCIAS DEMO (PASO A PASO)
   // ===========================================================================
+  sleepCancelable(ms, signal) {
+    return new Promise((resolve) => {
+      if (signal?.aborted) {
+        resolve(true);
+        return;
+      }
+      const timer = window.setTimeout(() => {
+        signal?.removeEventListener("abort", onAbort);
+        resolve(false);
+      }, ms);
+      const onAbort = () => {
+        clearTimeout(timer);
+        resolve(true);
+      };
+      signal?.addEventListener("abort", onAbort, { once: true });
+    });
+  }
+
+  async actualizarEstadoDemoSinHistorial(cmdInfo) {
+    // Actualiza estado_vehiculo en RDS (sp_actualizar_estado) SIN insertar en historial_comandos
+    try {
+      await api.request(`/api/vehiculos/${CONFIG.VEHICULO_ID}/estado`, {
+        method: "PUT",
+        body: JSON.stringify({
+          id_comando: Number(cmdInfo.id_comando),
+          conectado: true
+        })
+      }, 3500);
+    } catch {
+      // Estado visual continúa sin bloqueo
+    }
+    if (this.monitoreo) {
+      this.monitoreo.renderEstadoCard({
+        id_vehiculo: CONFIG.VEHICULO_ID,
+        id_comando: cmdInfo.id_comando,
+        comando: cmdInfo.nombre,
+        codigo: cmdInfo.codigo,
+        conectado: 1,
+        fecha_actualizacion: new Date().toISOString()
+      });
+    }
+  }
+
   async startSelectedDemo() {
     if (this.isDemoRunning || !this.ui.selectDemo) return;
 
@@ -845,52 +904,121 @@ class PlatformApp {
     }
 
     const selectedDemoId = Number(this.ui.selectDemo.value || 1);
-    this.setDemoLockState(true, selectedDemoId);
-
-    if (this.ui.lblDemoCurrentStep) {
-      this.ui.lblDemoCurrentStep.textContent = `Iniciando DEMO #${selectedDemoId}...`;
+    if (this.demoAbortController) {
+      this.demoAbortController.abort();
     }
+    this.demoAbortController = new AbortController();
+    const { signal } = this.demoAbortController;
 
-    // Enviar UNA SOLA petición REST (evita duplicar la demo por WS y HTTP al mismo tiempo)
+    this.setDemoLockState(true, selectedDemoId);
+    limpiarDestellosVisuales();
+
+    // Secuencia limpia y ordenada de la DEMO (1 movimiento a la vez + pausa real entre pasos)
+    const secuenciaPasos = [
+      { orden: 1, key: "ADELANTE",        duracion_ms: 1800, pausa_ms: 850 },
+      { orden: 2, key: "GIRAR_IZQUIERDA", duracion_ms: 1700, pausa_ms: 850 },
+      { orden: 3, key: "SUBIR_BRAZO",     duracion_ms: 1700, pausa_ms: 850 },
+      { orden: 4, key: "BAJAR_BRAZO",     duracion_ms: 1700, pausa_ms: 850 },
+      { orden: 5, key: "LUZ_LED",         duracion_ms: 1600, pausa_ms: 850 },
+      { orden: 6, key: "ATRAS",           duracion_ms: 1800, pausa_ms: 600 }
+    ];
+
     try {
-      await api.iniciarDemo({ idDemo: selectedDemoId, idVehiculo: CONFIG.VEHICULO_ID });
-      // Al retornar exitosamente la DEMO, aseguramos que la UI regrese a estado Inactivo
-      this.setDemoLockState(false, null);
-    } catch (err) {
-      if (err && (err.status === 403 || err.status === 409)) {
-        alert(err.message);
-      } else if (this.ui.lblDemoCurrentStep) {
-        this.ui.lblDemoCurrentStep.textContent = `DEMO detenida o error: ${err.message}`;
+      for (let i = 0; i < secuenciaPasos.length; i++) {
+        if (signal.aborted || !this.isDemoRunning) break;
+
+        const paso = secuenciaPasos[i];
+        const cmdInfo =
+          this.commandCatalog.get(paso.key) ||
+          CONFIG.DEFAULT_COMMAND_MAP[paso.key] ||
+          { id_comando: 1, codigo: 1, nombre: paso.key };
+
+        // 1. Mostrar y encender ÚNICAMENTE el movimiento del paso actual
+        if (this.ui.lblDemoCurrentStep) {
+          this.ui.lblDemoCurrentStep.textContent = `Paso #${paso.orden}/${secuenciaPasos.length}: ${cmdInfo.nombre.replace(/_/g, " ")}`;
+        }
+        if (this.ui.lblComandoActual) {
+          this.ui.lblComandoActual.textContent = cmdInfo.nombre;
+        }
+        const lblJoyDir = document.getElementById("lbl-joy-dir");
+        if (lblJoyDir) lblJoyDir.textContent = `DEMO: ${cmdInfo.nombre.replace(/_/g, " ")}`;
+        if (this.ui.badgeJoystickDir) this.ui.badgeJoystickDir.textContent = `Paso #${paso.orden}`;
+
+        destelloVisualControl(cmdInfo.nombre, paso.duracion_ms);
+        await this.actualizarEstadoDemoSinHistorial(cmdInfo);
+
+        // 2. Esperar duración exacta del paso (se aborta en 0 ms si presionan Cancelar o DETENER)
+        const abortadoEnMov = await this.sleepCancelable(paso.duracion_ms, signal);
+        if (abortadoEnMov || signal.aborted || !this.isDemoRunning) break;
+
+        // 3. Pausa real en DETENER entre movimientos (apaga todos los botones antes del siguiente)
+        limpiarDestellosVisuales();
+        if (paso.pausa_ms > 0 && i < secuenciaPasos.length - 1) {
+          if (this.ui.lblDemoCurrentStep) {
+            this.ui.lblDemoCurrentStep.textContent = `Pausa segura (${paso.pausa_ms} ms)...`;
+          }
+          if (lblJoyDir) lblJoyDir.textContent = "PAUSA (DETENER)";
+          const cmdStop = this.commandCatalog.get("DETENER") || CONFIG.DEFAULT_COMMAND_MAP.DETENER;
+          await this.actualizarEstadoDemoSinHistorial(cmdStop);
+
+          const abortadoEnPausa = await this.sleepCancelable(paso.pausa_ms, signal);
+          if (abortadoEnPausa || signal.aborted || !this.isDemoRunning) break;
+        }
       }
-      this.setDemoLockState(false, null);
+
+      // 4. Si no fue cancelada manualmente, finalizar poniendo el vehículo en DETENER e Inactivo
+      if (!signal.aborted && this.isDemoRunning) {
+        limpiarDestellosVisuales();
+        const cmdStop = this.commandCatalog.get("DETENER") || CONFIG.DEFAULT_COMMAND_MAP.DETENER;
+        await this.actualizarEstadoDemoSinHistorial(cmdStop);
+        this.setDemoLockState(false, null);
+
+        if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = "DETENER";
+        const lblJoyDir = document.getElementById("lbl-joy-dir");
+        if (lblJoyDir) lblJoyDir.textContent = "En espera";
+        if (this.ui.badgeJoystickDir) this.ui.badgeJoystickDir.textContent = "En espera";
+        if (this.ui.lblDemoCurrentStep) {
+          this.ui.lblDemoCurrentStep.textContent = "Secuencia DEMO finalizada · En espera ✨";
+        }
+      }
+    } finally {
+      if (!signal.aborted) {
+        this.setDemoLockState(false, null);
+      }
     }
   }
 
   async cancelActiveDemo() {
     const demoId = this.activeDemoId || Number(this.ui.selectDemo?.value || 1);
+    this.demoIgnoreServerUntil = Date.now() + 30000;
 
-    // 1. Notificar inmediatamente por WebSocket para despertar el asyncio.Event en milisegundos
+    // 1. Abortar inmediatamente el temporizador local (0 milisegundos)
+    if (this.demoAbortController) {
+      this.demoAbortController.abort();
+      this.demoAbortController = null;
+    }
+
+    // 2. Apagar de inmediato todas las luces de los botones y desbloquear la UI
+    limpiarDestellosVisuales();
+    this.setDemoLockState(false, null);
+
+    if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = "DETENER";
+    const lblJoyDir = document.getElementById("lbl-joy-dir");
+    if (lblJoyDir) lblJoyDir.textContent = "En espera";
+    if (this.ui.badgeJoystickDir) this.ui.badgeJoystickDir.textContent = "En espera";
+    if (this.ui.lblDemoCurrentStep) {
+      this.ui.lblDemoCurrentStep.textContent = "DEMO cancelada · Vehículo en DETENER";
+    }
+
+    // 3. Notificar al backend y actualizar estado a DETENER
     this.wsClient.sendJson({
       accion: "CANCELAR_DEMO",
       id_vehiculo: CONFIG.VEHICULO_ID,
       id_demo: demoId
     });
 
-    // 2. Liberar bloqueo de UI de inmediato
-    this.setDemoLockState(false, null);
-    if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = "DETENER";
-    const lblJoyDir = document.getElementById("lbl-joy-dir");
-    if (lblJoyDir) lblJoyDir.textContent = "En espera";
-    if (this.ui.lblDemoCurrentStep) {
-      this.ui.lblDemoCurrentStep.textContent = "DEMO cancelada · Vehículo en DETENER";
-    }
-
-    // 3. Confirmar cancelación por endpoint REST
-    try {
-      await api.cancelarDemo({ idDemo: demoId, idVehiculo: CONFIG.VEHICULO_ID });
-    } finally {
-      this.monitoreo?.refreshAll(false);
-    }
+    const cmdStop = this.commandCatalog.get("DETENER") || CONFIG.DEFAULT_COMMAND_MAP.DETENER;
+    await this.actualizarEstadoDemoSinHistorial(cmdStop);
   }
 
   setDemoLockState(locked, demoId = null) {
@@ -917,38 +1045,32 @@ class PlatformApp {
       return;
     }
 
-    if (payload.evento === "DEMO_INICIADA") {
-      this.setDemoLockState(true, payload.id_demo || 1);
-      if (this.ui.lblDemoCurrentStep) {
-        this.ui.lblDemoCurrentStep.textContent = "Secuencia DEMO en ejecución...";
+    const evento = String(payload.evento || "").toUpperCase();
+
+    // Ignorar eventos iniciales de conexión para no encender botones solos
+    if (evento === "CONEXION_ESTABLECIDA" || evento === "PING") {
+      return;
+    }
+
+    // Si estamos corriendo nuestra DEMO controlada o recién la cancelamos, ignorar ecos externos de demo
+    if (
+      evento.startsWith("DEMO_") &&
+      (this.isDemoRunning || Date.now() < this.demoIgnoreServerUntil)
+    ) {
+      return;
+    }
+
+    // Si es un eco de nuestro propio movimiento individual enviado hace menos de 2 segundos,
+    // NO encender otro botón diferente aunque RDS aún tenga un nombre antiguo en ese ID
+    const msDesdeClick = Date.now() - (this.lastUserCommand?.at || 0);
+    if (msDesdeClick < 2000 && this.lastUserCommand?.name) {
+      if (this.monitoreo) {
+        this.monitoreo.fetchAndRenderHistorial(false);
       }
-    } else if (payload.evento === "DEMO_PASO" && payload.comando) {
-      if (this.ui.lblDemoCurrentStep) {
-        this.ui.lblDemoCurrentStep.textContent = `Paso #${payload.orden}: ${payload.comando}`;
-      }
-      if (this.ui.lblComandoActual) {
-        this.ui.lblComandoActual.textContent = `DEMO: ${payload.comando}`;
-      }
-      const lblJoyDir = document.getElementById("lbl-joy-dir");
-      if (lblJoyDir) lblJoyDir.textContent = `DEMO: ${payload.comando}`;
-      destelloVisualControl(payload.comando, payload.duracion_ms || 1800);
-    } else if (payload.evento === "DEMO_PAUSA") {
-      if (this.ui.lblDemoCurrentStep) {
-        this.ui.lblDemoCurrentStep.textContent = `Pausa segura (${payload.pausa_ms} ms)`;
-      }
-      const lblJoyDir = document.getElementById("lbl-joy-dir");
-      if (lblJoyDir) lblJoyDir.textContent = "PAUSA (DETENER)";
-    } else if (payload.evento === "DEMO_FINALIZADA") {
-      this.setDemoLockState(false, null);
-      if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = "DETENER";
-      const lblJoyDir = document.getElementById("lbl-joy-dir");
-      if (lblJoyDir) lblJoyDir.textContent = "En espera";
-      if (this.ui.lblDemoCurrentStep) {
-        this.ui.lblDemoCurrentStep.textContent = payload.cancelada
-          ? "DEMO cancelada · Vehículo detenido"
-          : "DEMO finalizada · Vehículo en DETENER ✨";
-      }
-    } else if (payload.estado?.comando) {
+      return;
+    }
+
+    if (payload.estado?.comando) {
       const cmdNombre = String(payload.estado.comando);
       if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = cmdNombre;
       if (!this.joystick?.isDragging) {
@@ -956,6 +1078,13 @@ class PlatformApp {
         if (this.ui.badgeJoystickDir) this.ui.badgeJoystickDir.textContent = textDir;
         const lblJoyDir = document.getElementById("lbl-joy-dir");
         if (lblJoyDir) lblJoyDir.textContent = textDir;
+      }
+      destelloVisualControl(cmdNombre, 800);
+      if (this.monitoreo) {
+        this.monitoreo.renderEstadoCard(payload.estado);
+        if (evento === "MOVIMIENTO_INDIVIDUAL" || payload.guardado_en_historial) {
+          this.monitoreo.fetchAndRenderHistorial(false);
+        }
       }
     }
   }
@@ -983,17 +1112,92 @@ class PlatformApp {
 
   async loadCommands() {
     try {
-      const cmds = await api.obtenerComandos(CONFIG.VEHICULO_ID);
-      if (Array.isArray(cmds) && cmds.length > 0) {
-        cmds.forEach((cmd) => {
-          const key = this.normalizeCommandKey(cmd.nombre);
-          this.commandCatalog.set(key, {
-            id_comando: Number(cmd.id_comando),
-            codigo: Number(cmd.codigo ?? cmd.id_comando),
-            nombre: String(cmd.nombre)
-          });
+      let cmds = await api.obtenerComandos(CONFIG.VEHICULO_ID);
+      if (Array.isArray(cmds)) {
+        const expected = this.official12List;
+        const byName = new Map();
+        cmds.forEach((c) => {
+          byName.set(this.normalizeCommandKey(c.nombre), c);
         });
-        this.refreshDemoEditorSelects();
+
+        // Verificar si los 13 comandos oficiales (01..12 + DETENER) ya existen en RDS con su nombre exacto
+        const allPresent = expected.every((item) => byName.has(item.nombre));
+
+        if (!allPresent && cmds.length > 0 && !this._rdsCatalogSynced) {
+          this._rdsCatalogSynced = true;
+          try {
+            // Ordenar existentes por id_comando ascendente
+            const sortedExisting = [...cmds].sort((a, b) => Number(a.id_comando) - Number(b.id_comando));
+
+            // Paso 1: Reubicar temporalmente nombres/códigos de las filas existentes para evitar colisión UNIQUE
+            for (let i = 0; i < sortedExisting.length; i++) {
+              const row = sortedExisting[i];
+              await api.request(`/api/comandos/${row.id_comando}`, {
+                method: "PUT",
+                body: JSON.stringify({
+                  nombre: `TMP_CMD_${row.id_comando}`,
+                  codigo: 1000 + Number(row.id_comando),
+                  descripcion: row.descripcion || "",
+                  activo: true
+                })
+              }, 3500);
+            }
+
+            // Paso 2: Asignar los 13 comandos oficiales (reutilizando filas existentes con PUT o creando con POST)
+            for (let idx = 0; idx < expected.length; idx++) {
+              const target = expected[idx];
+              if (idx < sortedExisting.length) {
+                const row = sortedExisting[idx];
+                await api.request(`/api/comandos/${row.id_comando}`, {
+                  method: "PUT",
+                  body: JSON.stringify({
+                    nombre: target.nombre,
+                    codigo: target.codigo,
+                    descripcion: target.etiqueta,
+                    activo: true
+                  })
+                }, 3500);
+              } else {
+                await api.request("/api/comandos", {
+                  method: "POST",
+                  body: JSON.stringify({
+                    id_vehiculo: CONFIG.VEHICULO_ID,
+                    nombre: target.nombre,
+                    codigo: target.codigo,
+                    descripcion: target.etiqueta
+                  })
+                }, 3500);
+              }
+            }
+
+            // Recargar lista sincronizada desde RDS
+            cmds = await api.obtenerComandos(CONFIG.VEHICULO_ID);
+          } catch {
+            // Continuar con catálogo disponible
+          }
+        }
+
+        if (Array.isArray(cmds) && cmds.length > 0) {
+          cmds.forEach((cmd) => {
+            const key = this.normalizeCommandKey(cmd.nombre);
+            this.commandCatalog.set(key, {
+              id_comando: Number(cmd.id_comando),
+              codigo: Number(cmd.codigo ?? cmd.id_comando),
+              nombre: String(cmd.nombre)
+            });
+          });
+          // Sincronizar alias de Joystick con los IDs reales de RDS
+          const fwd = this.commandCatalog.get("ADELANTE");
+          const bwd = this.commandCatalog.get("ATRAS");
+          const lft = this.commandCatalog.get("GIRAR_IZQUIERDA");
+          const rgt = this.commandCatalog.get("GIRAR_DERECHA");
+          if (fwd) this.commandCatalog.set("AVANZAR", { ...fwd });
+          if (bwd) this.commandCatalog.set("RETROCEDER", { ...bwd });
+          if (lft) this.commandCatalog.set("IZQUIERDA", { ...lft });
+          if (rgt) this.commandCatalog.set("DERECHA", { ...rgt });
+
+          this.refreshDemoEditorSelects();
+        }
       }
     } catch {
       // Catálogo oficial por defecto preservado
