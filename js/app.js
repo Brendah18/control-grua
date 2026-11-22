@@ -1023,18 +1023,18 @@ class PlatformApp {
     this.setDemoLockState(true, selectedDemoId);
     limpiarDestellosVisuales();
 
-    // Secuencia DEMO completa y ágil (~12 segundos en total)
+    // Secuencia DEMO completa, fluida y sin pausas largas (el ESP8266 hace transición segura de 40 ms)
     const secuenciaPasos = [
-      { orden: 1,  key: "ADELANTE",        duracion_ms: 900,  pausa_ms: 250 },
-      { orden: 2,  key: "GIRAR_DERECHA",   duracion_ms: 750,  pausa_ms: 250 },
-      { orden: 3,  key: "GIRAR_IZQUIERDA", duracion_ms: 750,  pausa_ms: 250 },
-      { orden: 4,  key: "MOVER_DERECHA",   duracion_ms: 800,  pausa_ms: 250 },
-      { orden: 5,  key: "MOVER_IZQUIERDA", duracion_ms: 800,  pausa_ms: 250 },
-      { orden: 6,  key: "SUBIR_BRAZO",     duracion_ms: 1800, pausa_ms: 300 },
-      { orden: 7,  key: "BAJAR_BRAZO",     duracion_ms: 1800, pausa_ms: 300 },
-      { orden: 8,  key: "LUZ_LED",         duracion_ms: 450,  pausa_ms: 250 },
-      { orden: 9,  key: "ACTIVAR_SONIDO",  duracion_ms: 450,  pausa_ms: 250 },
-      { orden: 10, key: "ATRAS",           duracion_ms: 900,  pausa_ms: 250 }
+      { orden: 1,  key: "ADELANTE",        duracion_ms: 900,  pausa_ms: 0 },
+      { orden: 2,  key: "GIRAR_DERECHA",   duracion_ms: 750,  pausa_ms: 0 },
+      { orden: 3,  key: "GIRAR_IZQUIERDA", duracion_ms: 750,  pausa_ms: 0 },
+      { orden: 4,  key: "MOVER_DERECHA",   duracion_ms: 800,  pausa_ms: 0 },
+      { orden: 5,  key: "MOVER_IZQUIERDA", duracion_ms: 800,  pausa_ms: 0 },
+      { orden: 6,  key: "SUBIR_BRAZO",     duracion_ms: 1800, pausa_ms: 0 },
+      { orden: 7,  key: "BAJAR_BRAZO",     duracion_ms: 1800, pausa_ms: 0 },
+      { orden: 8,  key: "LUZ_LED",         duracion_ms: 450,  pausa_ms: 0 },
+      { orden: 9,  key: "ACTIVAR_SONIDO",  duracion_ms: 450,  pausa_ms: 0 },
+      { orden: 10, key: "ATRAS",           duracion_ms: 900,  pausa_ms: 0 }
     ];
 
     try {
