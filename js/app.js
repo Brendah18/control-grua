@@ -483,6 +483,7 @@ class PlatformApp {
     const bindMomentaryControl = (btn, fallbackCmd) => {
       if (!btn) return;
       let isHeld = false;
+      let pressStartedAt = 0;
       let pulseStopTimer = null;
 
       const getCmd = () =>
@@ -502,20 +503,25 @@ class PlatformApp {
           this.emitClaxonSound();
         }
 
+        if (pulseStopTimer) {
+          clearTimeout(pulseStopTimer);
+          pulseStopTimer = null;
+        }
+
         if (SINGLE_PULSE_COMMANDS.has(this.normalizeCommandKey(cmdName))) {
-          if (pulseStopTimer) clearTimeout(pulseStopTimer);
           await this.dispatchCommand(cmdName, false);
           pulseStopTimer = setTimeout(() => {
             pulseStopTimer = null;
             if (!this.isDemoRunning) {
               this.dispatchCommand("DETENER", true);
             }
-          }, 300);
+          }, 400);
           return;
         }
 
         if (isHeld) return;
         isHeld = true;
+        pressStartedAt = Date.now();
         await this.dispatchCommand(cmdName, false);
       };
 
@@ -523,7 +529,19 @@ class PlatformApp {
         if (e.type === "touchend" || e.type === "touchcancel") e.preventDefault();
         if (!isHeld) return;
         isHeld = false;
-        await this.dispatchCommand("DETENER", true);
+
+        const elapsed = Date.now() - pressStartedAt;
+        const minPulseMs = 350;
+        if (elapsed < minPulseMs) {
+          pulseStopTimer = setTimeout(() => {
+            pulseStopTimer = null;
+            if (!this.isDemoRunning) {
+              this.dispatchCommand("DETENER", true);
+            }
+          }, minPulseMs - elapsed);
+        } else {
+          await this.dispatchCommand("DETENER", true);
+        }
       };
 
       btn.addEventListener("mousedown", startPress);
