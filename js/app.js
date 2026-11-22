@@ -1013,12 +1013,12 @@ class PlatformApp {
     this.setDemoLockState(true, selectedDemoId);
     limpiarDestellosVisuales();
 
-    // Secuencia limpia y ordenada de la DEMO (1 movimiento a la vez + pausa real entre pasos)
+    // Secuencia limpia y ordenada de la DEMO (más tiempo para subir/bajar brazo con fuerza continua)
     const secuenciaPasos = [
       { orden: 1, key: "ADELANTE",        duracion_ms: 1800, pausa_ms: 850 },
       { orden: 2, key: "GIRAR_IZQUIERDA", duracion_ms: 1700, pausa_ms: 850 },
-      { orden: 3, key: "SUBIR_BRAZO",     duracion_ms: 1700, pausa_ms: 850 },
-      { orden: 4, key: "BAJAR_BRAZO",     duracion_ms: 1700, pausa_ms: 850 },
+      { orden: 3, key: "SUBIR_BRAZO",     duracion_ms: 3200, pausa_ms: 900 },
+      { orden: 4, key: "BAJAR_BRAZO",     duracion_ms: 3200, pausa_ms: 900 },
       { orden: 5, key: "LUZ_LED",         duracion_ms: 1600, pausa_ms: 850 },
       { orden: 6, key: "ATRAS",           duracion_ms: 1800, pausa_ms: 600 }
     ];
