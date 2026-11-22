@@ -1023,14 +1023,18 @@ class PlatformApp {
     this.setDemoLockState(true, selectedDemoId);
     limpiarDestellosVisuales();
 
-    // Secuencia limpia y ordenada de la DEMO (más tiempo para subir/bajar brazo con fuerza continua)
+    // Secuencia DEMO completa y ágil (~12 segundos en total)
     const secuenciaPasos = [
-      { orden: 1, key: "ADELANTE",        duracion_ms: 2000, pausa_ms: 850 },
-      { orden: 2, key: "GIRAR_IZQUIERDA", duracion_ms: 1800, pausa_ms: 850 },
-      { orden: 3, key: "SUBIR_BRAZO",     duracion_ms: 3200, pausa_ms: 900 },
-      { orden: 4, key: "BAJAR_BRAZO",     duracion_ms: 3200, pausa_ms: 900 },
-      { orden: 5, key: "LUZ_LED",         duracion_ms: 800,  pausa_ms: 850 },
-      { orden: 6, key: "ATRAS",           duracion_ms: 2000, pausa_ms: 600 }
+      { orden: 1,  key: "ADELANTE",        duracion_ms: 900,  pausa_ms: 250 },
+      { orden: 2,  key: "GIRAR_DERECHA",   duracion_ms: 750,  pausa_ms: 250 },
+      { orden: 3,  key: "GIRAR_IZQUIERDA", duracion_ms: 750,  pausa_ms: 250 },
+      { orden: 4,  key: "MOVER_DERECHA",   duracion_ms: 800,  pausa_ms: 250 },
+      { orden: 5,  key: "MOVER_IZQUIERDA", duracion_ms: 800,  pausa_ms: 250 },
+      { orden: 6,  key: "SUBIR_BRAZO",     duracion_ms: 1800, pausa_ms: 300 },
+      { orden: 7,  key: "BAJAR_BRAZO",     duracion_ms: 1800, pausa_ms: 300 },
+      { orden: 8,  key: "LUZ_LED",         duracion_ms: 450,  pausa_ms: 250 },
+      { orden: 9,  key: "ACTIVAR_SONIDO",  duracion_ms: 450,  pausa_ms: 250 },
+      { orden: 10, key: "ATRAS",           duracion_ms: 900,  pausa_ms: 250 }
     ];
 
     try {
