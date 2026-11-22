@@ -470,6 +470,70 @@ class PlatformApp {
       });
     });
 
+    // Helper para botones táctiles y de ratón:
+    // - Comandos continuos: mousedown/touchstart envía comando; mouseup/touchend/mouseleave envía DETENER.
+    // - Botones de pulso único (Luz, Sonido, Control Remoto): envía comando y tras ~300ms envía DETENER.
+    const SINGLE_PULSE_COMMANDS = new Set([
+      "LUZ_LED",
+      "ACTIVAR_SONIDO",
+      "DESACTIVAR_SONIDO",
+      "CONTROL_REMOTO"
+    ]);
+
+    const bindMomentaryControl = (btn, fallbackCmd) => {
+      if (!btn) return;
+      let isHeld = false;
+      let pulseStopTimer = null;
+
+      const getCmd = () =>
+        btn.getAttribute("data-codigo") ||
+        btn.getAttribute("data-cmd-name") ||
+        btn.getAttribute("data-comando") ||
+        fallbackCmd;
+
+      const startPress = async (e) => {
+        if (e.type === "touchstart") e.preventDefault();
+        if (e.type === "mousedown" && e.button !== 0) return;
+
+        const cmdName = getCmd();
+        if (!cmdName || !this.canExecuteCommand(cmdName)) return;
+
+        if (cmdName === "ACTIVAR_SONIDO") {
+          this.emitClaxonSound();
+        }
+
+        if (SINGLE_PULSE_COMMANDS.has(this.normalizeCommandKey(cmdName))) {
+          if (pulseStopTimer) clearTimeout(pulseStopTimer);
+          await this.dispatchCommand(cmdName, false);
+          pulseStopTimer = setTimeout(() => {
+            pulseStopTimer = null;
+            if (!this.isDemoRunning) {
+              this.dispatchCommand("DETENER", true);
+            }
+          }, 300);
+          return;
+        }
+
+        if (isHeld) return;
+        isHeld = true;
+        await this.dispatchCommand(cmdName, false);
+      };
+
+      const endPress = async (e) => {
+        if (e.type === "touchend" || e.type === "touchcancel") e.preventDefault();
+        if (!isHeld) return;
+        isHeld = false;
+        await this.dispatchCommand("DETENER", true);
+      };
+
+      btn.addEventListener("mousedown", startPress);
+      btn.addEventListener("touchstart", startPress, { passive: false });
+      btn.addEventListener("mouseup", endPress);
+      btn.addEventListener("mouseleave", endPress);
+      btn.addEventListener("touchend", endPress, { passive: false });
+      btn.addEventListener("touchcancel", endPress, { passive: false });
+    };
+
     // Cruceta D-Pad (01-ADELANTE, 02-ATRAS, 03-GIRAR_IZQUIERDA, 04-GIRAR_DERECHA)
     const dpadList = [
       { el: this.ui.btnDpadUp, cmd: "ADELANTE" },
@@ -477,30 +541,10 @@ class PlatformApp {
       { el: this.ui.btnDpadLeft, cmd: "GIRAR_IZQUIERDA" },
       { el: this.ui.btnDpadRight, cmd: "GIRAR_DERECHA" }
     ];
-    dpadList.forEach(({ el, cmd }) => {
-      el?.addEventListener("click", async () => {
-        const codigo = el.getAttribute("data-codigo") || cmd;
-        if (!this.canExecuteCommand(codigo)) return;
-        await this.dispatchCommand(codigo, false);
-      });
-    });
+    dpadList.forEach(({ el, cmd }) => bindMomentaryControl(el, cmd));
 
     // Catálogo de los 8 Comandos Físicos Restantes (05 al 12) usando data-codigo exacto
-    this.ui.secondaryButtons.forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        const cmdName =
-          btn.getAttribute("data-codigo") ||
-          btn.getAttribute("data-cmd-name") ||
-          btn.getAttribute("data-comando");
-        if (!cmdName) return;
-        if (!this.canExecuteCommand(cmdName)) return;
-
-        if (cmdName === "ACTIVAR_SONIDO") {
-          this.emitClaxonSound();
-        }
-        await this.dispatchCommand(cmdName, false);
-      });
-    });
+    this.ui.secondaryButtons.forEach((btn) => bindMomentaryControl(btn, ""));
 
     // Secuencias DEMO (Botones Iniciar y Cancelar)
     this.ui.btnDemoStart?.addEventListener("click", () => this.startSelectedDemo());
@@ -868,6 +912,7 @@ class PlatformApp {
         this.wsClient.sendJson({
           id_vehiculo: CONFIG.VEHICULO_ID,
           id_comando: retryCmd.id_comando,
+          codigo: retryCmd.nombre,
           token: currentToken,
           origen: isPriority ? "PRIORIDAD-DETENER" : `WSS-${this.currentRole}`
         });
