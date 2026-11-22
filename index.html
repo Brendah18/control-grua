@@ -188,6 +188,21 @@
       transition: all 0.15s ease;
       padding: 0;
       cursor: pointer;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .btn-dpad-pastel *,
+    .btn-cmd-tile *,
+    .btn-stop-huge * {
+      pointer-events: none;
+    }
+    .btn-stop-huge {
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
     .btn-dpad-pastel .dpad-num {
       font-size: 0.52rem;
@@ -238,6 +253,10 @@
       text-align: center;
       transition: all 0.18s ease;
       box-shadow: 0 2px 6px rgba(168, 85, 247, 0.08);
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
     .btn-cmd-tile:hover,
     .btn-cmd-tile:active {
@@ -675,26 +694,26 @@
             <!-- Cruceta D-Pad (01 ADELANTE, 02 ATRÁS, 03 GIRAR_IZQUIERDA, 04 GIRAR_DERECHA + DETENER) -->
             <div class="dpad-cross-wrap flex-shrink-0" aria-label="Cruceta Direccional 01 a 04">
               <div class="d-flex justify-content-center">
-                <button id="btn-joy-up" type="button" class="btn-dpad-pastel joy-up" data-dir="ADELANTE" data-cmd-name="ADELANTE" data-codigo="ADELANTE" title="01. ADELANTE">
+                <button id="btn-joy-up" type="button" class="btn-dpad-pastel joy-up" data-dir="ADELANTE" data-cmd-name="ADELANTE" data-codigo="ADELANTE" data-comando="ADELANTE" title="01. ADELANTE">
                   <span class="dpad-num">01</span>
                   <i class="bi bi-caret-up-fill"></i>
                 </button>
               </div>
               <div class="dpad-row-mid">
-                <button id="btn-joy-left" type="button" class="btn-dpad-pastel joy-left" data-dir="GIRAR_IZQUIERDA" data-cmd-name="GIRAR_IZQUIERDA" data-codigo="GIRAR_IZQUIERDA" title="03. GIRAR IZQUIERDA">
+                <button id="btn-joy-left" type="button" class="btn-dpad-pastel joy-left" data-dir="GIRAR_IZQUIERDA" data-cmd-name="GIRAR_IZQUIERDA" data-codigo="GIRAR_IZQUIERDA" data-comando="GIRAR_IZQUIERDA" title="03. GIRAR IZQUIERDA">
                   <span class="dpad-num">03</span>
                   <i class="bi bi-caret-left-fill"></i>
                 </button>
-                <button id="btn-joy-stop" type="button" class="btn-dpad-pastel joy-stop" data-dir="DETENER" data-codigo="DETENER" title="13. DETENER">
+                <button id="btn-joy-stop" type="button" class="btn-dpad-pastel joy-stop" data-dir="DETENER" data-cmd-name="DETENER" data-codigo="DETENER" data-comando="DETENER" title="13. DETENER">
                   <i class="bi bi-stop-circle-fill"></i>
                 </button>
-                <button id="btn-joy-right" type="button" class="btn-dpad-pastel joy-right" data-dir="GIRAR_DERECHA" data-cmd-name="GIRAR_DERECHA" data-codigo="GIRAR_DERECHA" title="04. GIRAR DERECHA">
+                <button id="btn-joy-right" type="button" class="btn-dpad-pastel joy-right" data-dir="GIRAR_DERECHA" data-cmd-name="GIRAR_DERECHA" data-codigo="GIRAR_DERECHA" data-comando="GIRAR_DERECHA" title="04. GIRAR DERECHA">
                   <span class="dpad-num">04</span>
                   <i class="bi bi-caret-right-fill"></i>
                 </button>
               </div>
               <div class="d-flex justify-content-center">
-                <button id="btn-joy-down" type="button" class="btn-dpad-pastel joy-down" data-dir="ATRAS" data-cmd-name="ATRAS" data-codigo="ATRAS" title="02. ATRÁS">
+                <button id="btn-joy-down" type="button" class="btn-dpad-pastel joy-down" data-dir="ATRAS" data-cmd-name="ATRAS" data-codigo="ATRAS" data-comando="ATRAS" title="02. ATRÁS">
                   <i class="bi bi-caret-down-fill"></i>
                   <span class="dpad-num">02</span>
                 </button>
@@ -1317,6 +1336,6 @@
   </script>
 
   <!-- Scripts Modulares ES6 -->
-  <script type="module" src="./js/app.js?v=5.1"></script>
+  <script type="module" src="./js/app.js?v=5.2"></script>
 </body>
 </html>
