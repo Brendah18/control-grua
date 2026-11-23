@@ -583,22 +583,12 @@ class PlatformApp {
           }
 
           if (codigo === "CONTROL_REMOTO") {
-            // 12 · VELOCIDAD: alternar velocidad por software sin disparar el canal físico que vuelve loco al carro
             this.highSpeedEnabled = !this.highSpeedEnabled;
             const targetSpeed = this.highSpeedEnabled ? 100 : 70;
-            const speedLabel = this.highSpeedEnabled ? "VELOCIDAD ALTA (100%)" : "VELOCIDAD NORMAL (70%)";
             const lblPower = document.getElementById("lbl-joy-power");
             if (lblPower) lblPower.textContent = `${targetSpeed}%`;
-            this.updateCommandUiOnly("CONTROL_REMOTO", speedLabel);
             api.ajustarVelocidad(targetSpeed, CONFIG.VEHICULO_ID);
-            this.activePulseTimer = window.setTimeout(() => {
-              this.activePulseTimer = null;
-              this.isPulseLocked = false;
-            }, 400);
-            return;
-          }
-
-          if (codigo === "ACTIVAR_SONIDO") {
+          } else if (codigo === "ACTIVAR_SONIDO") {
             this.soundEnabled = true;
             this.emitClaxonSound();
           } else if (codigo === "DESACTIVAR_SONIDO") {
@@ -953,23 +943,7 @@ class PlatformApp {
     destelloVisualControl(name, 900);
   }
 
-  resolveHardwareCommand(normalizedKey, defaultCmdInfo) {
-    // MOVER_IZQUIERDA y MOVER_DERECHA accionan el canal físico confirmado de izquierda/derecha en el ESP8266
-    // manteniendo el nombre e iluminación de MOVER_IZQUIERDA / MOVER_DERECHA en la interfaz web.
-    if (normalizedKey === "MOVER_IZQUIERDA") {
-      return (
-        this.commandCatalog.get("GIRAR_IZQUIERDA") ||
-        CONFIG.DEFAULT_COMMAND_MAP.GIRAR_IZQUIERDA ||
-        defaultCmdInfo
-      );
-    }
-    if (normalizedKey === "MOVER_DERECHA") {
-      return (
-        this.commandCatalog.get("GIRAR_DERECHA") ||
-        CONFIG.DEFAULT_COMMAND_MAP.GIRAR_DERECHA ||
-        defaultCmdInfo
-      );
-    }
+  resolveHardwareCommand(_normalizedKey, defaultCmdInfo) {
     return defaultCmdInfo;
   }
 
@@ -1134,25 +1108,11 @@ class PlatformApp {
     const hwCmd = this.resolveHardwareCommand(normalized, cmdInfo);
 
     if (normalized === "CONTROL_REMOTO") {
-      // En DEMO, actualizar tarjeta visual de Velocidad sin enviar el canal físico que altera al carrito
       this.highSpeedEnabled = !this.highSpeedEnabled;
       const targetSpeed = this.highSpeedEnabled ? 100 : 70;
       const lblPower = document.getElementById("lbl-joy-power");
       if (lblPower) lblPower.textContent = `${targetSpeed}%`;
-      if (this.monitoreo) {
-        this.monitoreo.renderEstadoCard({
-          id_vehiculo: CONFIG.VEHICULO_ID,
-          id_comando: cmdInfo.id_comando,
-          comando: "VELOCIDAD",
-          codigo: cmdInfo.codigo,
-          conectado: 1,
-          fecha_actualizacion: new Date().toISOString()
-        });
-      }
-      return;
-    }
-
-    if (normalized === "ACTIVAR_SONIDO") {
+    } else if (normalized === "ACTIVAR_SONIDO") {
       this.soundEnabled = true;
     } else if (normalized === "DESACTIVAR_SONIDO") {
       this.soundEnabled = false;
