@@ -19,7 +19,6 @@ class PlatformApp {
     this.activePulseTimer = null;
     this.isPulseLocked = false;
     this.soundEnabled = false;
-    this.highSpeedEnabled = false;
     this.activeOscillator = null;
     this._dispatchChain = Promise.resolve();
     this.isDemoRunning = false;
@@ -164,7 +163,7 @@ class PlatformApp {
       { id_comando: 9,  codigo: 9,  nombre: "LUZ_LED",           etiqueta: "09 · LUZ / LED" },
       { id_comando: 10, codigo: 10, nombre: "ACTIVAR_SONIDO",    etiqueta: "10 · ACTIVAR SONIDO" },
       { id_comando: 11, codigo: 11, nombre: "DESACTIVAR_SONIDO", etiqueta: "11 · DESACTIVAR SONIDO" },
-      { id_comando: 12, codigo: 12, nombre: "CONTROL_REMOTO",    etiqueta: "12 · VELOCIDAD" },
+      { id_comando: 12, codigo: 12, nombre: "CONTROL_REMOTO",    etiqueta: "12 · CONTROL REMOTO" },
       { id_comando: 13, codigo: 13, nombre: "DETENER",           etiqueta: "13 · DETENER (Paro Total)" }
     ];
 
@@ -515,24 +514,20 @@ class PlatformApp {
 
     let pressStartedAt = 0;
 
-    let pressSequenceId = 0;
-
     const releaseContinuousCommand = () => {
       if (this.joystick?.isDragging) return;
       if (this.comandoActivo !== null) {
-        const mySeq = pressSequenceId;
         this.comandoActivo = null;
         if (this.activePulseTimer) {
           clearTimeout(this.activePulseTimer);
           this.activePulseTimer = null;
         }
         const elapsed = Date.now() - pressStartedAt;
-        // Garantizar que la petición haya llegado a AWS y el relevador/optoacoplador dure al menos 650 ms activo
-        const minHoldMs = 650;
+        const minHoldMs = 350;
         if (elapsed < minHoldMs) {
           this.activePulseTimer = window.setTimeout(() => {
             this.activePulseTimer = null;
-            if (!this.isDemoRunning && this.comandoActivo === null && pressSequenceId === mySeq) {
+            if (!this.isDemoRunning && this.comandoActivo === null) {
               this.dispatchCommand("DETENER", true);
             }
           }, minHoldMs - elapsed);
@@ -560,68 +555,76 @@ class PlatformApp {
 
       btn.addEventListener("contextmenu", (e) => e.preventDefault());
 
-      btn.addEventListener("pointerdown", async (e) => {
+      btn.addEventListener("pointerdown", (e) => {
         if (e.button !== undefined && e.button !== 0) return;
         e.preventDefault();
 
         const codigo = getCodigo();
         if (!codigo || !this.canExecuteCommand(codigo)) return;
 
-        pressSequenceId++;
-        const currentSeq = pressSequenceId;
-
         // 1. Botones de acción puntual (LUZ_LED, ACTIVAR_SONIDO, DESACTIVAR_SONIDO, CONTROL_REMOTO):
-        //    Espera a que el comando llegue a AWS y mantiene el pulso 650 ms antes de enviar DETENER.
+        //    Pulso controlado de 350 ms + DETENER automático + debounce contra doble clic.
         if (SINGLE_PULSE_COMMANDS.has(codigo)) {
           if (this.isPulseLocked) return;
           this.isPulseLocked = true;
 
-          this.comandoActivo = null;
+          if (this.comandoActivo !== null) {
+            this.comandoActivo = null;
+          }
           if (this.activePulseTimer) {
             clearTimeout(this.activePulseTimer);
             this.activePulseTimer = null;
           }
 
-          if (codigo === "CONTROL_REMOTO") {
-            this.highSpeedEnabled = !this.highSpeedEnabled;
-            const targetSpeed = this.highSpeedEnabled ? 100 : 70;
-            const lblPower = document.getElementById("lbl-joy-power");
-            if (lblPower) lblPower.textContent = `${targetSpeed}%`;
-            api.ajustarVelocidad(targetSpeed, CONFIG.VEHICULO_ID);
-          } else if (codigo === "ACTIVAR_SONIDO") {
-            this.soundEnabled = true;
+          if (codigo === "ACTIVAR_SONIDO") {
             this.emitClaxonSound();
+            // Solo activar: si el sonido ya está activo, actualizar UI sin volver a pulsar el botón toggle físico
+            if (this.soundEnabled) {
+              this.updateCommandUiOnly("ACTIVAR_SONIDO");
+              this.activePulseTimer = window.setTimeout(() => {
+                this.activePulseTimer = null;
+                this.isPulseLocked = false;
+              }, 350);
+              return;
+            }
+            this.soundEnabled = true;
           } else if (codigo === "DESACTIVAR_SONIDO") {
-            this.soundEnabled = false;
             this.stopClaxonSound();
+            // Solo desactivar: si el sonido ya está apagado, actualizar UI sin pulsar el botón toggle físico
+            if (!this.soundEnabled) {
+              this.updateCommandUiOnly("DESACTIVAR_SONIDO");
+              this.activePulseTimer = window.setTimeout(() => {
+                this.activePulseTimer = null;
+                this.isPulseLocked = false;
+              }, 350);
+              return;
+            }
+            this.soundEnabled = false;
           }
 
-          await this.dispatchCommand(codigo, false);
+          this.dispatchCommand(codigo, false);
           this.activePulseTimer = window.setTimeout(() => {
             this.activePulseTimer = null;
             this.isPulseLocked = false;
-            if (!this.isDemoRunning && this.comandoActivo === null && pressSequenceId === currentSeq) {
+            if (!this.isDemoRunning && this.comandoActivo === null) {
               this.dispatchCommand("DETENER", true);
             }
-          }, 650);
+          }, 350);
           return;
         }
 
         // 2. Comandos continuos (ADELANTE, ATRAS, GIRAR_IZQUIERDA, GIRAR_DERECHA, MOVER_*, *_BRAZO):
+        //    Si comandoActivo !== codigo, guardar comandoActivo = codigo y enviar 1 sola vez.
         if (this.activePulseTimer) {
           clearTimeout(this.activePulseTimer);
           this.activePulseTimer = null;
+          this.isPulseLocked = false;
         }
-        this.isPulseLocked = false;
 
         if (this.comandoActivo !== codigo) {
           this.comandoActivo = codigo;
           pressStartedAt = Date.now();
-          await this.dispatchCommand(codigo, false);
-          // Reiniciar reloj al momento en que el servidor recibió el comando para que nunca dure menos de 650 ms
-          if (this.comandoActivo === codigo) {
-            pressStartedAt = Date.now();
-          }
+          this.dispatchCommand(codigo, false);
         }
       });
 
@@ -927,23 +930,38 @@ class PlatformApp {
     }
   }
 
-  updateCommandUiOnly(commandKey, customDisplayText = null) {
+  updateCommandUiOnly(commandKey) {
     const normalized = this.normalizeCommandKey(commandKey);
     const entry =
       this.commandCatalog.get(normalized) ||
       CONFIG.DEFAULT_COMMAND_MAP[normalized] ||
       { id_comando: 10, codigo: 10, nombre: normalized };
     const name = entry.nombre || normalized;
-    const labelText = customDisplayText || name.replace(/_/g, " ");
     this.lastUserCommand = { name, codigo: entry.codigo, at: Date.now() };
-    if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = labelText;
+    if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = name;
     const lblJoyDir = document.getElementById("lbl-joy-dir");
-    if (lblJoyDir) lblJoyDir.textContent = labelText;
-    if (this.ui.badgeJoystickDir) this.ui.badgeJoystickDir.textContent = labelText;
+    if (lblJoyDir) lblJoyDir.textContent = name.replace(/_/g, " ");
+    if (this.ui.badgeJoystickDir) this.ui.badgeJoystickDir.textContent = name.replace(/_/g, " ");
     destelloVisualControl(name, 900);
   }
 
-  resolveHardwareCommand(_normalizedKey, defaultCmdInfo) {
+  resolveHardwareCommand(normalizedKey, defaultCmdInfo) {
+    // MOVER_IZQUIERDA y MOVER_DERECHA accionan el canal físico confirmado de izquierda/derecha en el ESP8266
+    // manteniendo el nombre e iluminación de MOVER_IZQUIERDA / MOVER_DERECHA en la interfaz web.
+    if (normalizedKey === "MOVER_IZQUIERDA") {
+      return (
+        this.commandCatalog.get("GIRAR_IZQUIERDA") ||
+        CONFIG.DEFAULT_COMMAND_MAP.GIRAR_IZQUIERDA ||
+        defaultCmdInfo
+      );
+    }
+    if (normalizedKey === "MOVER_DERECHA") {
+      return (
+        this.commandCatalog.get("GIRAR_DERECHA") ||
+        CONFIG.DEFAULT_COMMAND_MAP.GIRAR_DERECHA ||
+        defaultCmdInfo
+      );
+    }
     return defaultCmdInfo;
   }
 
@@ -1075,7 +1093,12 @@ class PlatformApp {
       }
     };
 
-    // Encolar SIEMPRE en orden estricto para que DETENER jamás compita en paralelo ni corte un comando en 0 ms
+    // Si es DETENER prioritario, ejecutar de inmediato sin esperar cola previa
+    if (isPriority || normalized === "DETENER") {
+      this._dispatchChain = runSend();
+      return this._dispatchChain;
+    }
+
     this._dispatchChain = this._dispatchChain.then(runSend, runSend);
     return this._dispatchChain;
   }
@@ -1107,12 +1130,7 @@ class PlatformApp {
     const normalized = this.normalizeCommandKey(cmdInfo?.nombre);
     const hwCmd = this.resolveHardwareCommand(normalized, cmdInfo);
 
-    if (normalized === "CONTROL_REMOTO") {
-      this.highSpeedEnabled = !this.highSpeedEnabled;
-      const targetSpeed = this.highSpeedEnabled ? 100 : 70;
-      const lblPower = document.getElementById("lbl-joy-power");
-      if (lblPower) lblPower.textContent = `${targetSpeed}%`;
-    } else if (normalized === "ACTIVAR_SONIDO") {
+    if (normalized === "ACTIVAR_SONIDO") {
       this.soundEnabled = true;
     } else if (normalized === "DESACTIVAR_SONIDO") {
       this.soundEnabled = false;
@@ -1186,7 +1204,7 @@ class PlatformApp {
     this.setDemoLockState(true, selectedDemoId);
     limpiarDestellosVisuales();
 
-    // Secuencia DEMO completa con los 12 movimientos (incluyendo Velocidad y cerrando con LUZ_LED)
+    // Secuencia DEMO completa con TODOS los movimientos y LUZ_LED como último paso
     const secuenciaPasos = [
       { orden: 1,  key: "ADELANTE",          duracion_ms: 1200, pausa_ms: 600 },
       { orden: 2,  key: "ATRAS",             duracion_ms: 1200, pausa_ms: 600 },
@@ -1196,10 +1214,9 @@ class PlatformApp {
       { orden: 6,  key: "MOVER_DERECHA",     duracion_ms: 1200, pausa_ms: 600 },
       { orden: 7,  key: "SUBIR_BRAZO",       duracion_ms: 1200, pausa_ms: 600 },
       { orden: 8,  key: "BAJAR_BRAZO",       duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 9,  key: "CONTROL_REMOTO",    duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 10, key: "ACTIVAR_SONIDO",    duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 11, key: "DESACTIVAR_SONIDO", duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 12, key: "LUZ_LED",           duracion_ms: 1500, pausa_ms: 600 }
+      { orden: 9,  key: "ACTIVAR_SONIDO",    duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 10, key: "DESACTIVAR_SONIDO", duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 11, key: "LUZ_LED",           duracion_ms: 1500, pausa_ms: 600 }
     ];
 
     try {
