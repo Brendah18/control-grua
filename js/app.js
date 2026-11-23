@@ -514,10 +514,12 @@ class PlatformApp {
     ]);
 
     let pressStartedAt = 0;
+    let pressSeq = 0;
 
     const releaseContinuousCommand = () => {
       if (this.joystick?.isDragging) return;
       if (this.comandoActivo !== null) {
+        const seqAtRelease = pressSeq;
         this.comandoActivo = null;
         if (this.activePulseTimer) {
           clearTimeout(this.activePulseTimer);
@@ -528,7 +530,7 @@ class PlatformApp {
         if (elapsed < minHoldMs) {
           this.activePulseTimer = window.setTimeout(() => {
             this.activePulseTimer = null;
-            if (!this.isDemoRunning && this.comandoActivo === null) {
+            if (!this.isDemoRunning && this.comandoActivo === null && pressSeq === seqAtRelease) {
               this.dispatchCommand("DETENER", true);
             }
           }, minHoldMs - elapsed);
@@ -556,15 +558,17 @@ class PlatformApp {
 
       btn.addEventListener("contextmenu", (e) => e.preventDefault());
 
-      btn.addEventListener("pointerdown", (e) => {
+      btn.addEventListener("pointerdown", async (e) => {
         if (e.button !== undefined && e.button !== 0) return;
         e.preventDefault();
 
         const codigo = getCodigo();
         if (!codigo || !this.canExecuteCommand(codigo)) return;
 
+        pressSeq++;
+        const mySeq = pressSeq;
+
         // 1. Botones de acción puntual (LUZ_LED, ACTIVAR_SONIDO, DESACTIVAR_SONIDO, CONTROL_REMOTO):
-        //    Pulso controlado de 350 ms + DETENER automático + debounce contra doble clic.
         if (SINGLE_PULSE_COMMANDS.has(codigo)) {
           if (this.isPulseLocked) return;
           this.isPulseLocked = true;
@@ -585,7 +589,6 @@ class PlatformApp {
             api.ajustarVelocidad(targetSpeed, CONFIG.VEHICULO_ID);
           } else if (codigo === "ACTIVAR_SONIDO") {
             this.emitClaxonSound();
-            // Solo activar: si el sonido ya está activo, actualizar UI sin volver a pulsar el botón toggle físico
             if (this.soundEnabled) {
               this.updateCommandUiOnly("ACTIVAR_SONIDO");
               this.activePulseTimer = window.setTimeout(() => {
@@ -597,7 +600,6 @@ class PlatformApp {
             this.soundEnabled = true;
           } else if (codigo === "DESACTIVAR_SONIDO") {
             this.stopClaxonSound();
-            // Solo desactivar: si el sonido ya está apagado, actualizar UI sin pulsar el botón toggle físico
             if (!this.soundEnabled) {
               this.updateCommandUiOnly("DESACTIVAR_SONIDO");
               this.activePulseTimer = window.setTimeout(() => {
@@ -609,19 +611,18 @@ class PlatformApp {
             this.soundEnabled = false;
           }
 
-          this.dispatchCommand(codigo, false);
+          await this.dispatchCommand(codigo, false);
           this.activePulseTimer = window.setTimeout(() => {
             this.activePulseTimer = null;
             this.isPulseLocked = false;
-            if (!this.isDemoRunning && this.comandoActivo === null) {
+            if (!this.isDemoRunning && this.comandoActivo === null && pressSeq === mySeq) {
               this.dispatchCommand("DETENER", true);
             }
-          }, 350);
+          }, 550);
           return;
         }
 
         // 2. Comandos continuos (ADELANTE, ATRAS, GIRAR_IZQUIERDA, GIRAR_DERECHA, MOVER_*, *_BRAZO):
-        //    Si comandoActivo !== codigo, guardar comandoActivo = codigo y enviar 1 sola vez.
         if (this.activePulseTimer) {
           clearTimeout(this.activePulseTimer);
           this.activePulseTimer = null;
@@ -631,7 +632,10 @@ class PlatformApp {
         if (this.comandoActivo !== codigo) {
           this.comandoActivo = codigo;
           pressStartedAt = Date.now();
-          this.dispatchCommand(codigo, false);
+          await this.dispatchCommand(codigo, false);
+          if (this.comandoActivo === codigo) {
+            pressStartedAt = Date.now();
+          }
         }
       });
 
@@ -1100,12 +1104,7 @@ class PlatformApp {
       }
     };
 
-    // Si es DETENER prioritario, ejecutar de inmediato sin esperar cola previa
-    if (isPriority || normalized === "DETENER") {
-      this._dispatchChain = runSend();
-      return this._dispatchChain;
-    }
-
+    // Encolar SIEMPRE en orden estricto para que DETENER jamás termine antes que el movimiento ni deje los módulos encendidos
     this._dispatchChain = this._dispatchChain.then(runSend, runSend);
     return this._dispatchChain;
   }
