@@ -19,6 +19,7 @@ class PlatformApp {
     this.activePulseTimer = null;
     this.isPulseLocked = false;
     this.soundEnabled = false;
+    this.highSpeedEnabled = false;
     this.activeOscillator = null;
     this._dispatchChain = Promise.resolve();
     this.isDemoRunning = false;
@@ -163,7 +164,7 @@ class PlatformApp {
       { id_comando: 9,  codigo: 9,  nombre: "LUZ_LED",           etiqueta: "09 · LUZ / LED" },
       { id_comando: 10, codigo: 10, nombre: "ACTIVAR_SONIDO",    etiqueta: "10 · ACTIVAR SONIDO" },
       { id_comando: 11, codigo: 11, nombre: "DESACTIVAR_SONIDO", etiqueta: "11 · DESACTIVAR SONIDO" },
-      { id_comando: 12, codigo: 12, nombre: "CONTROL_REMOTO",    etiqueta: "12 · CONTROL REMOTO" },
+      { id_comando: 12, codigo: 12, nombre: "CONTROL_REMOTO",    etiqueta: "12 · VELOCIDAD" },
       { id_comando: 13, codigo: 13, nombre: "DETENER",           etiqueta: "13 · DETENER (Paro Total)" }
     ];
 
@@ -514,16 +515,27 @@ class PlatformApp {
 
     let pressStartedAt = 0;
 
+    const STEP_TURN_COMMANDS = new Set([
+      "GIRAR_IZQUIERDA",
+      "GIRAR_DERECHA",
+      "MOVER_IZQUIERDA",
+      "MOVER_DERECHA"
+    ]);
+
     const releaseContinuousCommand = () => {
       if (this.joystick?.isDragging) return;
       if (this.comandoActivo !== null) {
+        const prevCmd = this.comandoActivo;
         this.comandoActivo = null;
         if (this.activePulseTimer) {
           clearTimeout(this.activePulseTimer);
           this.activePulseTimer = null;
         }
         const elapsed = Date.now() - pressStartedAt;
-        const minHoldMs = 350;
+        // Giros/movimientos laterales cortos (210 ms normal / 380 ms alta) para avanzar toque por toque sin irse de jalón
+        const minHoldMs = STEP_TURN_COMMANDS.has(prevCmd)
+          ? (this.highSpeedEnabled ? 380 : 210)
+          : (this.highSpeedEnabled ? 500 : 320);
         if (elapsed < minHoldMs) {
           this.activePulseTimer = window.setTimeout(() => {
             this.activePulseTimer = null;
@@ -576,7 +588,13 @@ class PlatformApp {
             this.activePulseTimer = null;
           }
 
-          if (codigo === "ACTIVAR_SONIDO") {
+          if (codigo === "CONTROL_REMOTO") {
+            this.highSpeedEnabled = !this.highSpeedEnabled;
+            const targetSpeed = this.highSpeedEnabled ? 100 : 70;
+            const lblPower = document.getElementById("lbl-joy-power");
+            if (lblPower) lblPower.textContent = `${targetSpeed}%`;
+            api.ajustarVelocidad(targetSpeed, CONFIG.VEHICULO_ID);
+          } else if (codigo === "ACTIVAR_SONIDO") {
             this.emitClaxonSound();
             // Solo activar: si el sonido ya está activo, actualizar UI sin volver a pulsar el botón toggle físico
             if (this.soundEnabled) {
@@ -1204,19 +1222,20 @@ class PlatformApp {
     this.setDemoLockState(true, selectedDemoId);
     limpiarDestellosVisuales();
 
-    // Secuencia DEMO completa con TODOS los movimientos y LUZ_LED como último paso
+    // Secuencia DEMO completa con los 12 movimientos (incluyendo Velocidad y cerrando con LUZ_LED)
     const secuenciaPasos = [
       { orden: 1,  key: "ADELANTE",          duracion_ms: 1200, pausa_ms: 600 },
       { orden: 2,  key: "ATRAS",             duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 3,  key: "GIRAR_IZQUIERDA",   duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 4,  key: "GIRAR_DERECHA",     duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 5,  key: "MOVER_IZQUIERDA",   duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 6,  key: "MOVER_DERECHA",     duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 3,  key: "GIRAR_IZQUIERDA",   duracion_ms: 600,  pausa_ms: 600 },
+      { orden: 4,  key: "GIRAR_DERECHA",     duracion_ms: 600,  pausa_ms: 600 },
+      { orden: 5,  key: "MOVER_IZQUIERDA",   duracion_ms: 600,  pausa_ms: 600 },
+      { orden: 6,  key: "MOVER_DERECHA",     duracion_ms: 600,  pausa_ms: 600 },
       { orden: 7,  key: "SUBIR_BRAZO",       duracion_ms: 1200, pausa_ms: 600 },
       { orden: 8,  key: "BAJAR_BRAZO",       duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 9,  key: "ACTIVAR_SONIDO",    duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 10, key: "DESACTIVAR_SONIDO", duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 11, key: "LUZ_LED",           duracion_ms: 1500, pausa_ms: 600 }
+      { orden: 9,  key: "CONTROL_REMOTO",    duracion_ms: 900,  pausa_ms: 600 },
+      { orden: 10, key: "ACTIVAR_SONIDO",    duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 11, key: "DESACTIVAR_SONIDO", duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 12, key: "LUZ_LED",           duracion_ms: 1500, pausa_ms: 600 }
     ];
 
     try {
