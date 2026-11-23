@@ -466,17 +466,31 @@ class PlatformApp {
 
     // Botón Prioritario DETENER (Aborta DEMO si está corriendo y detiene motores al instante)
     const stopButtons = [this.ui.btnStopPriority, this.ui.btnDpadStop].filter(Boolean);
+    let lastStopClickAt = 0;
     stopButtons.forEach((btn) => {
       const handlePriorityStop = async (e) => {
         if (e.type === "pointerdown" && e.button !== undefined && e.button !== 0) return;
         e.preventDefault();
+        const now = Date.now();
+        if (now - lastStopClickAt < 180) return;
+        lastStopClickAt = now;
+
         this.comandoActivo = null;
         if (this.activePulseTimer) {
           clearTimeout(this.activePulseTimer);
           this.activePulseTimer = null;
         }
         this.isPulseLocked = false;
-        this.joystick?.forceStop();
+
+        if (this.joystick) {
+          this.joystick.isDragging = false;
+          this.joystick.currentDirection = "DETENER";
+          this.joystick.thumb?.classList.remove("dragging");
+          if (this.joystick.thumb) {
+            this.joystick.thumb.style.transform = "translate3d(0px, 0px, 0px)";
+          }
+        }
+
         if (this.isDemoRunning) {
           await this.cancelActiveDemo();
         } else {
@@ -484,6 +498,7 @@ class PlatformApp {
         }
       };
       btn.addEventListener("pointerdown", handlePriorityStop);
+      btn.addEventListener("click", handlePriorityStop);
       btn.addEventListener("contextmenu", (e) => e.preventDefault());
     });
 
@@ -497,10 +512,26 @@ class PlatformApp {
       "CONTROL_REMOTO"
     ]);
 
+    let pressStartedAt = 0;
+
     const releaseContinuousCommand = () => {
+      if (this.joystick?.isDragging) return;
       if (this.comandoActivo !== null) {
         this.comandoActivo = null;
-        if (!this.isDemoRunning) {
+        if (this.activePulseTimer) {
+          clearTimeout(this.activePulseTimer);
+          this.activePulseTimer = null;
+        }
+        const elapsed = Date.now() - pressStartedAt;
+        const minHoldMs = 350;
+        if (elapsed < minHoldMs) {
+          this.activePulseTimer = window.setTimeout(() => {
+            this.activePulseTimer = null;
+            if (!this.isDemoRunning && this.comandoActivo === null) {
+              this.dispatchCommand("DETENER", true);
+            }
+          }, minHoldMs - elapsed);
+        } else if (!this.isDemoRunning) {
           this.dispatchCommand("DETENER", true);
         }
       }
@@ -592,6 +623,7 @@ class PlatformApp {
 
         if (this.comandoActivo !== codigo) {
           this.comandoActivo = codigo;
+          pressStartedAt = Date.now();
           this.dispatchCommand(codigo, false);
         }
       });
@@ -955,6 +987,11 @@ class PlatformApp {
     if (lblJoyDir) lblJoyDir.textContent = textDir;
 
     if (this.isDemoRunning && !isPriorityStop) return;
+    if (isPriorityStop) {
+      this.comandoActivo = null;
+    } else {
+      this.comandoActivo = mappedCmd;
+    }
     await this.dispatchCommand(mappedCmd, isPriorityStop);
   }
 
@@ -987,7 +1024,6 @@ class PlatformApp {
 
     destelloVisualControl(immediateName, 900);
 
-    // Encolar envío de red en orden estricto para que DETENER jamás sea sobrescrito por una petición previa en vuelo
     const runSend = async () => {
       if (this.isDemoRunning && !isPriority) return;
 
@@ -1005,11 +1041,6 @@ class PlatformApp {
         this.commandCatalog.get("DETENER") ||
         CONFIG.DEFAULT_COMMAND_MAP.DETENER;
       const hwCmd = this.resolveHardwareCommand(normalized, cmdInfo);
-
-      // Si era un movimiento continuo pero el usuario ya soltó el botón mientras esperaba la red, abortar ese envío
-      if (!isPriority && this.comandoActivo === null && !this.isPulseLocked && normalized !== "DETENER") {
-        return;
-      }
 
       const origenTag = isPriority ? "PRIORIDAD-DETENER" : `WEB-${this.currentRole}`;
 
@@ -1061,6 +1092,12 @@ class PlatformApp {
         }
       }
     };
+
+    // Si es DETENER prioritario, ejecutar de inmediato sin esperar cola previa
+    if (isPriority || normalized === "DETENER") {
+      this._dispatchChain = runSend();
+      return this._dispatchChain;
+    }
 
     this._dispatchChain = this._dispatchChain.then(runSend, runSend);
     return this._dispatchChain;
