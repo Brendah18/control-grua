@@ -512,51 +512,28 @@ class PlatformApp {
     });
 
     // =========================================================================
-    // REPARACIÓN DE EVENTOS UNIFICADOS (Pointer Events + Hold Real Post-Red)
+    // CONTROL LIMPIO DE LOS 12 BOTONES + DETENER (Cero spam de DETENER en clics)
+    // - Un clic normal envía únicamente el comando seleccionado (el ESP8266
+    //   ejecuta el pulso completo y libera automáticamente a 0x0000).
+    // - Si el usuario mantiene presionado un botón continuo por más de 800 ms,
+    //   al soltar envía DETENER.
     // =========================================================================
-    const SINGLE_PULSE_COMMANDS = new Set([
-      "LUZ_LED",
-      "ACTIVAR_SONIDO",
-      "DESACTIVAR_SONIDO",
-      "CONTROL_REMOTO"
-    ]);
+    let holdStartMs = 0;
 
-    const releaseContinuousCommand = () => {
+    const releaseLongHoldOnly = () => {
       if (this.joystick?.isDragging) return;
       if (this.comandoActivo === null) return;
-
-      // Si el usuario soltó el botón mientras la petición de inicio aún viaja a AWS,
-      // marcar para que en cuanto AWS confirme el inicio corra el pulso completo de 450 ms y luego envíe DETENER.
-      if (isSendingStart) {
-        userReleasedWhileSending = true;
-        return;
-      }
-
-      const seqAtRelease = pressSeq;
+      const heldDuration = Date.now() - holdStartMs;
       this.comandoActivo = null;
-      if (this.activePulseTimer) {
-        clearTimeout(this.activePulseTimer);
-        this.activePulseTimer = null;
-      }
-
-      const elapsedSinceAck = Date.now() - startConfirmedAt;
-      const minHoldMs = this.highSpeedEnabled ? 600 : 450;
-      if (elapsedSinceAck < minHoldMs) {
-        this.activePulseTimer = window.setTimeout(() => {
-          this.activePulseTimer = null;
-          if (!this.isDemoRunning && this.comandoActivo === null && pressSeq === seqAtRelease) {
-            this.dispatchCommand("DETENER", true);
-          }
-        }, minHoldMs - elapsedSinceAck);
-      } else if (!this.isDemoRunning) {
+      // Solo enviar DETENER al soltar si fue una pulsación larga mantenida (>= 800 ms)
+      if (heldDuration >= 800 && !this.isDemoRunning) {
         this.dispatchCommand("DETENER", true);
       }
     };
 
-    // Seguridad global al soltar fuera del botón o perder foco de ventana
-    window.addEventListener("pointerup", releaseContinuousCommand);
-    window.addEventListener("pointercancel", releaseContinuousCommand);
-    window.addEventListener("blur", releaseContinuousCommand);
+    window.addEventListener("pointerup", releaseLongHoldOnly);
+    window.addEventListener("pointercancel", releaseLongHoldOnly);
+    window.addEventListener("blur", releaseLongHoldOnly);
 
     const bindUnifiedControl = (btn, fallbackCmd) => {
       if (!btn) return;
@@ -578,17 +555,12 @@ class PlatformApp {
         const codigo = getCodigo();
         if (!codigo || !this.canExecuteCommand(codigo)) return;
 
-        pressSeq++;
-        const mySeq = pressSeq;
-
-        // 1. Botones de acción puntual (LUZ_LED, ACTIVAR_SONIDO, DESACTIVAR_SONIDO, CONTROL_REMOTO):
+        // 1. Botones auxiliares (LUZ_LED, ACTIVAR_SONIDO, DESACTIVAR_SONIDO, CONTROL_REMOTO / VELOCIDAD)
         if (SINGLE_PULSE_COMMANDS.has(codigo)) {
           if (this.isPulseLocked) return;
           this.isPulseLocked = true;
-
-          isSendingStart = false;
-          userReleasedWhileSending = false;
           this.comandoActivo = null;
+
           if (this.activePulseTimer) {
             clearTimeout(this.activePulseTimer);
             this.activePulseTimer = null;
@@ -624,61 +596,28 @@ class PlatformApp {
             this.soundEnabled = false;
           }
 
-          await this.dispatchCommand(codigo, false);
           this.activePulseTimer = window.setTimeout(() => {
             this.activePulseTimer = null;
             this.isPulseLocked = false;
-            if (!this.isDemoRunning && this.comandoActivo === null && pressSeq === mySeq) {
-              this.dispatchCommand("DETENER", true);
-            }
-          }, 600);
+          }, 350);
+
+          await this.dispatchCommand(codigo, false);
           return;
         }
 
-        // 2. Comandos continuos (ADELANTE, ATRAS, GIRAR_IZQUIERDA, GIRAR_DERECHA, MOVER_*, *_BRAZO):
-        if (this.activePulseTimer) {
-          clearTimeout(this.activePulseTimer);
-          this.activePulseTimer = null;
-        }
-        this.isPulseLocked = false;
-
-        if (this.comandoActivo !== codigo) {
-          this.comandoActivo = codigo;
-          isSendingStart = true;
-          userReleasedWhileSending = false;
-          await this.dispatchCommand(codigo, false);
-
-          if (pressSeq !== mySeq) return;
-          isSendingStart = false;
-          startConfirmedAt = Date.now();
-
-          // Si el usuario ya había soltado el botón mientras viajaba la petición a AWS,
-          // mantener el movimiento activo durante minHoldMs reales a partir de este instante y luego enviar DETENER.
-          if (userReleasedWhileSending) {
-            userReleasedWhileSending = false;
-            this.comandoActivo = null;
-            const minHoldMs = this.highSpeedEnabled ? 600 : 450;
-            this.activePulseTimer = window.setTimeout(() => {
-              this.activePulseTimer = null;
-              if (!this.isDemoRunning && this.comandoActivo === null && pressSeq === mySeq) {
-                this.dispatchCommand("DETENER", true);
-              }
-            }, minHoldMs);
-          }
-        }
+        // 2. Botones de movimiento (01..08): envía el comando limpio sin cortarlo con DETENER
+        this.comandoActivo = codigo;
+        holdStartMs = Date.now();
+        await this.dispatchCommand(codigo, false);
       });
 
       btn.addEventListener("pointerup", (e) => {
         e.preventDefault();
-        releaseContinuousCommand();
+        releaseLongHoldOnly();
       });
 
       btn.addEventListener("pointercancel", () => {
-        releaseContinuousCommand();
-      });
-
-      btn.addEventListener("pointerleave", () => {
-        releaseContinuousCommand();
+        releaseLongHoldOnly();
       });
     };
 
