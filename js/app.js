@@ -1204,7 +1204,7 @@ class PlatformApp {
     this.setDemoLockState(true, selectedDemoId);
     limpiarDestellosVisuales();
 
-    // Secuencia DEMO completa con TODOS los movimientos (1200 ms por movimiento y 600 ms de freno DETENER)
+    // Secuencia DEMO completa con TODOS los movimientos y LUZ_LED como último paso
     const secuenciaPasos = [
       { orden: 1,  key: "ADELANTE",          duracion_ms: 1200, pausa_ms: 600 },
       { orden: 2,  key: "ATRAS",             duracion_ms: 1200, pausa_ms: 600 },
@@ -1214,9 +1214,9 @@ class PlatformApp {
       { orden: 6,  key: "MOVER_DERECHA",     duracion_ms: 1200, pausa_ms: 600 },
       { orden: 7,  key: "SUBIR_BRAZO",       duracion_ms: 1200, pausa_ms: 600 },
       { orden: 8,  key: "BAJAR_BRAZO",       duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 9,  key: "LUZ_LED",           duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 10, key: "ACTIVAR_SONIDO",    duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 11, key: "DESACTIVAR_SONIDO", duracion_ms: 1200, pausa_ms: 600 }
+      { orden: 9,  key: "ACTIVAR_SONIDO",    duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 10, key: "DESACTIVAR_SONIDO", duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 11, key: "LUZ_LED",           duracion_ms: 1500, pausa_ms: 600 }
     ];
 
     try {
@@ -1227,7 +1227,13 @@ class PlatformApp {
         const cmdInfo =
           this.commandCatalog.get(paso.key) ||
           CONFIG.DEFAULT_COMMAND_MAP[paso.key] ||
-          { id_comando: 1, codigo: 1, nombre: paso.key };
+          { id_comando: 9, codigo: 9, nombre: paso.key };
+
+        this.lastUserCommand = {
+          name: cmdInfo.nombre,
+          codigo: cmdInfo.codigo,
+          at: Date.now()
+        };
 
         // 1. Mostrar y encender ÚNICAMENTE el movimiento del paso actual
         if (this.ui.lblDemoCurrentStep) {
@@ -1240,8 +1246,9 @@ class PlatformApp {
         if (lblJoyDir) lblJoyDir.textContent = `DEMO: ${cmdInfo.nombre.replace(/_/g, " ")}`;
         if (this.ui.badgeJoystickDir) this.ui.badgeJoystickDir.textContent = `Paso #${paso.orden}`;
 
-        destelloVisualControl(cmdInfo.nombre, paso.duracion_ms);
+        destelloVisualControl(cmdInfo.nombre, paso.duracion_ms + 300);
         await this.actualizarEstadoDemoSinHistorial(cmdInfo);
+        destelloVisualControl(cmdInfo.nombre, paso.duracion_ms + 100);
 
         // 2. Esperar duración exacta del paso (se aborta en 0 ms si presionan Cancelar o DETENER)
         const abortadoEnMov = await this.sleepCancelable(paso.duracion_ms, signal);
@@ -1353,11 +1360,13 @@ class PlatformApp {
       return;
     }
 
-    // Si estamos corriendo nuestra DEMO controlada o recién la cancelamos, ignorar ecos externos de demo
-    if (
-      evento.startsWith("DEMO_") &&
-      (this.isDemoRunning || Date.now() < this.demoIgnoreServerUntil)
-    ) {
+    // Mientras corre nuestra DEMO paso a paso, ignorar ecos de ESTADO_ACTUALIZADO / DEMO_* para que
+    // un eco retrasado de DETENER jamás apague o sobrescriba el paso actual (ej. LUZ_LED)
+    if (this.isDemoRunning) {
+      return;
+    }
+
+    if (evento.startsWith("DEMO_") && Date.now() < this.demoIgnoreServerUntil) {
       return;
     }
 
