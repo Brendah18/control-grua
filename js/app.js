@@ -18,6 +18,8 @@ class PlatformApp {
     this.comandoActivo = null;
     this.activePulseTimer = null;
     this.isPulseLocked = false;
+    this.soundEnabled = false;
+    this.activeOscillator = null;
     this._dispatchChain = Promise.resolve();
     this.isDemoRunning = false;
     this.activeDemoId = null;
@@ -545,6 +547,28 @@ class PlatformApp {
 
           if (codigo === "ACTIVAR_SONIDO") {
             this.emitClaxonSound();
+            // Solo activar: si el sonido ya está activo, actualizar UI sin volver a pulsar el botón toggle físico
+            if (this.soundEnabled) {
+              this.updateCommandUiOnly("ACTIVAR_SONIDO");
+              this.activePulseTimer = window.setTimeout(() => {
+                this.activePulseTimer = null;
+                this.isPulseLocked = false;
+              }, 350);
+              return;
+            }
+            this.soundEnabled = true;
+          } else if (codigo === "DESACTIVAR_SONIDO") {
+            this.stopClaxonSound();
+            // Solo desactivar: si el sonido ya está apagado, actualizar UI sin pulsar el botón toggle físico
+            if (!this.soundEnabled) {
+              this.updateCommandUiOnly("DESACTIVAR_SONIDO");
+              this.activePulseTimer = window.setTimeout(() => {
+                this.activePulseTimer = null;
+                this.isPulseLocked = false;
+              }, 350);
+              return;
+            }
+            this.soundEnabled = false;
           }
 
           this.dispatchCommand(codigo, false);
@@ -841,6 +865,7 @@ class PlatformApp {
       if (!this.audioCtx) this.audioCtx = new AudioCtx();
       if (this.audioCtx.state === "suspended") this.audioCtx.resume();
 
+      this.stopClaxonSound();
       const osc = this.audioCtx.createOscillator();
       const gain = this.audioCtx.createGain();
       osc.type = "sawtooth";
@@ -850,11 +875,62 @@ class PlatformApp {
       gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.28);
       osc.connect(gain);
       gain.connect(this.audioCtx.destination);
+      this.activeOscillator = osc;
+      osc.onended = () => {
+        if (this.activeOscillator === osc) this.activeOscillator = null;
+      };
       osc.start();
       osc.stop(this.audioCtx.currentTime + 0.28);
     } catch {
       // Audio no bloqueante
     }
+  }
+
+  stopClaxonSound() {
+    try {
+      if (this.activeOscillator) {
+        this.activeOscillator.stop();
+        this.activeOscillator.disconnect();
+        this.activeOscillator = null;
+      }
+    } catch {
+      this.activeOscillator = null;
+    }
+  }
+
+  updateCommandUiOnly(commandKey) {
+    const normalized = this.normalizeCommandKey(commandKey);
+    const entry =
+      this.commandCatalog.get(normalized) ||
+      CONFIG.DEFAULT_COMMAND_MAP[normalized] ||
+      { id_comando: 10, codigo: 10, nombre: normalized };
+    const name = entry.nombre || normalized;
+    this.lastUserCommand = { name, codigo: entry.codigo, at: Date.now() };
+    if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = name;
+    const lblJoyDir = document.getElementById("lbl-joy-dir");
+    if (lblJoyDir) lblJoyDir.textContent = name.replace(/_/g, " ");
+    if (this.ui.badgeJoystickDir) this.ui.badgeJoystickDir.textContent = name.replace(/_/g, " ");
+    destelloVisualControl(name, 900);
+  }
+
+  resolveHardwareCommand(normalizedKey, defaultCmdInfo) {
+    // MOVER_IZQUIERDA y MOVER_DERECHA accionan el canal físico confirmado de izquierda/derecha en el ESP8266
+    // manteniendo el nombre e iluminación de MOVER_IZQUIERDA / MOVER_DERECHA en la interfaz web.
+    if (normalizedKey === "MOVER_IZQUIERDA") {
+      return (
+        this.commandCatalog.get("GIRAR_IZQUIERDA") ||
+        CONFIG.DEFAULT_COMMAND_MAP.GIRAR_IZQUIERDA ||
+        defaultCmdInfo
+      );
+    }
+    if (normalizedKey === "MOVER_DERECHA") {
+      return (
+        this.commandCatalog.get("GIRAR_DERECHA") ||
+        CONFIG.DEFAULT_COMMAND_MAP.GIRAR_DERECHA ||
+        defaultCmdInfo
+      );
+    }
+    return defaultCmdInfo;
   }
 
   async handleJoystickDirection(direction) {
@@ -928,6 +1004,7 @@ class PlatformApp {
         CONFIG.DEFAULT_COMMAND_MAP[normalized] ||
         this.commandCatalog.get("DETENER") ||
         CONFIG.DEFAULT_COMMAND_MAP.DETENER;
+      const hwCmd = this.resolveHardwareCommand(normalized, cmdInfo);
 
       // Si era un movimiento continuo pero el usuario ya soltó el botón mientras esperaba la red, abortar ese envío
       if (!isPriority && this.comandoActivo === null && !this.isPulseLocked && normalized !== "DETENER") {
@@ -939,9 +1016,9 @@ class PlatformApp {
       try {
         const res = await api.enviarMovimiento({
           idVehiculo: CONFIG.VEHICULO_ID,
-          idComando: cmdInfo.id_comando,
-          codigo: cmdInfo.codigo,
-          nombre: cmdInfo.nombre,
+          idComando: hwCmd.id_comando,
+          codigo: hwCmd.codigo,
+          nombre: hwCmd.nombre,
           origen: origenTag
         });
 
@@ -960,7 +1037,7 @@ class PlatformApp {
         }
         this._rdsCatalogSynced = false;
         await this.loadCommands();
-        const retryCmd = this.commandCatalog.get(normalized) || cmdInfo;
+        const retryCmd = this.resolveHardwareCommand(normalized, this.commandCatalog.get(normalized) || cmdInfo);
         try {
           await api.enviarMovimiento({
             idVehiculo: CONFIG.VEHICULO_ID,
@@ -1013,12 +1090,21 @@ class PlatformApp {
   async actualizarEstadoDemoSinHistorial(cmdInfo) {
     // PUT /api/estado actualiza estado_vehiculo en RDS (sp_actualizar_estado) SIN insertar en historial_comandos
     // y hace broadcast en tiempo real por el WebSocket wss://52.4.170.82:8000/ws/1 hacia el ESP8266
+    const normalized = this.normalizeCommandKey(cmdInfo?.nombre);
+    const hwCmd = this.resolveHardwareCommand(normalized, cmdInfo);
+
+    if (normalized === "ACTIVAR_SONIDO") {
+      this.soundEnabled = true;
+    } else if (normalized === "DESACTIVAR_SONIDO") {
+      this.soundEnabled = false;
+    }
+
     try {
       await api.request("/api/estado", {
         method: "PUT",
         body: JSON.stringify({
           id_vehiculo: CONFIG.VEHICULO_ID,
-          id_comando: Number(cmdInfo.id_comando),
+          id_comando: Number(hwCmd.id_comando),
           conectado: true
         })
       }, 3500);
@@ -1029,8 +1115,8 @@ class PlatformApp {
           : window.sessionStorage.getItem("iot_auth_token") || "";
       this.wsClient.sendJson({
         id_vehiculo: CONFIG.VEHICULO_ID,
-        id_comando: Number(cmdInfo.id_comando),
-        codigo: cmdInfo.nombre,
+        id_comando: Number(hwCmd.id_comando),
+        codigo: hwCmd.nombre,
         token: currentToken,
         origen: "DEMO-PASO"
       });
@@ -1081,16 +1167,19 @@ class PlatformApp {
     this.setDemoLockState(true, selectedDemoId);
     limpiarDestellosVisuales();
 
-    // Secuencia DEMO calibrada: 1200 ms por movimiento y 600 ms de freno DETENER entre pasos
+    // Secuencia DEMO completa con TODOS los movimientos (1200 ms por movimiento y 600 ms de freno DETENER)
     const secuenciaPasos = [
-      { orden: 1, key: "ADELANTE",        duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 2, key: "GIRAR_DERECHA",   duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 3, key: "GIRAR_IZQUIERDA", duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 4, key: "SUBIR_BRAZO",     duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 5, key: "BAJAR_BRAZO",     duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 6, key: "LUZ_LED",         duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 7, key: "ACTIVAR_SONIDO",  duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 8, key: "ATRAS",           duracion_ms: 1200, pausa_ms: 600 }
+      { orden: 1,  key: "ADELANTE",          duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 2,  key: "ATRAS",             duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 3,  key: "GIRAR_IZQUIERDA",   duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 4,  key: "GIRAR_DERECHA",     duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 5,  key: "MOVER_IZQUIERDA",   duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 6,  key: "MOVER_DERECHA",     duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 7,  key: "SUBIR_BRAZO",       duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 8,  key: "BAJAR_BRAZO",       duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 9,  key: "LUZ_LED",           duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 10, key: "ACTIVAR_SONIDO",    duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 11, key: "DESACTIVAR_SONIDO", duracion_ms: 1200, pausa_ms: 600 }
     ];
 
     try {
