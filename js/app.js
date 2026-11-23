@@ -514,20 +514,24 @@ class PlatformApp {
 
     let pressStartedAt = 0;
 
+    let pressSequenceId = 0;
+
     const releaseContinuousCommand = () => {
       if (this.joystick?.isDragging) return;
       if (this.comandoActivo !== null) {
+        const mySeq = pressSequenceId;
         this.comandoActivo = null;
         if (this.activePulseTimer) {
           clearTimeout(this.activePulseTimer);
           this.activePulseTimer = null;
         }
         const elapsed = Date.now() - pressStartedAt;
-        const minHoldMs = 350;
+        // Garantizar que la petición haya llegado a AWS y el relevador/optoacoplador dure al menos 650 ms activo
+        const minHoldMs = 650;
         if (elapsed < minHoldMs) {
           this.activePulseTimer = window.setTimeout(() => {
             this.activePulseTimer = null;
-            if (!this.isDemoRunning && this.comandoActivo === null) {
+            if (!this.isDemoRunning && this.comandoActivo === null && pressSequenceId === mySeq) {
               this.dispatchCommand("DETENER", true);
             }
           }, minHoldMs - elapsed);
@@ -555,76 +559,62 @@ class PlatformApp {
 
       btn.addEventListener("contextmenu", (e) => e.preventDefault());
 
-      btn.addEventListener("pointerdown", (e) => {
+      btn.addEventListener("pointerdown", async (e) => {
         if (e.button !== undefined && e.button !== 0) return;
         e.preventDefault();
 
         const codigo = getCodigo();
         if (!codigo || !this.canExecuteCommand(codigo)) return;
 
+        pressSequenceId++;
+        const currentSeq = pressSequenceId;
+
         // 1. Botones de acción puntual (LUZ_LED, ACTIVAR_SONIDO, DESACTIVAR_SONIDO, CONTROL_REMOTO):
-        //    Pulso controlado de 350 ms + DETENER automático + debounce contra doble clic.
+        //    Espera a que el comando llegue a AWS y mantiene el pulso 650 ms antes de enviar DETENER.
         if (SINGLE_PULSE_COMMANDS.has(codigo)) {
           if (this.isPulseLocked) return;
           this.isPulseLocked = true;
 
-          if (this.comandoActivo !== null) {
-            this.comandoActivo = null;
-          }
+          this.comandoActivo = null;
           if (this.activePulseTimer) {
             clearTimeout(this.activePulseTimer);
             this.activePulseTimer = null;
           }
 
           if (codigo === "ACTIVAR_SONIDO") {
-            this.emitClaxonSound();
-            // Solo activar: si el sonido ya está activo, actualizar UI sin volver a pulsar el botón toggle físico
-            if (this.soundEnabled) {
-              this.updateCommandUiOnly("ACTIVAR_SONIDO");
-              this.activePulseTimer = window.setTimeout(() => {
-                this.activePulseTimer = null;
-                this.isPulseLocked = false;
-              }, 350);
-              return;
-            }
             this.soundEnabled = true;
+            this.emitClaxonSound();
           } else if (codigo === "DESACTIVAR_SONIDO") {
-            this.stopClaxonSound();
-            // Solo desactivar: si el sonido ya está apagado, actualizar UI sin pulsar el botón toggle físico
-            if (!this.soundEnabled) {
-              this.updateCommandUiOnly("DESACTIVAR_SONIDO");
-              this.activePulseTimer = window.setTimeout(() => {
-                this.activePulseTimer = null;
-                this.isPulseLocked = false;
-              }, 350);
-              return;
-            }
             this.soundEnabled = false;
+            this.stopClaxonSound();
           }
 
-          this.dispatchCommand(codigo, false);
+          await this.dispatchCommand(codigo, false);
           this.activePulseTimer = window.setTimeout(() => {
             this.activePulseTimer = null;
             this.isPulseLocked = false;
-            if (!this.isDemoRunning && this.comandoActivo === null) {
+            if (!this.isDemoRunning && this.comandoActivo === null && pressSequenceId === currentSeq) {
               this.dispatchCommand("DETENER", true);
             }
-          }, 750);
+          }, 650);
           return;
         }
 
         // 2. Comandos continuos (ADELANTE, ATRAS, GIRAR_IZQUIERDA, GIRAR_DERECHA, MOVER_*, *_BRAZO):
-        //    Si comandoActivo !== codigo, guardar comandoActivo = codigo y enviar 1 sola vez.
         if (this.activePulseTimer) {
           clearTimeout(this.activePulseTimer);
           this.activePulseTimer = null;
-          this.isPulseLocked = false;
         }
+        this.isPulseLocked = false;
 
         if (this.comandoActivo !== codigo) {
           this.comandoActivo = codigo;
           pressStartedAt = Date.now();
-          this.dispatchCommand(codigo, false);
+          await this.dispatchCommand(codigo, false);
+          // Reiniciar reloj al momento en que el servidor recibió el comando para que nunca dure menos de 650 ms
+          if (this.comandoActivo === codigo) {
+            pressStartedAt = Date.now();
+          }
         }
       });
 
@@ -1093,12 +1083,7 @@ class PlatformApp {
       }
     };
 
-    // Si es DETENER prioritario, ejecutar de inmediato sin esperar cola previa
-    if (isPriority || normalized === "DETENER") {
-      this._dispatchChain = runSend();
-      return this._dispatchChain;
-    }
-
+    // Encolar SIEMPRE en orden estricto para que DETENER jamás compita en paralelo ni corte un comando en 0 ms
     this._dispatchChain = this._dispatchChain.then(runSend, runSend);
     return this._dispatchChain;
   }
