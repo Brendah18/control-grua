@@ -50,10 +50,12 @@ export class VirtualJoystick {
     window.addEventListener("mousemove", (e) => this.handleMouseMove(e));
     window.addEventListener("mouseup", () => this.handleMouseUp());
 
-    // Seguridad al perder foco o cambiar de pestaña en el celular
-    window.addEventListener("blur", () => this.forceStop());
+    // Seguridad al perder foco o cambiar de pestaña en el celular (solo si se estaba arrastrando el joystick)
+    window.addEventListener("blur", () => {
+      if (this.isDragging) this.forceStop();
+    });
     document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
+      if (document.hidden && this.isDragging) {
         this.forceStop();
       }
     });

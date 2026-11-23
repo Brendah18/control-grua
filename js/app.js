@@ -6,11 +6,11 @@
  * - 3. Control de DEMO con Cancelación Instantánea y Prevención de Concurrencia
  */
 
-import { CONFIG } from "./config.js?v=5.0";
-import { api } from "./api.js?v=5.0";
-import { IoTWebSocketClient, destelloVisualControl, limpiarDestellosVisuales } from "./websocket.js?v=5.0";
-import { VirtualJoystick } from "./joystick.js?v=5.0";
-import { monitoreoInstance } from "./monitoreo.js?v=5.0";
+import { CONFIG } from "./config.js?v=6.7";
+import { api } from "./api.js?v=6.7";
+import { IoTWebSocketClient, destelloVisualControl, limpiarDestellosVisuales } from "./websocket.js?v=6.7";
+import { VirtualJoystick } from "./joystick.js?v=6.7";
+import { monitoreoInstance } from "./monitoreo.js?v=6.7";
 
 class PlatformApp {
   constructor() {
@@ -512,28 +512,14 @@ class PlatformApp {
     });
 
     // =========================================================================
-    // CONTROL LIMPIO DE LOS 12 BOTONES + DETENER (Cero spam de DETENER en clics)
-    // - Un clic normal envía únicamente el comando seleccionado (el ESP8266
-    //   ejecuta el pulso completo y libera automáticamente a 0x0000).
-    // - Si el usuario mantiene presionado un botón continuo por más de 800 ms,
-    //   al soltar envía DETENER.
+    // CONTROL DIRECTO DE LOS 12 BOTONES (Cero envío automático de DETENER al soltar)
+    // - Cada botón (01..12) envía únicamente su propio comando a AWS y al ESP8266.
+    // - El ESP8266 mantiene encendido el módulo optoacoplador durante su tiempo
+    //   completo y lo apaga a 0x0000 automáticamente al finalizar.
+    // - DETENER solo se envía cuando el usuario presiona el botón DETENER o
+    //   suelta el Joystick circular al centro.
     // =========================================================================
-    let holdStartMs = 0;
-
-    const releaseLongHoldOnly = () => {
-      if (this.joystick?.isDragging) return;
-      if (this.comandoActivo === null) return;
-      const heldDuration = Date.now() - holdStartMs;
-      this.comandoActivo = null;
-      // Solo enviar DETENER al soltar si fue una pulsación larga mantenida (>= 800 ms)
-      if (heldDuration >= 800 && !this.isDemoRunning) {
-        this.dispatchCommand("DETENER", true);
-      }
-    };
-
-    window.addEventListener("pointerup", releaseLongHoldOnly);
-    window.addEventListener("pointercancel", releaseLongHoldOnly);
-    window.addEventListener("blur", releaseLongHoldOnly);
+    let lastCmdSentAt = 0;
 
     const bindUnifiedControl = (btn, fallbackCmd) => {
       if (!btn) return;
@@ -548,77 +534,46 @@ class PlatformApp {
 
       btn.addEventListener("contextmenu", (e) => e.preventDefault());
 
-      btn.addEventListener("pointerdown", async (e) => {
-        if (e.button !== undefined && e.button !== 0) return;
+      const handleButtonTrigger = async (e) => {
+        if (e.type === "pointerdown" && e.button !== undefined && e.button !== 0) return;
         e.preventDefault();
+
+        const now = Date.now();
+        if (now - lastCmdSentAt < 220) return;
+        lastCmdSentAt = now;
 
         const codigo = getCodigo();
         if (!codigo || !this.canExecuteCommand(codigo)) return;
 
-        // 1. Botones auxiliares (LUZ_LED, ACTIVAR_SONIDO, DESACTIVAR_SONIDO, CONTROL_REMOTO / VELOCIDAD)
-        if (SINGLE_PULSE_COMMANDS.has(codigo)) {
-          if (this.isPulseLocked) return;
-          this.isPulseLocked = true;
-          this.comandoActivo = null;
+        this.comandoActivo = codigo;
 
-          if (this.activePulseTimer) {
-            clearTimeout(this.activePulseTimer);
-            this.activePulseTimer = null;
+        if (codigo === "CONTROL_REMOTO") {
+          this.highSpeedEnabled = !this.highSpeedEnabled;
+          const targetSpeed = this.highSpeedEnabled ? 100 : 70;
+          const lblPower = document.getElementById("lbl-joy-power");
+          if (lblPower) lblPower.textContent = `${targetSpeed}%`;
+          api.ajustarVelocidad(targetSpeed, CONFIG.VEHICULO_ID);
+        } else if (codigo === "ACTIVAR_SONIDO") {
+          this.emitClaxonSound();
+          if (this.soundEnabled) {
+            this.updateCommandUiOnly("ACTIVAR_SONIDO");
+            return;
           }
-
-          if (codigo === "CONTROL_REMOTO") {
-            this.highSpeedEnabled = !this.highSpeedEnabled;
-            const targetSpeed = this.highSpeedEnabled ? 100 : 70;
-            const lblPower = document.getElementById("lbl-joy-power");
-            if (lblPower) lblPower.textContent = `${targetSpeed}%`;
-            api.ajustarVelocidad(targetSpeed, CONFIG.VEHICULO_ID);
-          } else if (codigo === "ACTIVAR_SONIDO") {
-            this.emitClaxonSound();
-            if (this.soundEnabled) {
-              this.updateCommandUiOnly("ACTIVAR_SONIDO");
-              this.activePulseTimer = window.setTimeout(() => {
-                this.activePulseTimer = null;
-                this.isPulseLocked = false;
-              }, 350);
-              return;
-            }
-            this.soundEnabled = true;
-          } else if (codigo === "DESACTIVAR_SONIDO") {
-            this.stopClaxonSound();
-            if (!this.soundEnabled) {
-              this.updateCommandUiOnly("DESACTIVAR_SONIDO");
-              this.activePulseTimer = window.setTimeout(() => {
-                this.activePulseTimer = null;
-                this.isPulseLocked = false;
-              }, 350);
-              return;
-            }
-            this.soundEnabled = false;
+          this.soundEnabled = true;
+        } else if (codigo === "DESACTIVAR_SONIDO") {
+          this.stopClaxonSound();
+          if (!this.soundEnabled) {
+            this.updateCommandUiOnly("DESACTIVAR_SONIDO");
+            return;
           }
-
-          this.activePulseTimer = window.setTimeout(() => {
-            this.activePulseTimer = null;
-            this.isPulseLocked = false;
-          }, 350);
-
-          await this.dispatchCommand(codigo, false);
-          return;
+          this.soundEnabled = false;
         }
 
-        // 2. Botones de movimiento (01..08): envía el comando limpio sin cortarlo con DETENER
-        this.comandoActivo = codigo;
-        holdStartMs = Date.now();
         await this.dispatchCommand(codigo, false);
-      });
+      };
 
-      btn.addEventListener("pointerup", (e) => {
-        e.preventDefault();
-        releaseLongHoldOnly();
-      });
-
-      btn.addEventListener("pointercancel", () => {
-        releaseLongHoldOnly();
-      });
+      btn.addEventListener("pointerdown", handleButtonTrigger);
+      btn.addEventListener("click", handleButtonTrigger);
     };
 
     // Cruceta D-Pad (01-ADELANTE, 02-ATRAS, 03-GIRAR_IZQUIERDA, 04-GIRAR_DERECHA)
