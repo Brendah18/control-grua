@@ -1182,48 +1182,48 @@ body.viewport-app {
     font-size: 0.74rem !important;
   }
   .joystick-zone {
-    width: 88px !important;
-    height: 88px !important;
+    width: 104px !important;
+    height: 104px !important;
   }
   .joy-ring-guide {
-    inset: 13px !important;
+    inset: 15px !important;
   }
   .joystick-thumb {
-    width: 34px !important;
-    height: 34px !important;
-    left: calc(50% - 17px) !important;
-    top: calc(50% - 17px) !important;
-    font-size: 0.9rem !important;
+    width: 38px !important;
+    height: 38px !important;
+    left: calc(50% - 19px) !important;
+    top: calc(50% - 19px) !important;
+    font-size: 1rem !important;
   }
   .dpad-cross-wrap {
-    padding: 3px !important;
-    gap: 2px !important;
+    padding: 4px !important;
+    gap: 3px !important;
   }
   .dpad-row-mid {
-    gap: 2px !important;
+    gap: 3px !important;
   }
   .btn-dpad-pastel {
-    width: 30px !important;
-    height: 27px !important;
-    font-size: 0.78rem !important;
-    border-radius: 7px !important;
+    width: 35px !important;
+    height: 32px !important;
+    font-size: 0.86rem !important;
+    border-radius: 8px !important;
   }
   .telemetry-box {
-    padding: 2px 4px !important;
+    padding: 3px 5px !important;
   }
   .telemetry-label {
-    font-size: 0.54rem !important;
+    font-size: 0.56rem !important;
   }
   .telemetry-val {
-    font-size: 0.74rem !important;
+    font-size: 0.8rem !important;
   }
   .telemetry-val-highlight {
-    font-size: 0.72rem !important;
+    font-size: 0.78rem !important;
   }
   .btn-stop-huge {
-    padding: 0.3rem 0.45rem !important;
-    font-size: 0.74rem !important;
-    border-radius: 9px !important;
+    padding: 0.38rem 0.5rem !important;
+    font-size: 0.8rem !important;
+    border-radius: 10px !important;
   }
   .card-functions {
     flex: 1 1 auto !important;
@@ -1254,20 +1254,203 @@ body.viewport-app {
   }
 }
 
-/* Responsividad para pantallas mayores (Tablets y Desktop) */
+/* Responsividad para pantallas medianas (Tablets verticales 769px - 991px) */
+@media (min-width: 769px) and (max-width: 991px) {
+  .card-direction .card-body-clean {
+    gap: 0.9rem !important;
+    padding: 0.35rem 0.25rem;
+  }
+  .card-direction .joystick-zone {
+    width: 150px;
+    height: 150px;
+    border-width: 3px;
+  }
+  .card-direction .joy-ring-guide {
+    inset: 22px;
+  }
+  .card-direction .joystick-thumb {
+    --joy-thumb-size: 54px;
+    width: var(--joy-thumb-size);
+    height: var(--joy-thumb-size);
+    left: calc(50% - var(--joy-thumb-size) / 2);
+    top: calc(50% - var(--joy-thumb-size) / 2);
+    font-size: 1.3rem;
+  }
+  .card-direction .dpad-cross-wrap {
+    padding: 8px;
+    gap: 5px;
+    border-radius: 16px;
+  }
+  .card-direction .dpad-row-mid {
+    gap: 5px;
+  }
+  .card-direction .btn-dpad-pastel {
+    width: 44px;
+    height: 40px;
+    font-size: 1.05rem;
+    border-radius: 11px;
+  }
+  .card-direction .btn-dpad-pastel .dpad-num {
+    font-size: 0.62rem;
+  }
+  .card-direction .telemetry-box {
+    padding: 0.35rem 0.5rem;
+    border-radius: 11px;
+  }
+  .card-direction .telemetry-label {
+    font-size: 0.68rem;
+  }
+  .card-direction .telemetry-val,
+  .card-direction .telemetry-val-highlight {
+    font-size: 0.98rem;
+  }
+  .card-direction .btn-stop-huge {
+    padding: 0.55rem 0.8rem;
+    font-size: 0.96rem;
+    border-radius: 12px;
+  }
+}
+
+/* Responsividad para pantallas mayores (Tablets horizontales y Desktop >= 992px) */
 @media (min-width: 992px) {
   .control-grid-layout {
     display: grid;
     grid-template-columns: 1.05fr 1fr;
     grid-template-rows: 1fr auto;
-    gap: 0.5rem;
+    gap: 0.55rem;
   }
   .card-direction {
     grid-column: 1;
     grid-row: 1 / span 2;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
+    padding: 0.75rem 1rem;
+  }
+  .card-direction .card-header-clean {
+    flex-shrink: 0;
+    margin-bottom: 0.55rem;
+    padding-bottom: 0.4rem;
+  }
+  .card-direction .header-icon-box {
+    width: 28px;
+    height: 28px;
+    font-size: 0.95rem;
+    border-radius: 9px;
+  }
+  .card-direction .header-title {
+    font-size: 0.96rem;
+  }
+  .card-direction .badge-soft {
+    font-size: 0.78rem;
+    padding: 0.2rem 0.65rem;
+  }
+  .card-direction .card-body-clean {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr auto;
+    align-items: center;
+    justify-items: center;
+    gap: clamp(0.75rem, 1.8vh, 1.35rem) clamp(0.85rem, 1.8vw, 1.5rem) !important;
+    padding: 0.35rem 0.35rem 0.15rem;
+  }
+  .card-direction .joystick-wrapper {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card-direction .joystick-zone {
+    --joy-size: clamp(165px, min(33vh, 22vw), 305px);
+    width: var(--joy-size);
+    height: var(--joy-size);
+    border-width: 3.5px;
+    box-shadow: 0 0 24px rgba(236, 72, 153, 0.34), inset 0 0 20px rgba(168, 85, 247, 0.26);
+  }
+  .card-direction .joy-ring-guide {
+    inset: 15%;
+    border-width: 2px;
+  }
+  .card-direction .joy-cross-guide::before {
+    left: 14px;
+    right: 14px;
+  }
+  .card-direction .joy-cross-guide::after {
+    top: 14px;
+    bottom: 14px;
+  }
+  .card-direction .joystick-thumb {
+    --joy-thumb-size: clamp(62px, min(11.5vh, 7.6vw), 108px);
+    width: var(--joy-thumb-size);
+    height: var(--joy-thumb-size);
+    left: calc(50% - var(--joy-thumb-size) / 2);
+    top: calc(50% - var(--joy-thumb-size) / 2);
+    font-size: clamp(1.5rem, 2.9vh, 2.35rem);
+  }
+  .card-direction .dpad-cross-wrap {
+    grid-column: 2;
+    grid-row: 1;
+    padding: clamp(10px, 1.6vh, 16px);
+    gap: clamp(6px, 1.05vh, 10px);
+    border-radius: 22px;
+    border-width: 2px;
+  }
+  .card-direction .dpad-row-mid {
+    gap: clamp(6px, 1.05vh, 10px);
+  }
+  .card-direction .btn-dpad-pastel {
+    width: clamp(56px, min(10vh, 6.4vw), 92px);
+    height: clamp(52px, min(9.2vh, 5.9vw), 84px);
+    border-radius: 15px;
+    border-width: 2px;
+    font-size: clamp(1.25rem, 2.35vh, 1.85rem);
+    gap: 2px;
+  }
+  .card-direction .btn-dpad-pastel .dpad-num {
+    font-size: clamp(0.68rem, 1.2vh, 0.9rem);
+  }
+  .card-direction .telemetry-stop-column {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    gap: clamp(0.45rem, 1.05vh, 0.75rem);
+  }
+  .card-direction .telemetry-stop-column .row {
+    margin-bottom: 0 !important;
+    --bs-gutter-x: 0.65rem;
+    --bs-gutter-y: 0.65rem;
+  }
+  .card-direction .telemetry-box {
+    padding: clamp(0.42rem, 1.05vh, 0.78rem) 0.85rem;
+    border-radius: 13px;
+    border-width: 1.5px;
+  }
+  .card-direction .direction-box {
+    margin-bottom: 0 !important;
+    padding: clamp(0.45rem, 1.1vh, 0.82rem) 0.85rem;
+  }
+  .card-direction .telemetry-label {
+    font-size: clamp(0.7rem, 1.2vh, 0.86rem);
+    margin-bottom: 2px;
+  }
+  .card-direction .telemetry-val {
+    font-size: clamp(1.08rem, 1.95vh, 1.42rem);
+    line-height: 1.15;
+  }
+  .card-direction .telemetry-val-highlight {
+    font-size: clamp(1.04rem, 1.9vh, 1.38rem);
+    line-height: 1.15;
+  }
+  .card-direction .btn-stop-huge {
+    padding: clamp(0.68rem, 1.55vh, 1.12rem) 1rem;
+    font-size: clamp(1rem, 1.85vh, 1.3rem);
+    border-radius: 14px;
+    letter-spacing: 1px;
   }
   .card-functions {
     grid-column: 2;
@@ -1278,5 +1461,33 @@ body.viewport-app {
   .card-demo {
     grid-column: 2;
     grid-row: 2;
+  }
+}
+
+/* Ajuste seguro para pantallas desktop de baja altura (ej. 1024x600 o ventanas reducidas) */
+@media (min-width: 992px) and (max-height: 680px) {
+  .card-direction .card-body-clean {
+    gap: 0.55rem 0.9rem !important;
+    padding: 0.2rem 0.2rem 0.1rem;
+  }
+  .card-direction .joystick-zone {
+    --joy-size: clamp(148px, min(27vh, 19vw), 195px);
+  }
+  .card-direction .joystick-thumb {
+    --joy-thumb-size: clamp(54px, min(9.5vh, 6.5vw), 70px);
+  }
+  .card-direction .btn-dpad-pastel {
+    width: clamp(46px, min(8vh, 5.5vw), 62px);
+    height: clamp(42px, min(7.3vh, 5vw), 56px);
+    font-size: 1.15rem;
+    border-radius: 12px;
+  }
+  .card-direction .telemetry-box,
+  .card-direction .direction-box {
+    padding: 0.3rem 0.6rem;
+  }
+  .card-direction .btn-stop-huge {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.96rem;
   }
 }
