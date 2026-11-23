@@ -468,6 +468,11 @@ class PlatformApp {
     // Botón Prioritario DETENER (Aborta DEMO si está corriendo y detiene motores al instante)
     const stopButtons = [this.ui.btnStopPriority, this.ui.btnDpadStop].filter(Boolean);
     let lastStopClickAt = 0;
+    let pressSeq = 0;
+    let isSendingStart = false;
+    let userReleasedWhileSending = false;
+    let startConfirmedAt = 0;
+
     stopButtons.forEach((btn) => {
       const handlePriorityStop = async (e) => {
         if (e.type === "pointerdown" && e.button !== undefined && e.button !== 0) return;
@@ -476,6 +481,9 @@ class PlatformApp {
         if (now - lastStopClickAt < 180) return;
         lastStopClickAt = now;
 
+        pressSeq++;
+        isSendingStart = false;
+        userReleasedWhileSending = false;
         this.comandoActivo = null;
         if (this.activePulseTimer) {
           clearTimeout(this.activePulseTimer);
@@ -504,7 +512,7 @@ class PlatformApp {
     });
 
     // =========================================================================
-    // REPARACIÓN DE EVENTOS UNIFICADOS (Pointer Events + comandoActivo + Debounce 350ms)
+    // REPARACIÓN DE EVENTOS UNIFICADOS (Pointer Events + Hold Real Post-Red)
     // =========================================================================
     const SINGLE_PULSE_COMMANDS = new Set([
       "LUZ_LED",
@@ -513,30 +521,35 @@ class PlatformApp {
       "CONTROL_REMOTO"
     ]);
 
-    let pressStartedAt = 0;
-    let pressSeq = 0;
-
     const releaseContinuousCommand = () => {
       if (this.joystick?.isDragging) return;
-      if (this.comandoActivo !== null) {
-        const seqAtRelease = pressSeq;
-        this.comandoActivo = null;
-        if (this.activePulseTimer) {
-          clearTimeout(this.activePulseTimer);
+      if (this.comandoActivo === null) return;
+
+      // Si el usuario soltó el botón mientras la petición de inicio aún viaja a AWS,
+      // marcar para que en cuanto AWS confirme el inicio corra el pulso completo de 450 ms y luego envíe DETENER.
+      if (isSendingStart) {
+        userReleasedWhileSending = true;
+        return;
+      }
+
+      const seqAtRelease = pressSeq;
+      this.comandoActivo = null;
+      if (this.activePulseTimer) {
+        clearTimeout(this.activePulseTimer);
+        this.activePulseTimer = null;
+      }
+
+      const elapsedSinceAck = Date.now() - startConfirmedAt;
+      const minHoldMs = this.highSpeedEnabled ? 600 : 450;
+      if (elapsedSinceAck < minHoldMs) {
+        this.activePulseTimer = window.setTimeout(() => {
           this.activePulseTimer = null;
-        }
-        const elapsed = Date.now() - pressStartedAt;
-        const minHoldMs = this.highSpeedEnabled ? 550 : 380;
-        if (elapsed < minHoldMs) {
-          this.activePulseTimer = window.setTimeout(() => {
-            this.activePulseTimer = null;
-            if (!this.isDemoRunning && this.comandoActivo === null && pressSeq === seqAtRelease) {
-              this.dispatchCommand("DETENER", true);
-            }
-          }, minHoldMs - elapsed);
-        } else if (!this.isDemoRunning) {
-          this.dispatchCommand("DETENER", true);
-        }
+          if (!this.isDemoRunning && this.comandoActivo === null && pressSeq === seqAtRelease) {
+            this.dispatchCommand("DETENER", true);
+          }
+        }, minHoldMs - elapsedSinceAck);
+      } else if (!this.isDemoRunning) {
+        this.dispatchCommand("DETENER", true);
       }
     };
 
@@ -573,9 +586,9 @@ class PlatformApp {
           if (this.isPulseLocked) return;
           this.isPulseLocked = true;
 
-          if (this.comandoActivo !== null) {
-            this.comandoActivo = null;
-          }
+          isSendingStart = false;
+          userReleasedWhileSending = false;
+          this.comandoActivo = null;
           if (this.activePulseTimer) {
             clearTimeout(this.activePulseTimer);
             this.activePulseTimer = null;
@@ -618,7 +631,7 @@ class PlatformApp {
             if (!this.isDemoRunning && this.comandoActivo === null && pressSeq === mySeq) {
               this.dispatchCommand("DETENER", true);
             }
-          }, 550);
+          }, 600);
           return;
         }
 
@@ -626,15 +639,31 @@ class PlatformApp {
         if (this.activePulseTimer) {
           clearTimeout(this.activePulseTimer);
           this.activePulseTimer = null;
-          this.isPulseLocked = false;
         }
+        this.isPulseLocked = false;
 
         if (this.comandoActivo !== codigo) {
           this.comandoActivo = codigo;
-          pressStartedAt = Date.now();
+          isSendingStart = true;
+          userReleasedWhileSending = false;
           await this.dispatchCommand(codigo, false);
-          if (this.comandoActivo === codigo) {
-            pressStartedAt = Date.now();
+
+          if (pressSeq !== mySeq) return;
+          isSendingStart = false;
+          startConfirmedAt = Date.now();
+
+          // Si el usuario ya había soltado el botón mientras viajaba la petición a AWS,
+          // mantener el movimiento activo durante minHoldMs reales a partir de este instante y luego enviar DETENER.
+          if (userReleasedWhileSending) {
+            userReleasedWhileSending = false;
+            this.comandoActivo = null;
+            const minHoldMs = this.highSpeedEnabled ? 600 : 450;
+            this.activePulseTimer = window.setTimeout(() => {
+              this.activePulseTimer = null;
+              if (!this.isDemoRunning && this.comandoActivo === null && pressSeq === mySeq) {
+                this.dispatchCommand("DETENER", true);
+              }
+            }, minHoldMs);
           }
         }
       });
