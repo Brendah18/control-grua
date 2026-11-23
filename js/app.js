@@ -512,14 +512,25 @@ class PlatformApp {
     });
 
     // =========================================================================
-    // CONTROL DIRECTO DE LOS 12 BOTONES (Cero envío automático de DETENER al soltar)
-    // - Cada botón (01..12) envía únicamente su propio comando a AWS y al ESP8266.
-    // - El ESP8266 mantiene encendido el módulo optoacoplador durante su tiempo
-    //   completo y lo apaga a 0x0000 automáticamente al finalizar.
-    // - DETENER solo se envía cuando el usuario presiona el botón DETENER o
-    //   suelta el Joystick circular al centro.
+    // CONTROL PASO A PASO CONFORME SE TOCA EL BOTÓN (Y CONTINUO SI SE MANTIENE)
+    // - Cada toque envía un pulso corto (~480 ms en el ESP8266) sin irse rápido.
+    // - Si el usuario mantiene el dedo presionado, repite el pulso suavemente
+    //   mientras siga tocando el botón y se detiene al soltar.
     // =========================================================================
     let lastCmdSentAt = 0;
+    let holdRepeatTimer = null;
+
+    const stopHoldRepeat = () => {
+      if (holdRepeatTimer) {
+        clearInterval(holdRepeatTimer);
+        holdRepeatTimer = null;
+      }
+      this.comandoActivo = null;
+    };
+
+    window.addEventListener("pointerup", stopHoldRepeat);
+    window.addEventListener("pointercancel", stopHoldRepeat);
+    window.addEventListener("blur", stopHoldRepeat);
 
     const bindUnifiedControl = (btn, fallbackCmd) => {
       if (!btn) return;
@@ -545,6 +556,7 @@ class PlatformApp {
         const codigo = getCodigo();
         if (!codigo || !this.canExecuteCommand(codigo)) return;
 
+        stopHoldRepeat();
         this.comandoActivo = codigo;
 
         if (codigo === "CONTROL_REMOTO") {
@@ -553,6 +565,8 @@ class PlatformApp {
           const lblPower = document.getElementById("lbl-joy-power");
           if (lblPower) lblPower.textContent = `${targetSpeed}%`;
           api.ajustarVelocidad(targetSpeed, CONFIG.VEHICULO_ID);
+          await this.dispatchCommand(codigo, false);
+          return;
         } else if (codigo === "ACTIVAR_SONIDO") {
           this.emitClaxonSound();
           if (this.soundEnabled) {
@@ -560,6 +574,8 @@ class PlatformApp {
             return;
           }
           this.soundEnabled = true;
+          await this.dispatchCommand(codigo, false);
+          return;
         } else if (codigo === "DESACTIVAR_SONIDO") {
           this.stopClaxonSound();
           if (!this.soundEnabled) {
@@ -567,13 +583,30 @@ class PlatformApp {
             return;
           }
           this.soundEnabled = false;
+          await this.dispatchCommand(codigo, false);
+          return;
+        } else if (codigo === "LUZ_LED") {
+          await this.dispatchCommand(codigo, false);
+          return;
         }
 
+        // Movimientos (01..08): un paso corto por toque, y si mantiene presionado repite cada 520 ms
         await this.dispatchCommand(codigo, false);
+        if (e.type === "pointerdown" && this.comandoActivo === codigo) {
+          holdRepeatTimer = window.setInterval(() => {
+            if (this.comandoActivo === codigo && !this.isDemoRunning) {
+              this.dispatchCommand(codigo, false);
+            } else {
+              stopHoldRepeat();
+            }
+          }, 520);
+        }
       };
 
       btn.addEventListener("pointerdown", handleButtonTrigger);
-      btn.addEventListener("click", handleButtonTrigger);
+      btn.addEventListener("pointerup", stopHoldRepeat);
+      btn.addEventListener("pointercancel", stopHoldRepeat);
+      btn.addEventListener("pointerleave", stopHoldRepeat);
     };
 
     // Cruceta D-Pad (01-ADELANTE, 02-ATRAS, 03-GIRAR_IZQUIERDA, 04-GIRAR_DERECHA)
@@ -879,23 +912,9 @@ class PlatformApp {
     destelloVisualControl(name, 900);
   }
 
-  resolveHardwareCommand(normalizedKey, defaultCmdInfo) {
-    // MOVER_IZQUIERDA y MOVER_DERECHA accionan el canal físico confirmado de izquierda/derecha en el ESP8266
-    // manteniendo el nombre e iluminación de MOVER_IZQUIERDA / MOVER_DERECHA en la interfaz web.
-    if (normalizedKey === "MOVER_IZQUIERDA") {
-      return (
-        this.commandCatalog.get("GIRAR_IZQUIERDA") ||
-        CONFIG.DEFAULT_COMMAND_MAP.GIRAR_IZQUIERDA ||
-        defaultCmdInfo
-      );
-    }
-    if (normalizedKey === "MOVER_DERECHA") {
-      return (
-        this.commandCatalog.get("GIRAR_DERECHA") ||
-        CONFIG.DEFAULT_COMMAND_MAP.GIRAR_DERECHA ||
-        defaultCmdInfo
-      );
-    }
+  resolveHardwareCommand(_normalizedKey, defaultCmdInfo) {
+    // Enviar cada comando con su código real (MOVER_IZQUIERDA = 5 -> canal 12 carrito completo,
+    // MOVER_DERECHA = 6 -> canal 10 carrito completo, GIRAR_IZQ/DER = 3/4 -> canales 4/1 garra)
     return defaultCmdInfo;
   }
 
@@ -1180,8 +1199,18 @@ class PlatformApp {
         await this.actualizarEstadoDemoSinHistorial(cmdInfo);
         destelloVisualControl(cmdInfo.nombre, paso.duracion_ms + 100);
 
-        // 2. Esperar duración exacta del paso (se aborta en 0 ms si presionan Cancelar o DETENER)
+        // 2. Mantener activo el movimiento durante toda la duración del paso en la DEMO
+        const isSinglePulseDemoStep = ["LUZ_LED", "ACTIVAR_SONIDO", "DESACTIVAR_SONIDO", "CONTROL_REMOTO"].includes(paso.key);
+        let demoKeepAlive = null;
+        if (!isSinglePulseDemoStep && paso.duracion_ms > 500) {
+          demoKeepAlive = window.setInterval(() => {
+            if (!signal.aborted && this.isDemoRunning) {
+              this.actualizarEstadoDemoSinHistorial(cmdInfo);
+            }
+          }, 420);
+        }
         const abortadoEnMov = await this.sleepCancelable(paso.duracion_ms, signal);
+        if (demoKeepAlive) clearInterval(demoKeepAlive);
         if (abortadoEnMov || signal.aborted || !this.isDemoRunning) break;
 
         // 3. Pausa real en DETENER entre movimientos (apaga todos los botones antes del siguiente)
