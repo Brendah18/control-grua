@@ -515,27 +515,16 @@ class PlatformApp {
 
     let pressStartedAt = 0;
 
-    const STEP_TURN_COMMANDS = new Set([
-      "GIRAR_IZQUIERDA",
-      "GIRAR_DERECHA",
-      "MOVER_IZQUIERDA",
-      "MOVER_DERECHA"
-    ]);
-
     const releaseContinuousCommand = () => {
       if (this.joystick?.isDragging) return;
       if (this.comandoActivo !== null) {
-        const prevCmd = this.comandoActivo;
         this.comandoActivo = null;
         if (this.activePulseTimer) {
           clearTimeout(this.activePulseTimer);
           this.activePulseTimer = null;
         }
         const elapsed = Date.now() - pressStartedAt;
-        // Giros/movimientos laterales cortos (210 ms normal / 380 ms alta) para avanzar toque por toque sin irse de jalón
-        const minHoldMs = STEP_TURN_COMMANDS.has(prevCmd)
-          ? (this.highSpeedEnabled ? 380 : 210)
-          : (this.highSpeedEnabled ? 500 : 320);
+        const minHoldMs = this.highSpeedEnabled ? 550 : 380;
         if (elapsed < minHoldMs) {
           this.activePulseTimer = window.setTimeout(() => {
             this.activePulseTimer = null;
@@ -1222,18 +1211,17 @@ class PlatformApp {
     this.setDemoLockState(true, selectedDemoId);
     limpiarDestellosVisuales();
 
-    // Secuencia DEMO completa: ADELANTE y ATRAS con el mismo tiempo exacto (1200 ms),
-    // SUBIR_BRAZO y BAJAR_BRAZO con recorrido completo (3200 ms), e incluye VELOCIDAD (movimiento 12)
+    // Secuencia DEMO completa: movimientos continuos (1200 ms), brazo con recorrido completo (3200 ms), y Velocidad
     const secuenciaPasos = [
       { orden: 1,  key: "ADELANTE",          duracion_ms: 1200, pausa_ms: 600 },
       { orden: 2,  key: "ATRAS",             duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 3,  key: "GIRAR_IZQUIERDA",   duracion_ms: 600,  pausa_ms: 600 },
-      { orden: 4,  key: "GIRAR_DERECHA",     duracion_ms: 600,  pausa_ms: 600 },
-      { orden: 5,  key: "MOVER_IZQUIERDA",   duracion_ms: 600,  pausa_ms: 600 },
-      { orden: 6,  key: "MOVER_DERECHA",     duracion_ms: 600,  pausa_ms: 600 },
+      { orden: 3,  key: "GIRAR_IZQUIERDA",   duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 4,  key: "GIRAR_DERECHA",     duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 5,  key: "MOVER_IZQUIERDA",   duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 6,  key: "MOVER_DERECHA",     duracion_ms: 1200, pausa_ms: 600 },
       { orden: 7,  key: "SUBIR_BRAZO",       duracion_ms: 3200, pausa_ms: 700 },
       { orden: 8,  key: "BAJAR_BRAZO",       duracion_ms: 3200, pausa_ms: 700 },
-      { orden: 9,  key: "CONTROL_REMOTO",    duracion_ms: 900,  pausa_ms: 600 },
+      { orden: 9,  key: "CONTROL_REMOTO",    duracion_ms: 1200, pausa_ms: 600 },
       { orden: 10, key: "ACTIVAR_SONIDO",    duracion_ms: 1200, pausa_ms: 600 },
       { orden: 11, key: "DESACTIVAR_SONIDO", duracion_ms: 1200, pausa_ms: 600 },
       { orden: 12, key: "LUZ_LED",           duracion_ms: 1500, pausa_ms: 600 }
