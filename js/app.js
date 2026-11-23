@@ -19,6 +19,7 @@ class PlatformApp {
     this.activePulseTimer = null;
     this.isPulseLocked = false;
     this.soundEnabled = false;
+    this.highSpeedEnabled = false;
     this.activeOscillator = null;
     this._dispatchChain = Promise.resolve();
     this.isDemoRunning = false;
@@ -581,6 +582,22 @@ class PlatformApp {
             this.activePulseTimer = null;
           }
 
+          if (codigo === "CONTROL_REMOTO") {
+            // 12 · VELOCIDAD: alternar velocidad por software sin disparar el canal físico que vuelve loco al carro
+            this.highSpeedEnabled = !this.highSpeedEnabled;
+            const targetSpeed = this.highSpeedEnabled ? 100 : 70;
+            const speedLabel = this.highSpeedEnabled ? "VELOCIDAD ALTA (100%)" : "VELOCIDAD NORMAL (70%)";
+            const lblPower = document.getElementById("lbl-joy-power");
+            if (lblPower) lblPower.textContent = `${targetSpeed}%`;
+            this.updateCommandUiOnly("CONTROL_REMOTO", speedLabel);
+            api.ajustarVelocidad(targetSpeed, CONFIG.VEHICULO_ID);
+            this.activePulseTimer = window.setTimeout(() => {
+              this.activePulseTimer = null;
+              this.isPulseLocked = false;
+            }, 400);
+            return;
+          }
+
           if (codigo === "ACTIVAR_SONIDO") {
             this.soundEnabled = true;
             this.emitClaxonSound();
@@ -920,18 +937,19 @@ class PlatformApp {
     }
   }
 
-  updateCommandUiOnly(commandKey) {
+  updateCommandUiOnly(commandKey, customDisplayText = null) {
     const normalized = this.normalizeCommandKey(commandKey);
     const entry =
       this.commandCatalog.get(normalized) ||
       CONFIG.DEFAULT_COMMAND_MAP[normalized] ||
       { id_comando: 10, codigo: 10, nombre: normalized };
     const name = entry.nombre || normalized;
+    const labelText = customDisplayText || name.replace(/_/g, " ");
     this.lastUserCommand = { name, codigo: entry.codigo, at: Date.now() };
-    if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = name;
+    if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = labelText;
     const lblJoyDir = document.getElementById("lbl-joy-dir");
-    if (lblJoyDir) lblJoyDir.textContent = name.replace(/_/g, " ");
-    if (this.ui.badgeJoystickDir) this.ui.badgeJoystickDir.textContent = name.replace(/_/g, " ");
+    if (lblJoyDir) lblJoyDir.textContent = labelText;
+    if (this.ui.badgeJoystickDir) this.ui.badgeJoystickDir.textContent = labelText;
     destelloVisualControl(name, 900);
   }
 
@@ -1114,6 +1132,25 @@ class PlatformApp {
     // y hace broadcast en tiempo real por el WebSocket wss://52.4.170.82:8000/ws/1 hacia el ESP8266
     const normalized = this.normalizeCommandKey(cmdInfo?.nombre);
     const hwCmd = this.resolveHardwareCommand(normalized, cmdInfo);
+
+    if (normalized === "CONTROL_REMOTO") {
+      // En DEMO, actualizar tarjeta visual de Velocidad sin enviar el canal físico que altera al carrito
+      this.highSpeedEnabled = !this.highSpeedEnabled;
+      const targetSpeed = this.highSpeedEnabled ? 100 : 70;
+      const lblPower = document.getElementById("lbl-joy-power");
+      if (lblPower) lblPower.textContent = `${targetSpeed}%`;
+      if (this.monitoreo) {
+        this.monitoreo.renderEstadoCard({
+          id_vehiculo: CONFIG.VEHICULO_ID,
+          id_comando: cmdInfo.id_comando,
+          comando: "VELOCIDAD",
+          codigo: cmdInfo.codigo,
+          conectado: 1,
+          fecha_actualizacion: new Date().toISOString()
+        });
+      }
+      return;
+    }
 
     if (normalized === "ACTIVAR_SONIDO") {
       this.soundEnabled = true;
