@@ -1222,7 +1222,8 @@ class PlatformApp {
     this.setDemoLockState(true, selectedDemoId);
     limpiarDestellosVisuales();
 
-    // Secuencia DEMO completa con los 12 movimientos (incluyendo Velocidad y cerrando con LUZ_LED)
+    // Secuencia DEMO completa: ADELANTE y ATRAS con el mismo tiempo exacto (1200 ms),
+    // SUBIR_BRAZO y BAJAR_BRAZO con recorrido completo (3200 ms), e incluye VELOCIDAD (movimiento 12)
     const secuenciaPasos = [
       { orden: 1,  key: "ADELANTE",          duracion_ms: 1200, pausa_ms: 600 },
       { orden: 2,  key: "ATRAS",             duracion_ms: 1200, pausa_ms: 600 },
@@ -1230,8 +1231,8 @@ class PlatformApp {
       { orden: 4,  key: "GIRAR_DERECHA",     duracion_ms: 600,  pausa_ms: 600 },
       { orden: 5,  key: "MOVER_IZQUIERDA",   duracion_ms: 600,  pausa_ms: 600 },
       { orden: 6,  key: "MOVER_DERECHA",     duracion_ms: 600,  pausa_ms: 600 },
-      { orden: 7,  key: "SUBIR_BRAZO",       duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 8,  key: "BAJAR_BRAZO",       duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 7,  key: "SUBIR_BRAZO",       duracion_ms: 3200, pausa_ms: 700 },
+      { orden: 8,  key: "BAJAR_BRAZO",       duracion_ms: 3200, pausa_ms: 700 },
       { orden: 9,  key: "CONTROL_REMOTO",    duracion_ms: 900,  pausa_ms: 600 },
       { orden: 10, key: "ACTIVAR_SONIDO",    duracion_ms: 1200, pausa_ms: 600 },
       { orden: 11, key: "DESACTIVAR_SONIDO", duracion_ms: 1200, pausa_ms: 600 },
