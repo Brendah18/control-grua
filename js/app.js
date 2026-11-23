@@ -163,7 +163,7 @@ class PlatformApp {
       { id_comando: 9,  codigo: 9,  nombre: "LUZ_LED",           etiqueta: "09 · LUZ / LED" },
       { id_comando: 10, codigo: 10, nombre: "ACTIVAR_SONIDO",    etiqueta: "10 · ACTIVAR SONIDO" },
       { id_comando: 11, codigo: 11, nombre: "DESACTIVAR_SONIDO", etiqueta: "11 · DESACTIVAR SONIDO" },
-      { id_comando: 12, codigo: 12, nombre: "CONTROL_REMOTO",    etiqueta: "12 · CONTROL REMOTO" },
+      { id_comando: 12, codigo: 12, nombre: "CONTROL_REMOTO",    etiqueta: "12 · VELOCIDAD" },
       { id_comando: 13, codigo: 13, nombre: "DETENER",           etiqueta: "13 · DETENER (Paro Total)" }
     ];
 
@@ -609,7 +609,7 @@ class PlatformApp {
             if (!this.isDemoRunning && this.comandoActivo === null) {
               this.dispatchCommand("DETENER", true);
             }
-          }, 350);
+          }, 750);
           return;
         }
 
@@ -1204,7 +1204,7 @@ class PlatformApp {
     this.setDemoLockState(true, selectedDemoId);
     limpiarDestellosVisuales();
 
-    // Secuencia DEMO completa con TODOS los movimientos y LUZ_LED como último paso
+    // Secuencia DEMO completa con los 12 movimientos (incluyendo Velocidad y cerrando con LUZ_LED)
     const secuenciaPasos = [
       { orden: 1,  key: "ADELANTE",          duracion_ms: 1200, pausa_ms: 600 },
       { orden: 2,  key: "ATRAS",             duracion_ms: 1200, pausa_ms: 600 },
@@ -1214,9 +1214,10 @@ class PlatformApp {
       { orden: 6,  key: "MOVER_DERECHA",     duracion_ms: 1200, pausa_ms: 600 },
       { orden: 7,  key: "SUBIR_BRAZO",       duracion_ms: 1200, pausa_ms: 600 },
       { orden: 8,  key: "BAJAR_BRAZO",       duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 9,  key: "ACTIVAR_SONIDO",    duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 10, key: "DESACTIVAR_SONIDO", duracion_ms: 1200, pausa_ms: 600 },
-      { orden: 11, key: "LUZ_LED",           duracion_ms: 1500, pausa_ms: 600 }
+      { orden: 9,  key: "CONTROL_REMOTO",    duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 10, key: "ACTIVAR_SONIDO",    duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 11, key: "DESACTIVAR_SONIDO", duracion_ms: 1200, pausa_ms: 600 },
+      { orden: 12, key: "LUZ_LED",           duracion_ms: 1500, pausa_ms: 600 }
     ];
 
     try {
