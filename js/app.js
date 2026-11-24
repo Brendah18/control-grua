@@ -19,7 +19,7 @@ class PlatformApp {
     this.activePulseTimer = null;
     this.isPulseLocked = false;
     this.soundEnabled = false;
-    this.lightEnabled = false;
+    this.lightEnabled = true; // La excavadora inicia con luz LED encendida: Apagar apaga y Prender prende
     this.highSpeedEnabled = false;
     this.activeOscillator = null;
     this._dispatchChain = Promise.resolve();
