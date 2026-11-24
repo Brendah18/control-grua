@@ -6,11 +6,11 @@
  * - 3. Control de DEMO con Cancelación Instantánea y Prevención de Concurrencia
  */
 
-import { CONFIG } from "./config.js?v=7.0";
-import { api } from "./api.js?v=7.0";
-import { IoTWebSocketClient, destelloVisualControl, limpiarDestellosVisuales } from "./websocket.js?v=7.0";
-import { VirtualJoystick } from "./joystick.js?v=7.0";
-import { monitoreoInstance } from "./monitoreo.js?v=7.0";
+import { CONFIG } from "./config.js?v=7.1";
+import { api } from "./api.js?v=7.1";
+import { IoTWebSocketClient, destelloVisualControl, limpiarDestellosVisuales } from "./websocket.js?v=7.1";
+import { VirtualJoystick } from "./joystick.js?v=7.1";
+import { monitoreoInstance } from "./monitoreo.js?v=7.1";
 
 class PlatformApp {
   constructor() {
@@ -61,6 +61,7 @@ class PlatformApp {
       btnRefreshHealth: document.getElementById("btn-refresh-health"),
       alertGuestSession: document.getElementById("alert-guest-session"),
       alertAdminBola: document.getElementById("alert-admin-bola"),
+      alertSslHelp: document.getElementById("alert-ssl-help"),
       guestTimerDisplay: document.getElementById("guest-timer-display"),
       btnRequestGuestTrial: document.getElementById("btn-request-guest-trial"),
 
@@ -151,11 +152,21 @@ class PlatformApp {
     // 5. Restaurar sesión de sessionStorage o mostrar pantalla de Login
     this.restoreOrRequireLogin();
 
-    // 6. Polling de salud de la infraestructura
+    // 6. Polling de salud de la infraestructura y reconexión automática al volver a la pestaña (tras aceptar SSL)
     this.healthTimer = window.setInterval(
       () => this.checkHealthOnly(),
       CONFIG.HEALTH_POLL_INTERVAL_MS
     );
+
+    window.addEventListener("focus", () => {
+      if (!this.currentUser) return;
+      const wsNotOpen = !this.wsClient?.socket || this.wsClient.socket.readyState !== WebSocket.OPEN;
+      const sslBannerVisible = this.ui.alertSslHelp && !this.ui.alertSslHelp.classList.contains("d-none");
+      if (wsNotOpen || sslBannerVisible) {
+        this.wsClient?.connect();
+        this.verifyHealthAndSync();
+      }
+    });
   }
 
   seedDefaultCommands() {
@@ -1578,6 +1589,12 @@ class PlatformApp {
     const { apiAvailable, rdsState } = await api.checkInfrastructureHealth();
     this.updateApiIndicator(apiAvailable ? "available" : "unavailable");
     this.updateRdsIndicator(rdsState);
+    if (apiAvailable && this.currentUser) {
+      const wsNotOpen = !this.wsClient?.socket || this.wsClient.socket.readyState !== WebSocket.OPEN;
+      if (wsNotOpen) {
+        this.wsClient?.connect();
+      }
+    }
   }
 
   async loadCommands() {
@@ -1862,12 +1879,14 @@ class PlatformApp {
     if (state === "available") {
       this.ui.badgeApi.className = "badge rounded-pill badge-state-online";
       this.ui.badgeApi.innerHTML = `<span class="status-dot dot-online"></span>Disponible`;
+      this.ui.alertSslHelp?.classList.add("d-none");
     } else if (state === "checking") {
       this.ui.badgeApi.className = "badge rounded-pill badge-state-warning";
       this.ui.badgeApi.innerHTML = `<span class="status-dot dot-warning"></span>Comprobando...`;
     } else {
       this.ui.badgeApi.className = "badge rounded-pill badge-state-offline";
       this.ui.badgeApi.innerHTML = `<span class="status-dot dot-offline"></span>No disponible`;
+      this.ui.alertSslHelp?.classList.remove("d-none");
     }
   }
 

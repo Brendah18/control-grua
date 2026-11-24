@@ -32,8 +32,8 @@
   />
 
   <!-- Hojas de Estilos -->
-  <link rel="stylesheet" href="./css/styles.css?v=5.1" />
-  <link rel="stylesheet" href="./css/style.css?v=5.1" />
+  <link rel="stylesheet" href="./css/styles.css?v=5.2" />
+  <link rel="stylesheet" href="./css/style.css?v=5.2" />
 
   <!-- Estilos Críticos Embebidos: Layout Mobile-First 100dvh Sin Cortes, Modal Login, Cruceta D-Pad y Grid 4x2 -->
   <style>
@@ -760,6 +760,21 @@
     </div>
   </div>
 
+  <!-- BANNER DE RECONEXIÓN SSL AWS (SOLO VISIBLE SI EL NAVEGADOR BLOQUEA EL CERTIFICADO AUTOFIRMADO) -->
+  <div id="alert-ssl-help" class="px-3 d-none flex-shrink-0">
+    <div class="guest-banner d-flex align-items-center justify-content-between gap-2 px-2 py-1" style="background: linear-gradient(90deg, #ffe4e6, #fef3c7); border-color: #fda4af;">
+      <div class="d-flex align-items-center gap-1 min-w-0">
+        <i class="bi bi-shield-lock-fill text-danger flex-shrink-0"></i>
+        <span class="small fw-bold text-headline text-truncate" style="font-size: 0.68rem;">
+          Navegador bloqueando SSL autofirmado de AWS: abre el botón, elige <strong>Configuración avanzada → Continuar</strong> y vuelve aquí.
+        </span>
+      </div>
+      <a href="https://52.4.170.82:8000/docs" target="_blank" rel="noopener noreferrer" class="btn btn-xs btn-amber py-0 px-2 flex-shrink-0 text-decoration-none">
+        <i class="bi bi-box-arrow-up-right me-1"></i>Autorizar AWS
+      </a>
+    </div>
+  </div>
+
   <!-- =====================================================================
        4. CONTENIDO PRINCIPAL: VISTAS (AJUSTE EXACTO A 100dvh SIN SCROLL)
        ===================================================================== -->
@@ -1321,7 +1336,7 @@
 
   <!-- Puente de Autenticación Integrado -->
   <script type="module">
-    import { api } from "./js/api.js?v=4.9";
+    import { api } from "./js/api.js?v=7.1";
 
     const OFFICIAL_USERS = {
       "admin@iot.com": {
@@ -1449,6 +1464,6 @@
   </script>
 
   <!-- Scripts Modulares ES6 -->
-  <script type="module" src="./js/app.js?v=7.0"></script>
+  <script type="module" src="./js/app.js?v=7.1"></script>
 </body>
 </html>
