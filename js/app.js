@@ -18,7 +18,7 @@ class PlatformApp {
     this.comandoActivo = null;
     this.activePulseTimer = null;
     this.isPulseLocked = false;
-    this.soundEnabled = false;
+    this.soundEnabled = true; // La excavadora inicia con sonido activado: Des. Sonido apaga y Act. Sonido prende
     this.lightEnabled = true; // La excavadora inicia con luz LED encendida: Apagar apaga y Prender prende
     this.highSpeedEnabled = false;
     this.activeOscillator = null;
