@@ -6,11 +6,11 @@
  * - 3. Control de DEMO con Cancelación Instantánea y Prevención de Concurrencia
  */
 
-import { CONFIG } from "./config.js?v=6.7";
-import { api } from "./api.js?v=6.7";
-import { IoTWebSocketClient, destelloVisualControl, limpiarDestellosVisuales } from "./websocket.js?v=6.7";
-import { VirtualJoystick } from "./joystick.js?v=6.7";
-import { monitoreoInstance } from "./monitoreo.js?v=6.7";
+import { CONFIG } from "./config.js?v=7.0";
+import { api } from "./api.js?v=7.0";
+import { IoTWebSocketClient, destelloVisualControl, limpiarDestellosVisuales } from "./websocket.js?v=7.0";
+import { VirtualJoystick } from "./joystick.js?v=7.0";
+import { monitoreoInstance } from "./monitoreo.js?v=7.0";
 
 class PlatformApp {
   constructor() {
@@ -19,9 +19,15 @@ class PlatformApp {
     this.activePulseTimer = null;
     this.isPulseLocked = false;
     this.soundEnabled = false;
+    this.lightEnabled = false;
     this.highSpeedEnabled = false;
     this.activeOscillator = null;
     this._dispatchChain = Promise.resolve();
+    this._holdRepeatTimer = null;
+    this._joystickKeepAliveTimer = null;
+    this._keepAliveInFlight = false;
+    this._keepAlivePromise = Promise.resolve();
+    this._controlSeq = 0;
     this.isDemoRunning = false;
     this.activeDemoId = null;
     this.demoAbortController = null;
@@ -88,6 +94,8 @@ class PlatformApp {
       badgeDemoStatus: document.getElementById("badge-demo-status"),
       lblDemoCurrentStep: document.getElementById("lbl-demo-current-step"),
       lblDemoStepDetails: document.getElementById("lbl-demo-step-details"),
+      btnLuzOn: document.getElementById("btn-luz-on"),
+      btnLuzOff: document.getElementById("btn-luz-off"),
       secondaryButtons: document.querySelectorAll(".cmd-sec-btn"),
 
       // Vista 3: Administración
@@ -468,22 +476,16 @@ class PlatformApp {
     // Botón Prioritario DETENER (Aborta DEMO si está corriendo y detiene motores al instante)
     const stopButtons = [this.ui.btnStopPriority, this.ui.btnDpadStop].filter(Boolean);
     let lastStopClickAt = 0;
-    let pressSeq = 0;
-    let isSendingStart = false;
-    let userReleasedWhileSending = false;
-    let startConfirmedAt = 0;
 
     stopButtons.forEach((btn) => {
       const handlePriorityStop = async (e) => {
         if (e.type === "pointerdown" && e.button !== undefined && e.button !== 0) return;
         e.preventDefault();
         const now = Date.now();
-        if (now - lastStopClickAt < 180) return;
+        if (now - lastStopClickAt < 160) return;
         lastStopClickAt = now;
 
-        pressSeq++;
-        isSendingStart = false;
-        userReleasedWhileSending = false;
+        this.stopAllKeepAlives();
         this.comandoActivo = null;
         if (this.activePulseTimer) {
           clearTimeout(this.activePulseTimer);
@@ -498,6 +500,10 @@ class PlatformApp {
           if (this.joystick.thumb) {
             this.joystick.thumb.style.transform = "translate3d(0px, 0px, 0px)";
           }
+          const lblAngle = document.getElementById("lbl-joy-angle");
+          const lblPower = document.getElementById("lbl-joy-power");
+          if (lblAngle) lblAngle.textContent = "0°";
+          if (lblPower) lblPower.textContent = "0%";
         }
 
         if (this.isDemoRunning) {
@@ -512,28 +518,56 @@ class PlatformApp {
     });
 
     // =========================================================================
-    // CONTROL PASO A PASO CONFORME SE TOCA EL BOTÓN (Y CONTINUO SI SE MANTIENE)
-    // - Cada toque envía un pulso corto (~480 ms en el ESP8266) sin irse rápido.
-    // - Si el usuario mantiene el dedo presionado, repite el pulso suavemente
-    //   mientras siga tocando el botón y se detiene al soltar.
+    // CONTROL FLUIDO (TOQUE CORTO CONTROLADO + CONTINUO SIN CORTES AL MANTENER)
+    // - Cambiar entre botones es instantáneo (0 ms entre comandos distintos).
+    // - Al mantener presionado (01..08), envía keep-alive ligero cada 360 ms
+    //   (PUT /api/estado sin duplicar historial) y el ESP8266 extiende el mismo
+    //   canal sin pausa (0 ms). Al soltar tras mantener, envía DETENER al instante.
+    // - En toque corto (< 380 ms), el ESP8266 completa su paso fluido sin cortes.
     // =========================================================================
-    let lastCmdSentAt = 0;
-    let holdRepeatTimer = null;
+    let lastSameCmd = "";
+    let lastSameCmdAt = 0;
+    let holdStartAt = 0;
+    let holdExtended = false;
+    let activeHoldPointerId = null;
+    let activeHoldBtn = null;
 
-    const stopHoldRepeat = () => {
-      if (holdRepeatTimer) {
-        clearInterval(holdRepeatTimer);
-        holdRepeatTimer = null;
+    const releaseHoldControl = () => {
+      const wasActive = Boolean(this.comandoActivo);
+      const heldMs = holdStartAt > 0 ? Date.now() - holdStartAt : 0;
+      const shouldStopNow = wasActive && (holdExtended || heldMs >= 380);
+
+      if (activeHoldBtn && activeHoldPointerId !== null) {
+        try {
+          activeHoldBtn.releasePointerCapture?.(activeHoldPointerId);
+        } catch {
+          // captura ya liberada
+        }
       }
+      activeHoldBtn = null;
+      activeHoldPointerId = null;
+      holdStartAt = 0;
+      holdExtended = false;
+
+      if (!wasActive) return;
+
+      this.stopAllKeepAlives();
       this.comandoActivo = null;
+
+      if (shouldStopNow && !this.isDemoRunning) {
+        this.dispatchCommand("DETENER", true);
+      }
     };
 
-    window.addEventListener("pointerup", stopHoldRepeat);
-    window.addEventListener("pointercancel", stopHoldRepeat);
-    window.addEventListener("blur", stopHoldRepeat);
+    window.addEventListener("pointerup", releaseHoldControl);
+    window.addEventListener("pointercancel", releaseHoldControl);
+    window.addEventListener("blur", releaseHoldControl);
+
+    this.updateLightButtonsUi();
 
     const bindUnifiedControl = (btn, fallbackCmd) => {
       if (!btn) return;
+      let lastPointerDownAt = 0;
 
       const getCodigo = () =>
         this.normalizeCommandKey(
@@ -546,18 +580,27 @@ class PlatformApp {
       btn.addEventListener("contextmenu", (e) => e.preventDefault());
 
       const handleButtonTrigger = async (e) => {
-        if (e.type === "pointerdown" && e.button !== undefined && e.button !== 0) return;
+        if (e.type === "pointerdown") {
+          if (e.button !== undefined && e.button !== 0) return;
+          lastPointerDownAt = Date.now();
+        } else if (e.type === "click") {
+          // Evitar doble disparo cuando ya atendió pointerdown; permitir teclado/accesibilidad
+          if (Date.now() - lastPointerDownAt < 450) return;
+        }
         e.preventDefault();
-
-        const now = Date.now();
-        if (now - lastCmdSentAt < 220) return;
-        lastCmdSentAt = now;
 
         const codigo = getCodigo();
         if (!codigo || !this.canExecuteCommand(codigo)) return;
 
-        stopHoldRepeat();
-        this.comandoActivo = codigo;
+        const luzAccion = (btn.getAttribute("data-luz-accion") || "").toUpperCase();
+        const dedupeKey = luzAccion ? `${codigo}_${luzAccion}` : codigo;
+        const now = Date.now();
+        if (dedupeKey === lastSameCmd && now - lastSameCmdAt < 110) return;
+        lastSameCmd = dedupeKey;
+        lastSameCmdAt = now;
+
+        this.stopAllKeepAlives();
+        this.comandoActivo = null;
 
         if (codigo === "CONTROL_REMOTO") {
           this.highSpeedEnabled = !this.highSpeedEnabled;
@@ -586,27 +629,70 @@ class PlatformApp {
           await this.dispatchCommand(codigo, false);
           return;
         } else if (codigo === "LUZ_LED") {
-          await this.dispatchCommand(codigo, false);
-          return;
+          if (luzAccion === "ON") {
+            if (this.lightEnabled) {
+              this.updateLightButtonsUi();
+              this.updateCommandUiOnly("LUZ_LED", "LUZ ENCENDIDA");
+              destelloVisualControl("LUZ_LED_ON", 700);
+              return;
+            }
+            this.lightEnabled = true;
+            this.updateLightButtonsUi();
+            await this.dispatchCommand("LUZ_LED", false, "WEB-LUZ-ON");
+            return;
+          } else if (luzAccion === "OFF") {
+            if (!this.lightEnabled) {
+              this.updateLightButtonsUi();
+              this.updateCommandUiOnly("LUZ_LED", "LUZ APAGADA");
+              destelloVisualControl("LUZ_LED_OFF", 700);
+              return;
+            }
+            this.lightEnabled = false;
+            this.updateLightButtonsUi();
+            await this.dispatchCommand("LUZ_LED", false, "WEB-LUZ-OFF");
+            return;
+          } else {
+            this.lightEnabled = !this.lightEnabled;
+            this.updateLightButtonsUi();
+            await this.dispatchCommand("LUZ_LED", false);
+            return;
+          }
         }
 
-        // Movimientos (01..08): un paso corto por toque, y si mantiene presionado repite cada 520 ms
-        await this.dispatchCommand(codigo, false);
-        if (e.type === "pointerdown" && this.comandoActivo === codigo) {
-          holdRepeatTimer = window.setInterval(() => {
-            if (this.comandoActivo === codigo && !this.isDemoRunning) {
-              this.dispatchCommand(codigo, false);
+        // Movimientos (01..08): disparo inmediato + keep-alive continuo mientras siga presionado
+        const mySeq = this._controlSeq;
+        this.comandoActivo = codigo;
+        holdStartAt = Date.now();
+        holdExtended = false;
+
+        if (e.type === "pointerdown") {
+          activeHoldBtn = btn;
+          activeHoldPointerId = e.pointerId ?? null;
+          try {
+            if (e.pointerId !== undefined) btn.setPointerCapture?.(e.pointerId);
+          } catch {
+            // continuar sin pointer capture
+          }
+        }
+
+        this.dispatchCommand(codigo, false);
+
+        if (e.type === "pointerdown") {
+          this._holdRepeatTimer = window.setInterval(() => {
+            if (this.comandoActivo === codigo && !this.isDemoRunning && this._controlSeq === mySeq) {
+              holdExtended = true;
+              this.sendHoldKeepAlive(codigo, mySeq);
             } else {
-              stopHoldRepeat();
+              this.stopAllKeepAlives();
             }
-          }, 520);
+          }, 360);
         }
       };
 
       btn.addEventListener("pointerdown", handleButtonTrigger);
-      btn.addEventListener("pointerup", stopHoldRepeat);
-      btn.addEventListener("pointercancel", stopHoldRepeat);
-      btn.addEventListener("pointerleave", stopHoldRepeat);
+      btn.addEventListener("click", handleButtonTrigger);
+      btn.addEventListener("pointerup", releaseHoldControl);
+      btn.addEventListener("pointercancel", releaseHoldControl);
     };
 
     // Cruceta D-Pad (01-ADELANTE, 02-ATRAS, 03-GIRAR_IZQUIERDA, 04-GIRAR_DERECHA)
@@ -897,23 +983,90 @@ class PlatformApp {
     }
   }
 
-  updateCommandUiOnly(commandKey) {
+  stopAllKeepAlives() {
+    this._controlSeq++;
+    if (this._holdRepeatTimer) {
+      clearInterval(this._holdRepeatTimer);
+      this._holdRepeatTimer = null;
+    }
+    if (this._joystickKeepAliveTimer) {
+      clearInterval(this._joystickKeepAliveTimer);
+      this._joystickKeepAliveTimer = null;
+    }
+  }
+
+  updateLightButtonsUi() {
+    if (this.ui.btnLuzOn) {
+      this.ui.btnLuzOn.classList.toggle("is-active-state", Boolean(this.lightEnabled));
+    }
+    if (this.ui.btnLuzOff) {
+      this.ui.btnLuzOff.classList.toggle("is-active-state", !this.lightEnabled);
+    }
+  }
+
+  sendHoldKeepAlive(commandKey, seq) {
+    if (this.isDemoRunning || seq !== this._controlSeq || this._keepAliveInFlight) {
+      return;
+    }
+
+    const normalized = this.normalizeCommandKey(commandKey);
+    const cmdInfo =
+      this.commandCatalog.get(normalized) ||
+      CONFIG.DEFAULT_COMMAND_MAP[normalized];
+    if (!cmdInfo || normalized === "DETENER") return;
+
+    const hwCmd = this.resolveHardwareCommand(normalized, cmdInfo);
+    this._keepAliveInFlight = true;
+    this.lastUserCommand = {
+      name: hwCmd.nombre || normalized,
+      codigo: hwCmd.codigo,
+      at: Date.now()
+    };
+    destelloVisualControl(hwCmd.nombre || normalized, 750);
+
+    const runKeepAlive = async () => {
+      try {
+        if (seq !== this._controlSeq || this.isDemoRunning) return;
+        await api.request(
+          "/api/estado",
+          {
+            method: "PUT",
+            body: JSON.stringify({
+              id_vehiculo: CONFIG.VEHICULO_ID,
+              id_comando: Number(hwCmd.id_comando),
+              conectado: true
+            })
+          },
+          2500
+        );
+      } catch {
+        // Fallback silencioso
+      } finally {
+        this._keepAliveInFlight = false;
+      }
+    };
+
+    this._keepAlivePromise = runKeepAlive();
+  }
+
+  updateCommandUiOnly(commandKey, customLabel = null) {
     const normalized = this.normalizeCommandKey(commandKey);
     const entry =
       this.commandCatalog.get(normalized) ||
       CONFIG.DEFAULT_COMMAND_MAP[normalized] ||
       { id_comando: 10, codigo: 10, nombre: normalized };
     const name = entry.nombre || normalized;
+    const labelMostrar = customLabel || name.replace(/_/g, " ");
     this.lastUserCommand = { name, codigo: entry.codigo, at: Date.now() };
-    if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = name;
+    if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = customLabel || name;
     const lblJoyDir = document.getElementById("lbl-joy-dir");
-    if (lblJoyDir) lblJoyDir.textContent = name.replace(/_/g, " ");
-    if (this.ui.badgeJoystickDir) this.ui.badgeJoystickDir.textContent = name.replace(/_/g, " ");
+    if (lblJoyDir) lblJoyDir.textContent = labelMostrar;
+    if (this.ui.badgeJoystickDir) this.ui.badgeJoystickDir.textContent = labelMostrar;
     destelloVisualControl(name, 900);
   }
 
   resolveHardwareCommand(_normalizedKey, defaultCmdInfo) {
-    // Enviar cada comando con su código real (MOVER_IZQUIERDA = 5 -> canal 12 carrito completo,
+    // Enviar cada comando con su código real (MOVER_IZQUIERDA = 5 -> canal 11 carrito completo,
     // MOVER_DERECHA = 6 -> canal 10 carrito completo, GIRAR_IZQ/DER = 3/4 -> canales 4/1 garra)
     return defaultCmdInfo;
   }
@@ -940,15 +1093,30 @@ class PlatformApp {
     if (lblJoyDir) lblJoyDir.textContent = textDir;
 
     if (this.isDemoRunning && !isPriorityStop) return;
+
+    this.stopAllKeepAlives();
+
     if (isPriorityStop) {
       this.comandoActivo = null;
-    } else {
-      this.comandoActivo = mappedCmd;
+      await this.dispatchCommand("DETENER", true);
+      return;
     }
-    await this.dispatchCommand(mappedCmd, isPriorityStop);
+
+    const mySeq = this._controlSeq;
+    this.comandoActivo = mappedCmd;
+    this.dispatchCommand(mappedCmd, false);
+
+    // Keep-alive continuo mientras el usuario mantenga arrastrado el joystick en esta dirección
+    this._joystickKeepAliveTimer = window.setInterval(() => {
+      if (this.joystick?.isDragging && this.comandoActivo === mappedCmd && !this.isDemoRunning && this._controlSeq === mySeq) {
+        this.sendHoldKeepAlive(mappedCmd, mySeq);
+      } else {
+        this.stopAllKeepAlives();
+      }
+    }, 360);
   }
 
-  async dispatchCommand(commandKey, isPriority = false) {
+  async dispatchCommand(commandKey, isPriority = false, customOrigen = null) {
     if (this.isDemoRunning && !isPriority) return;
 
     const normalized = this.normalizeCommandKey(commandKey);
@@ -960,6 +1128,15 @@ class PlatformApp {
 
     // Actualizar UI inmediatamente al presionar/soltar
     const immediateName = fallbackEntry.nombre || normalized || "DETENER";
+    const displayLabel =
+      customOrigen === "WEB-LUZ-ON"
+        ? "LUZ ENCENDIDA"
+        : customOrigen === "WEB-LUZ-OFF"
+          ? "LUZ APAGADA"
+          : immediateName === "DETENER"
+            ? "En espera"
+            : immediateName.replace(/_/g, " ");
+
     this.lastUserCommand = {
       name: immediateName,
       codigo: fallbackEntry.codigo,
@@ -969,16 +1146,30 @@ class PlatformApp {
     if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = immediateName;
     const lblJoyDir = document.getElementById("lbl-joy-dir");
     if (lblJoyDir) {
-      lblJoyDir.textContent = immediateName === "DETENER" ? "En espera" : immediateName.replace(/_/g, " ");
+      lblJoyDir.textContent = displayLabel;
     }
     if (this.ui.badgeJoystickDir) {
-      this.ui.badgeJoystickDir.textContent = immediateName === "DETENER" ? "En espera" : immediateName.replace(/_/g, " ");
+      this.ui.badgeJoystickDir.textContent = displayLabel;
     }
 
-    destelloVisualControl(immediateName, 900);
+    const flashKey =
+      customOrigen === "WEB-LUZ-ON"
+        ? "LUZ_LED_ON"
+        : customOrigen === "WEB-LUZ-OFF"
+          ? "LUZ_LED_OFF"
+          : immediateName;
+    destelloVisualControl(flashKey, 900);
 
     const runSend = async () => {
       if (this.isDemoRunning && !isPriority) return;
+
+      // Si es DETENER prioritario, esperar brevemente a que concluya un keep-alive en vuelo para que DETENER sea siempre el último
+      if (isPriority && this._keepAliveInFlight) {
+        await Promise.race([
+          this._keepAlivePromise,
+          new Promise((resolve) => window.setTimeout(resolve, 260))
+        ]);
+      }
 
       if (this._catalogSyncPromise) {
         try {
@@ -995,7 +1186,8 @@ class PlatformApp {
         CONFIG.DEFAULT_COMMAND_MAP.DETENER;
       const hwCmd = this.resolveHardwareCommand(normalized, cmdInfo);
 
-      const origenTag = isPriority ? "PRIORIDAD-DETENER" : `WEB-${this.currentRole}`;
+      const origenTag =
+        customOrigen || (isPriority ? "PRIORIDAD-DETENER" : `WEB-${this.currentRole}`);
 
       try {
         const res = await api.enviarMovimiento({
@@ -1012,7 +1204,10 @@ class PlatformApp {
             ? { ...res.data.estado, comando: cmdInfo.nombre, codigo: cmdInfo.codigo }
             : { id_vehiculo: CONFIG.VEHICULO_ID, comando: cmdInfo.nombre, codigo: cmdInfo.codigo, conectado: 1, fecha_actualizacion: new Date().toISOString() };
           this.monitoreo.renderEstadoCard(estadoMostrar);
-          this.monitoreo.fetchAndRenderHistorial(false);
+          // Solo descargar el historial completo si el usuario está viendo la pestaña MONITOREO (evita saturar la red en CONTROL)
+          if (this.currentView === "monitoreo") {
+            this.monitoreo.fetchAndRenderHistorial(false);
+          }
         }
       } catch (err) {
         if (err && err.status === 403) {
@@ -1040,7 +1235,7 @@ class PlatformApp {
             id_comando: retryCmd.id_comando,
             codigo: retryCmd.nombre,
             token: currentToken,
-            origen: isPriority ? "PRIORIDAD-DETENER" : `WSS-${this.currentRole}`
+            origen: customOrigen || (isPriority ? "PRIORIDAD-DETENER" : `WSS-${this.currentRole}`)
           });
         }
       }
@@ -1082,6 +1277,9 @@ class PlatformApp {
       this.soundEnabled = true;
     } else if (normalized === "DESACTIVAR_SONIDO") {
       this.soundEnabled = false;
+    } else if (normalized === "LUZ_LED") {
+      this.lightEnabled = !this.lightEnabled;
+      this.updateLightButtonsUi();
     }
 
     try {
@@ -1135,6 +1333,7 @@ class PlatformApp {
       }
     }
 
+    this.stopAllKeepAlives();
     this.comandoActivo = null;
     if (this.activePulseTimer) {
       clearTimeout(this.activePulseTimer);
@@ -1253,6 +1452,7 @@ class PlatformApp {
   async cancelActiveDemo() {
     const demoId = this.activeDemoId || Number(this.ui.selectDemo?.value || 1);
     this.demoIgnoreServerUntil = Date.now() + 30000;
+    this.stopAllKeepAlives();
     this.comandoActivo = null;
     if (this.activePulseTimer) {
       clearTimeout(this.activePulseTimer);
@@ -1333,7 +1533,7 @@ class PlatformApp {
     // NO encender otro botón diferente aunque RDS aún tenga un nombre antiguo en ese ID
     const msDesdeClick = Date.now() - (this.lastUserCommand?.at || 0);
     if (msDesdeClick < 2000 && this.lastUserCommand?.name) {
-      if (this.monitoreo) {
+      if (this.monitoreo && this.currentView === "monitoreo") {
         this.monitoreo.fetchAndRenderHistorial(false);
       }
       return;
@@ -1351,7 +1551,7 @@ class PlatformApp {
       destelloVisualControl(cmdNombre, 800);
       if (this.monitoreo) {
         this.monitoreo.renderEstadoCard(payload.estado);
-        if (evento === "MOVIMIENTO_INDIVIDUAL" || payload.guardado_en_historial) {
+        if (this.currentView === "monitoreo" && (evento === "MOVIMIENTO_INDIVIDUAL" || payload.guardado_en_historial)) {
           this.monitoreo.fetchAndRenderHistorial(false);
         }
       }

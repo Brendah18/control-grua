@@ -32,8 +32,8 @@
   />
 
   <!-- Hojas de Estilos -->
-  <link rel="stylesheet" href="./css/styles.css?v=5.0" />
-  <link rel="stylesheet" href="./css/style.css?v=5.0" />
+  <link rel="stylesheet" href="./css/styles.css?v=5.1" />
+  <link rel="stylesheet" href="./css/style.css?v=5.1" />
 
   <!-- Estilos Críticos Embebidos: Layout Mobile-First 100dvh Sin Cortes, Modal Login, Cruceta D-Pad y Grid 4x2 -->
   <style>
@@ -195,6 +195,7 @@
     }
     .btn-dpad-pastel *,
     .btn-cmd-tile *,
+    .btn-luz-action *,
     .btn-stop-huge * {
       pointer-events: none;
     }
@@ -299,6 +300,74 @@
       opacity: 0.42;
       cursor: not-allowed !important;
       filter: grayscale(0.35);
+    }
+
+    /* Celda 09 dividida: Prender Luz (solo encender) y Apagar Luz (solo apagar) */
+    .luz-split-tile {
+      width: 100%;
+      height: 100%;
+      min-height: 44px;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1.5px solid rgba(168, 85, 247, 0.32);
+      border-radius: 11px;
+      padding: 4px 5px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(168, 85, 247, 0.08);
+    }
+    .luz-split-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      width: 100%;
+    }
+    .btn-luz-action {
+      border-radius: 7px;
+      padding: 3px 2px;
+      font-size: 0.62rem;
+      font-weight: 900;
+      line-height: 1.05;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .btn-luz-on {
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      border: 1.5px solid #34d399;
+      color: #047857;
+    }
+    .btn-luz-on:hover,
+    .btn-luz-on:active,
+    .btn-luz-on.is-active-state {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border-color: #059669;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+    }
+    .btn-luz-off {
+      background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+      border: 1.5px solid #fb7185;
+      color: #be123c;
+    }
+    .btn-luz-off:hover,
+    .btn-luz-off:active,
+    .btn-luz-off.is-active-state {
+      background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
+      border-color: #be123c;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(244, 63, 94, 0.3);
     }
 
     /* Barra Horizontal Compacta para DEMO (Bloque 3) */
@@ -455,6 +524,20 @@
         min-height: 38px !important;
         padding: 3px 3px !important;
         border-radius: 9px !important;
+      }
+      .luz-split-tile {
+        min-height: 38px !important;
+        padding: 3px 3px !important;
+        border-radius: 9px !important;
+        gap: 2px !important;
+      }
+      .luz-split-actions {
+        gap: 2px !important;
+      }
+      .btn-luz-action {
+        padding: 2px 1px !important;
+        font-size: 0.52rem !important;
+        border-radius: 6px !important;
       }
       .tile-icon {
         font-size: 0.88rem !important;
@@ -817,14 +900,23 @@
               <span class="tile-label">Bajar Brazo</span>
             </button>
 
-            <!-- Fila 2 (09 a 12): LUZ_LED, ACTIVAR_SONIDO, DESACTIVAR_SONIDO, CONTROL_REMOTO -->
-            <button type="button" class="btn-cmd-tile cmd-sec-btn" data-codigo="LUZ_LED" data-cmd-name="LUZ_LED" data-comando="LUZ_LED">
+            <!-- Fila 2 (09 a 12): LUZ_LED (Prender / Apagar), ACTIVAR_SONIDO, DESACTIVAR_SONIDO, CONTROL_REMOTO -->
+            <div class="luz-split-tile" data-cmd-group="LUZ_LED">
               <div class="tile-top-row">
                 <span class="cmd-code-tag">09</span>
-                <i class="bi bi-lightbulb-fill tile-icon text-emerald"></i>
+                <span class="tile-label">Luz / LED</span>
               </div>
-              <span class="tile-label">Luz / LED</span>
-            </button>
+              <div class="luz-split-actions">
+                <button id="btn-luz-on" type="button" class="btn-luz-action btn-luz-on cmd-sec-btn" data-codigo="LUZ_LED" data-cmd-name="LUZ_LED" data-comando="LUZ_LED" data-luz-accion="ON" title="09. Prender Luz LED (solo encender)">
+                  <i class="bi bi-lightbulb-fill"></i>
+                  <span>Prender</span>
+                </button>
+                <button id="btn-luz-off" type="button" class="btn-luz-action btn-luz-off cmd-sec-btn" data-codigo="LUZ_LED" data-cmd-name="LUZ_LED" data-comando="LUZ_LED" data-luz-accion="OFF" title="09. Apagar Luz LED (solo apagar)">
+                  <i class="bi bi-lightbulb-off-fill"></i>
+                  <span>Apagar</span>
+                </button>
+              </div>
+            </div>
 
             <button id="btn-claxon" type="button" class="btn-cmd-tile cmd-sec-btn" data-codigo="ACTIVAR_SONIDO" data-cmd-name="ACTIVAR_SONIDO" data-comando="ACTIVAR_SONIDO">
               <div class="tile-top-row">
@@ -1357,6 +1449,6 @@
   </script>
 
   <!-- Scripts Modulares ES6 -->
-  <script type="module" src="./js/app.js?v=6.8"></script>
+  <script type="module" src="./js/app.js?v=7.0"></script>
 </body>
 </html>

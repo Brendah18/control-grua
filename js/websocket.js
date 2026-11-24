@@ -53,18 +53,29 @@ export function destelloVisualControl(rawCommandName, duracionMs = 900) {
   }
 
   // 3. Catálogo de los 12 botones (01..12): Coincidencia EXACTA por data-cmd-name (1 solo botón)
-  document.querySelectorAll(".cmd-sec-btn").forEach((btn) => {
-    const attrName = String(btn.getAttribute("data-cmd-name") || "")
-      .trim()
-      .toUpperCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, "_");
+  if (cmd === "LUZ_LED_ON") {
+    const btnOn = document.getElementById("btn-luz-on");
+    if (btnOn) elementsToFlash.push(btnOn);
+  } else if (cmd === "LUZ_LED_OFF") {
+    const btnOff = document.getElementById("btn-luz-off");
+    if (btnOff) elementsToFlash.push(btnOff);
+  } else if (cmd === "LUZ_LED") {
+    const tile = document.querySelector(".luz-split-tile");
+    if (tile) elementsToFlash.push(tile);
+  } else {
+    document.querySelectorAll(".cmd-sec-btn").forEach((btn) => {
+      const attrName = String(btn.getAttribute("data-cmd-name") || "")
+        .trim()
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, "_");
 
-    if (attrName === cmd) {
-      elementsToFlash.push(btn);
-    }
-  });
+      if (attrName === cmd) {
+        elementsToFlash.push(btn);
+      }
+    });
+  }
 
   // 4. Encender únicamente los elementos del comando actual durante el tiempo indicado
   const tiempoEncendido = Math.max(450, duracionMs - 100);

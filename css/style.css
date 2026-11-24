@@ -500,12 +500,12 @@ body.viewport-app {
   font-size: 1.05rem;
   box-shadow: 0 4px 16px rgba(147, 51, 234, 0.55), inset 0 2px 4px rgba(255, 255, 255, 0.7);
   cursor: grab;
-  transition: transform 0.05s linear;
+  transition: transform 0.08s ease-out;
 }
 .joystick-thumb.dragging {
   cursor: grabbing;
   box-shadow: 0 0 24px rgba(236, 72, 153, 0.85), 0 0 12px rgba(147, 51, 234, 0.7);
-  transform: scale(1.1);
+  transition: none;
 }
 
 /* Cruceta D-Pad Ordenada en Cruz (+) Glassmorphism Pastel */

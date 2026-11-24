@@ -15,7 +15,7 @@ export class VirtualJoystick {
     this.isDragging = false;
     this.currentDirection = "DETENER";
     this.disabled = false;
-    this.deadzoneRatio = 0.25;
+    this.deadzoneRatio = 0.2;
 
     this.bindEvents();
   }
@@ -159,7 +159,14 @@ export class VirtualJoystick {
     this.thumb.style.transform = `translate3d(${clampedX.toFixed(1)}px, ${clampedY.toFixed(1)}px, 0px)`;
 
     const normalizedDistance = maxRadius > 0 ? Math.min(distance / maxRadius, 1) : 0;
+    const lblAngle = document.getElementById("lbl-joy-angle");
+    const lblPower = document.getElementById("lbl-joy-power");
+    const lblJoyDir = document.getElementById("lbl-joy-dir");
+
     if (normalizedDistance < this.deadzoneRatio) {
+      if (lblAngle) lblAngle.textContent = "0°";
+      if (lblPower) lblPower.textContent = "0%";
+      if (lblJoyDir) lblJoyDir.textContent = "En espera";
       this.emitIfDirectionChanged("DETENER");
       return;
     }
@@ -168,14 +175,25 @@ export class VirtualJoystick {
     const positiveAngle = Math.round((angleDeg + 360) % 360);
     const powerPct = Math.round(normalizedDistance * 100);
 
-    const lblAngle = document.getElementById("lbl-joy-angle");
-    const lblPower = document.getElementById("lbl-joy-power");
     if (lblAngle) lblAngle.textContent = `${positiveAngle}°`;
     if (lblPower) lblPower.textContent = `${powerPct}%`;
 
-    let nextDirection = "DETENER";
+    // Histéresis angular (±8°) para evitar rebotes bruscos en diagonales al deslizar el dedo/mouse
+    const H = 8;
+    let nextDirection = this.currentDirection;
 
-    if (angleDeg >= -135 && angleDeg < -45) {
+    if (this.currentDirection === "AVANZAR" && angleDeg >= -135 - H && angleDeg < -45 + H) {
+      nextDirection = "AVANZAR";
+    } else if (this.currentDirection === "DERECHA" && angleDeg >= -45 - H && angleDeg < 45 + H) {
+      nextDirection = "DERECHA";
+    } else if (this.currentDirection === "RETROCEDER" && angleDeg >= 45 - H && angleDeg < 135 + H) {
+      nextDirection = "RETROCEDER";
+    } else if (
+      this.currentDirection === "IZQUIERDA" &&
+      (angleDeg >= 135 - H || angleDeg < -135 + H)
+    ) {
+      nextDirection = "IZQUIERDA";
+    } else if (angleDeg >= -135 && angleDeg < -45) {
       nextDirection = "AVANZAR";
     } else if (angleDeg >= -45 && angleDeg < 45) {
       nextDirection = "DERECHA";
@@ -185,7 +203,6 @@ export class VirtualJoystick {
       nextDirection = "IZQUIERDA";
     }
 
-    const lblJoyDir = document.getElementById("lbl-joy-dir");
     if (lblJoyDir) {
       lblJoyDir.textContent = nextDirection === "DETENER" ? "En espera" : nextDirection;
     }
