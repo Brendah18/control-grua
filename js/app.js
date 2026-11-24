@@ -19,7 +19,7 @@ class PlatformApp {
     this.activePulseTimer = null;
     this.isPulseLocked = false;
     this.soundEnabled = true; // La excavadora inicia con sonido activado: Des. Sonido apaga y Act. Sonido prende
-    this.lightEnabled = true; // La excavadora inicia con luz LED encendida: Apagar apaga y Prender prende
+    this.lightEnabled = false; // La excavadora inicia con luz LED apagada: Prender enciende y Apagar apaga
     this.highSpeedEnabled = false;
     this.activeOscillator = null;
     this._dispatchChain = Promise.resolve();
