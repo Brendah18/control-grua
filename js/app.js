@@ -623,41 +623,21 @@ class PlatformApp {
           return;
         } else if (codigo === "ACTIVAR_SONIDO") {
           this.emitClaxonSound();
-          if (this.soundEnabled) {
-            this.updateCommandUiOnly("ACTIVAR_SONIDO");
-            return;
-          }
           this.soundEnabled = true;
           await this.dispatchCommand(codigo, false);
           return;
         } else if (codigo === "DESACTIVAR_SONIDO") {
           this.stopClaxonSound();
-          if (!this.soundEnabled) {
-            this.updateCommandUiOnly("DESACTIVAR_SONIDO");
-            return;
-          }
           this.soundEnabled = false;
           await this.dispatchCommand(codigo, false);
           return;
         } else if (codigo === "LUZ_LED") {
           if (luzAccion === "ON") {
-            if (this.lightEnabled) {
-              this.updateLightButtonsUi();
-              this.updateCommandUiOnly("LUZ_LED", "LUZ ENCENDIDA");
-              destelloVisualControl("LUZ_LED_ON", 700);
-              return;
-            }
             this.lightEnabled = true;
             this.updateLightButtonsUi();
             await this.dispatchCommand("LUZ_LED", false, "WEB-LUZ-ON");
             return;
           } else if (luzAccion === "OFF") {
-            if (!this.lightEnabled) {
-              this.updateLightButtonsUi();
-              this.updateCommandUiOnly("LUZ_LED", "LUZ APAGADA");
-              destelloVisualControl("LUZ_LED_OFF", 700);
-              return;
-            }
             this.lightEnabled = false;
             this.updateLightButtonsUi();
             await this.dispatchCommand("LUZ_LED", false, "WEB-LUZ-OFF");
@@ -1552,6 +1532,18 @@ class PlatformApp {
 
     if (payload.estado?.comando) {
       const cmdNombre = String(payload.estado.comando);
+      const origenUpper = String(payload.origen || "").toUpperCase();
+      if (origenUpper.includes("LUZ-ON")) {
+        this.lightEnabled = true;
+        this.updateLightButtonsUi();
+      } else if (origenUpper.includes("LUZ-OFF")) {
+        this.lightEnabled = false;
+        this.updateLightButtonsUi();
+      } else if (cmdNombre.toUpperCase() === "ACTIVAR_SONIDO") {
+        this.soundEnabled = true;
+      } else if (cmdNombre.toUpperCase() === "DESACTIVAR_SONIDO") {
+        this.soundEnabled = false;
+      }
       if (this.ui.lblComandoActual) this.ui.lblComandoActual.textContent = cmdNombre;
       if (!this.joystick?.isDragging) {
         const textDir = cmdNombre === "DETENER" ? "En espera" : cmdNombre.replace(/_/g, " ");
